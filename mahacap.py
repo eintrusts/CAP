@@ -15,12 +15,19 @@ st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", lay
 # ---------------------------
 ADMIN_PASSWORD = "eintrust123"
 
+# ---------------------------
+# Session State Initialization
+# ---------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
-if "admin_mode" not in st.session_state:
-    st.session_state.admin_mode = False
 if "data" not in st.session_state:
-    st.session_state.data = pd.DataFrame()
+    # Initialize with empty DataFrame with required columns
+    st.session_state.data = pd.DataFrame(columns=[
+        "City Name", "District", "Population", "ULB Category", "CAP Status",
+        "GHG Emissions", "Environment Department Exist", "Department Name",
+        "Head Name", "Head Designantion", "Head Qualification", "Department Email",
+        "Dedicated Climate Officer"
+    ])
 
 # ---------------------------
 # Helpers
@@ -32,66 +39,13 @@ def canon(s: str) -> str:
     s = re.sub(r"[’'`\"()%/\.]", "", s)
     return s
 
-def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-    df.columns = (
-        df.columns.astype(str)
-        .str.strip()
-        .str.replace("\n", " ", regex=False)
-        .str.replace(r"\s+", " ", regex=True)
-    )
-    return df
-
-# Column aliases for flexibility
-ALIASES = {
-    "City Name": ["City Name", "City", "ULB", "City_Name"],
-    "District": ["District", "District Name", "Dist"],
-    "Population": ["Population", "Population(as per 2011)", "Population 2011"],
-    "ULB Category": ["ULB Category", "ULB Type"],
-    "CAP Status": ["CAP Status", "CAPStatus"],
-    "GHG Emissions": ["GHG Emissions", "Total Emissions"],
-    "Environment Department Exist": ["Environment Department Exist", "Env Dept Exists"],
-    "Department Name": ["Department Name"],
-    "Head Name": ["Head Name"],
-    "Head Designantion": ["Head Designantion", "Head Designation"],
-    "Head Qualification": ["Head Qualification"],
-    "Department Email": ["Department Email"],
-    "Dedicated Climate Officer": ["Dedicated Climate Officer"],
-}
-
-def find_col(df: pd.DataFrame, target: str) -> str | None:
-    for alias in ALIASES.get(target, [target]):
-        for col in df.columns:
-            if canon(col) == canon(alias):
-                return col
-    for col in df.columns:
-        if canon(col) == canon(target):
-            return col
-    return None
-
-def get_val(row: pd.Series, df_cols: pd.Index, target: str, default="—"):
-    col = find_col(pd.DataFrame(columns=df_cols), target)
-    if col is None:
-        return default
-    val = row.get(col, default)
-    if pd.isna(val):
-        return default
-    return val
-
-# ---------------------------
-# Admin Login
-# ---------------------------
-def login():
-    with st.form("login_form"):
-        password = st.text_input("Enter Admin Password", type="password")
-        submit = st.form_submit_button("Login")
-        if submit:
-            if password == ADMIN_PASSWORD:
-                st.session_state.authenticated = True
-                st.session_state.admin_mode = True
-                st.success("Admin login successful")
-            else:
-                st.error("Incorrect password")
+def get_val(row: pd.Series, target: str, default="—"):
+    if target in row:
+        val = row[target]
+        if pd.isna(val):
+            return default
+        return val
+    return default
 
 # ---------------------------
 # Sidebar Logo
@@ -105,6 +59,20 @@ st.sidebar.image(
 # Navigation
 # ---------------------------
 menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Panel"])
+
+# ---------------------------
+# Admin Login
+# ---------------------------
+def admin_login():
+    with st.form("login_form"):
+        password = st.text_input("Enter Admin Password", type="password")
+        submit = st.form_submit_button("Login")
+        if submit:
+            if password == ADMIN_PASSWORD:
+                st.session_state.authenticated = True
+                st.success("Admin login successful")
+            else:
+                st.error("Incorrect password")
 
 # ---------------------------
 # Home Page
@@ -129,9 +97,8 @@ if menu == "Home":
                          title="District-wise CAP Completion")
             st.plotly_chart(fig, use_container_width=True)
 
-        ghg_col = find_col(df, "GHG Emissions")
-        if ghg_col:
-            fig2 = px.bar(df, x="City Name", y=ghg_col, title="GHG Emissions by City", text=ghg_col)
+        if "GHG Emissions" in df.columns:
+            fig2 = px.bar(df, x="City Name", y="GHG Emissions", title="GHG Emissions by City", text="GHG Emissions")
             st.plotly_chart(fig2, use_container_width=True)
 
 # ---------------------------
@@ -142,42 +109,41 @@ elif menu == "City Dashboard":
     if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
-        city_col = find_col(df, "City Name")
-        if city_col:
-            city = st.selectbox("Select City", df[city_col].dropna().unique())
-            city_row = df[df[city_col] == city].iloc[0]
+        city_col = "City Name"
+        city = st.selectbox("Select City", df[city_col].dropna().unique())
+        city_row = df[df[city_col] == city].iloc[0]
 
-            st.subheader(f"🏙️ {city} Details")
+        st.subheader(f"🏙️ {city} Details")
 
-            with st.expander("🏠 Basic Info", expanded=True):
-                st.write(f"**District:** {get_val(city_row, df.columns, 'District')}")
-                st.write(f"**Population:** {get_val(city_row, df.columns, 'Population')}")
-                st.write(f"**ULB Category:** {get_val(city_row, df.columns, 'ULB Category')}")
+        with st.expander("🏠 Basic Info", expanded=True):
+            st.write(f"**District:** {get_val(city_row, 'District')}")
+            st.write(f"**Population:** {get_val(city_row, 'Population')}")
+            st.write(f"**ULB Category:** {get_val(city_row, 'ULB Category')}")
 
-            with st.expander("🏢 Environment Dept"):
-                st.write(f"**Exists:** {get_val(city_row, df.columns, 'Environment Department Exist')}")
-                st.write(f"**Dept Name:** {get_val(city_row, df.columns, 'Department Name')}")
-                st.write(f"**Head Name:** {get_val(city_row, df.columns, 'Head Name')}")
-                st.write(f"**Head Designation:** {get_val(city_row, df.columns, 'Head Designantion')}")
-                st.write(f"**Head Qualification:** {get_val(city_row, df.columns, 'Head Qualification')}")
-                st.write(f"**Email:** {get_val(city_row, df.columns, 'Department Email')}")
-                st.write(f"**Dedicated Climate Officer:** {get_val(city_row, df.columns, 'Dedicated Climate Officer')}")
+        with st.expander("🏢 Environment Dept"):
+            st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
+            st.write(f"**Dept Name:** {get_val(city_row, 'Department Name')}")
+            st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
+            st.write(f"**Head Designation:** {get_val(city_row, 'Head Designantion')}")
+            st.write(f"**Head Qualification:** {get_val(city_row, 'Head Qualification')}")
+            st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
+            st.write(f"**Dedicated Climate Officer:** {get_val(city_row, 'Dedicated Climate Officer')}")
 
-            with st.expander("🌡️ GHG & CAP Actions"):
-                st.write(f"**Total GHG Emissions:** {get_val(city_row, df.columns, 'GHG Emissions')} MTCO2e")
-                st.write("**Suggested CAP Actions:**")
-                st.write("- Renewable energy increase")
-                st.write("- Public transport & EV promotion")
-                st.write("- Waste to energy initiatives")
-                st.write("- Energy efficiency programs")
-                st.write("- Urban forestry & green cover")
+        with st.expander("🌡️ GHG & CAP Actions"):
+            st.write(f"**Total GHG Emissions:** {get_val(city_row, 'GHG Emissions')} MTCO2e")
+            st.write("**Suggested CAP Actions:**")
+            st.write("- Renewable energy increase")
+            st.write("- Public transport & EV promotion")
+            st.write("- Waste to energy initiatives")
+            st.write("- Energy efficiency programs")
+            st.write("- Urban forestry & green cover")
 
 # ---------------------------
 # Admin Panel
 # ---------------------------
 elif menu == "Admin Panel":
     if not st.session_state.authenticated:
-        login()
+        admin_login()
     else:
         st.header("🔑 Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
@@ -214,7 +180,6 @@ elif menu == "Admin Panel":
                     "Department Email": dept_email,
                     "Dedicated Climate Officer": climate_officer
                 }
-                # If city exists, update; else add
                 df = st.session_state.data
                 if city_name in df.get("City Name", []):
                     idx = df[df["City Name"] == city_name].index[0]
