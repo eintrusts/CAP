@@ -120,7 +120,7 @@ def admin_login():
 # Home Page
 # ---------------------------
 if menu == "Home":
-    st.header("📊 Maharashtra CAP Dashboard")
+    st.header("Maharashtra CAP Dashboard")
     st.markdown("### Engage • Enlighten • Empower")
 
     df = st.session_state.data
@@ -184,7 +184,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("🔑 Admin Panel")
+        st.header("Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
@@ -194,7 +194,7 @@ elif menu == "Admin Panel":
             city_name = st.selectbox("Select City", cities_list)
             district = st.text_input("District", value=cities_districts[city_name], disabled=True)
 
-            population = st.number_input("Population", min_value=0, value=int(df[df["City Name"]==city_name]["Population"].values[0]) if city_name in df.get("City Name", []) else 0, step=1000, format="%d")
+            population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(df[df["City Name"]==city_name]["Population"].values[0]) if city_name in df.get("City Name", []) else 0, step=1000, format="%d")
             
             ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
