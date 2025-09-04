@@ -95,9 +95,36 @@ st.sidebar.image(
     use_container_width=True
 )
 
-menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Panel"])
+# Custom CSS for forest green buttons
+st.sidebar.markdown(
+    """
+    <style>
+    .sidebar .sidebar-content button {
+        background-color: #228B22 !important;
+        color: white !important;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    .sidebar .sidebar-content button:hover {
+        background-color: #196619 !important;
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
+# Sidebar buttons for navigation
+if st.sidebar.button("Home"):
+    st.session_state.menu = "Home"
+if st.sidebar.button("City Dashboard"):
+    st.session_state.menu = "City Dashboard"
+if st.sidebar.button("Admin Panel"):
+    st.session_state.menu = "Admin Panel"
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("EinTrust | © 2025")
+
+menu = st.session_state.menu
 
 # ---------------------------
 # Admin Login
