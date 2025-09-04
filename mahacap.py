@@ -5,7 +5,6 @@ import pandas as pd
 import plotly.express as px
 import os
 from datetime import datetime
-from fpdf import FPDF
 
 # ---------------------------
 # Page Configuration
@@ -321,7 +320,7 @@ elif menu == "CAP Preparation":
             other_emissions = st.number_input("Other City Emissions (MTCO2e)", min_value=0)
             other_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
             
-            submit = st.form_submit_button("Save CAP Raw Data & Generate Report")
+            submit = st.form_submit_button("Save CAP Raw Data & Download CSV")
             if submit:
                 new_data = {
                     "City Name": city_name,
@@ -349,27 +348,9 @@ elif menu == "CAP Preparation":
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
                 st.success(f"CAP Raw Data for {city_name} saved successfully!")
 
-                # ---------------------------
-                # Generate Simple CAP Report PDF
-                # ---------------------------
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_font("Arial", "B", 16)
-                pdf.cell(0, 10, f"{city_name} - Climate Action Plan", ln=True, align="C")
-                pdf.set_font("Arial", "", 12)
-                pdf.ln(5)
-                for key, val in new_data.items():
-                    pdf.cell(0, 8, f"{key}: {val}", ln=True)
-                
-                pdf.ln(5)
-                pdf.multi_cell(0, 8, "Recommended Actions to Achieve Net Zero by 2050:\n"
-                                       "- Increase renewable energy adoption\n"
-                                       "- Promote electric vehicles and public transport\n"
-                                       "- Implement energy efficiency programs\n"
-                                       "- Expand urban forestry and green cover\n"
-                                       "- Enhance waste recycling and waste-to-energy initiatives\n"
-                                       "- Monitor industrial emissions and adopt cleaner technology\n")
-
-                pdf_file = f"{city_name}_CAP_Report.pdf"
-                pdf.output(pdf_file)
-                st.download_button("Download CAP Report (PDF)", data=open(pdf_file, "rb"), file_name=pdf_file)
+                st.download_button(
+                    label="Download CAP Raw Data CSV",
+                    data=df_cap.to_csv(index=False).encode('utf-8'),
+                    file_name=f"{city_name}_CAP_Data.csv",
+                    mime="text/csv"
+                )
