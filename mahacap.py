@@ -239,8 +239,16 @@ elif menu == "Admin Panel":
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             
             ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
+            
+            # Environment Dept Exists
             env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
-            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
+
+            # Automatically fill Department Name if env_exist is "Yes"
+            if env_exist == "Yes":
+                dept_name = st.text_input("Department Name", value="Environment", disabled=True)
+            else:
+                dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
+            
             head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
             dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
 
