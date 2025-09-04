@@ -94,9 +94,6 @@ st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
-st.sidebar.markdown("## Maharashtra CAP Dashboard")
-st.sidebar.markdown("**Engage • Enlighten • Empower**")
-st.sidebar.markdown("---")
 
 menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Panel"])
 st.sidebar.markdown("---")
@@ -121,7 +118,7 @@ def admin_login():
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra CAP Dashboard")
-    st.markdown("### Engage • Enlighten • Empower")
+    st.markdown("Maharashtra's Net Zero Journey")
 
     df = st.session_state.data
     if df.empty:
@@ -153,7 +150,7 @@ elif menu == "City Dashboard":
         city = st.selectbox("Select City", df[city_col].dropna().unique())
         city_row = df[df[city_col] == city].iloc[0]
 
-        st.subheader(f"🏙️ {city} Details")
+        st.subheader(f"{city} Details")
         with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
             st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
@@ -182,7 +179,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("🔑 Admin Panel")
+        st.header("Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
