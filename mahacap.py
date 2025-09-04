@@ -285,40 +285,40 @@ elif menu == "CAP Preparation":
         df_cap = st.session_state.cap_data
 
         with st.form("cap_form"):
-            city_name = st.selectbox("Select City", st.session_state.data["City Name"].dropna().unique())
+            city_name = st.selectbox("Select City", st.session_state.data["City Name"].dropna().unique(), key="cap_city_select")
             
             st.subheader("Energy Sector")
-            energy_elec = st.number_input("Annual Electricity Consumption (kWh)", min_value=0)
-            energy_fuel = st.number_input("Annual Fossil Fuel Consumption (liters)", min_value=0)
-            energy_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            energy_elec = st.number_input("Annual Electricity Consumption (kWh)", min_value=0, key="energy_elec")
+            energy_fuel = st.number_input("Annual Fossil Fuel Consumption (liters)", min_value=0, key="energy_fuel")
+            energy_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="energy_file")
             
             st.subheader("Transport Sector")
-            vehicles_total = st.number_input("Total Vehicles in City", min_value=0)
-            fuel_consumption = st.number_input("Annual Fuel Consumption by Vehicles (liters)", min_value=0)
-            transport_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            vehicles_total = st.number_input("Total Vehicles in City", min_value=0, key="vehicles_total")
+            fuel_consumption = st.number_input("Annual Fuel Consumption by Vehicles (liters)", min_value=0, key="fuel_consumption")
+            transport_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="transport_file")
             
             st.subheader("Buildings Sector")
-            buildings_count = st.number_input("Total Buildings", min_value=0)
-            buildings_area = st.number_input("Total Built-up Area (sq.m)", min_value=0)
-            buildings_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            buildings_count = st.number_input("Total Buildings", min_value=0, key="buildings_count")
+            buildings_area = st.number_input("Total Built-up Area (sq.m)", min_value=0, key="buildings_area")
+            buildings_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="buildings_file")
             
             st.subheader("Waste Sector")
-            waste_generated = st.number_input("Total Waste Generated (tonnes/year)", min_value=0)
-            waste_recycled = st.number_input("Waste Recycled (tonnes/year)", min_value=0)
-            waste_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            waste_generated = st.number_input("Total Waste Generated (tonnes/year)", min_value=0, key="waste_generated")
+            waste_recycled = st.number_input("Waste Recycled (tonnes/year)", min_value=0, key="waste_recycled")
+            waste_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="waste_file")
             
             st.subheader("Industry Sector")
-            industry_count = st.number_input("Number of Industrial Units", min_value=0)
-            industry_energy = st.number_input("Industrial Energy Consumption (kWh/year)", min_value=0)
-            industry_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            industry_count = st.number_input("Number of Industrial Units", min_value=0, key="industry_count")
+            industry_energy = st.number_input("Industrial Energy Consumption (kWh/year)", min_value=0, key="industry_energy")
+            industry_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="industry_file")
             
             st.subheader("Urban Forestry & Land Use")
-            green_cover = st.number_input("Urban Green Cover (ha)", min_value=0)
-            forestry_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            green_cover = st.number_input("Urban Green Cover (ha)", min_value=0, key="green_cover")
+            forestry_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="forestry_file")
             
             st.subheader("Other Emissions")
-            other_emissions = st.number_input("Other City Emissions (MTCO2e)", min_value=0)
-            other_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"])
+            other_emissions = st.number_input("Other City Emissions (MTCO2e)", min_value=0, key="other_emissions")
+            other_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="other_file")
             
             submit = st.form_submit_button("Save CAP Raw Data & Download CSV")
             if submit:
