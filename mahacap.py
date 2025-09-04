@@ -118,7 +118,7 @@ def admin_login():
 # Home Page
 # ---------------------------
 if menu == "Home":
-    st.header("📊 Maharashtra CAP Dashboard")
+    st.header("Maharashtra CAP Dashboard")
     st.markdown("### Engage • Enlighten • Empower")
 
     df = st.session_state.data
@@ -155,19 +155,19 @@ elif menu == "City Dashboard":
 
         st.subheader(f"🏙️ {city} Details")
 
-        with st.expander("🏠 Basic Info", expanded=True):
+        with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
             st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
             st.write(f"**ULB Category:** {get_val(city_row, 'ULB Category')}")
             st.write(f"**CAP Status:** {get_val(city_row, 'CAP Status')}")
 
-        with st.expander("🏢 Environment Dept"):
+        with st.expander("Environment Department"):
             st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
             st.write(f"**Dept Name:** {get_val(city_row, 'Department Name')}")
             st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
             st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
 
-        with st.expander("🌡️ GHG & CAP Actions"):
+        with st.expander("GHG & CAP Actions"):
             st.write(f"**Total GHG Emissions:** {get_val(city_row, 'GHG Emissions')} MTCO2e")
             st.write("**Suggested CAP Actions:**")
             st.write("- Renewable energy increase")
@@ -183,7 +183,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("🔑 Admin Panel")
+        st.header("Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
