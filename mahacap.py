@@ -169,13 +169,6 @@ if menu == "Home":
         st.metric("Total Cities", total_cities)
         st.metric("Cities with CAP Completed", cities_done)
 
-        if "District" in df.columns:
-            district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x=="Completed").sum()).reset_index()
-            district_summary.columns = ["District", "CAPs Done"]
-            fig = px.bar(district_summary, x="District", y="CAPs Done", text="CAPs Done",
-                         title="District-wise CAP Completion")
-            st.plotly_chart(fig, use_container_width=True)
-
         if "GHG Emissions" in df.columns:
             fig2 = px.bar(df, x="City Name", y="GHG Emissions", title="GHG Emissions by City", text="GHG Emissions")
             st.plotly_chart(fig2, use_container_width=True)
