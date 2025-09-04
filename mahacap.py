@@ -104,9 +104,6 @@ st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
-st.sidebar.markdown("## Maharashtra CAP Dashboard")
-st.sidebar.markdown("**Engage • Enlighten • Empower**")
-st.sidebar.markdown("---")
 
 # Custom CSS for forest green buttons
 st.sidebar.markdown(
