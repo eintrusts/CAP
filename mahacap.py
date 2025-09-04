@@ -21,7 +21,7 @@ ADMIN_PASSWORD = "eintrust123"
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "data" not in st.session_state:
-    # Initialize with empty DataFrame with required columns
+    # Initialize empty DataFrame with required columns
     st.session_state.data = pd.DataFrame(columns=[
         "City Name", "District", "Population", "ULB Category", "CAP Status",
         "GHG Emissions", "Environment Department Exist", "Department Name",
@@ -82,7 +82,7 @@ if menu == "Home":
     st.markdown("### Engage • Enlighten • Empower")
 
     df = st.session_state.data
-    if df.empty:
+    if not isinstance(df, pd.DataFrame) or df.empty:
         st.info("No city data available. Admin must add data.")
     else:
         total_cities = df.shape[0]
@@ -106,7 +106,7 @@ if menu == "Home":
 # ---------------------------
 elif menu == "City Dashboard":
     df = st.session_state.data
-    if df.empty:
+    if not isinstance(df, pd.DataFrame) or df.empty:
         st.info("No city data available. Admin must add data.")
     else:
         city_col = "City Name"
