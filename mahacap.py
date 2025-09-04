@@ -16,10 +16,10 @@ st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", lay
 ADMIN_PASSWORD = "eintrust2025"
 
 # ---------------------------
-# Data Files
+# Data Files for Persistence
 # ---------------------------
 DATA_FILE = "cities_data.csv"
-CAP_FILE = "cap_preparation_data.csv"
+CAP_RAW_FILE = "cap_raw_data.csv"
 
 # ---------------------------
 # Cities and Districts
@@ -78,10 +78,8 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "menu" not in st.session_state:
     st.session_state.menu = "Home"
-if "admin_section" not in st.session_state:
-    st.session_state.admin_section = "For Dashboard"
-
-# Load data
+if "last_updated" not in st.session_state:
+    st.session_state.last_updated = None
 if os.path.exists(DATA_FILE):
     st.session_state.data = pd.read_csv(DATA_FILE)
 else:
@@ -91,10 +89,10 @@ else:
         "Head Name", "Department Email"
     ])
 
-if os.path.exists(CAP_FILE):
-    st.session_state.cap_data = pd.read_csv(CAP_FILE)
+if os.path.exists(CAP_RAW_FILE):
+    st.session_state.cap_raw_data = pd.read_csv(CAP_RAW_FILE).set_index("City").to_dict(orient="index")
 else:
-    st.session_state.cap_data = pd.DataFrame()
+    st.session_state.cap_raw_data = {}
 
 # ---------------------------
 # Helper Functions
@@ -107,11 +105,21 @@ def format_population(num):
         return "—"
     return "{:,}".format(int(num))
 
-def update_last_updated():
-    st.session_state.last_updated = pd.Timestamp.now()
+def calculate_ghg_inventory(raw_data):
+    # Simple approximation using emission factors
+    ghg = 0
+    ghg += raw_data.get("Diesel consumption",0) * 2.68 / 1000     # tCO2e
+    ghg += raw_data.get("Petrol consumption",0) * 2.31 / 1000
+    ghg += raw_data.get("LPG consumption",0) * 1.51 / 1000
+    ghg += raw_data.get("Natural gas consumption",0) * 2.0 / 1000
+    ghg += raw_data.get("Electricity consumption",0) * 0.00085    # kWh to tCO2e
+    ghg += raw_data.get("Municipal vehicles km",0) * 0.00025
+    ghg += raw_data.get("Public buses km",0) * 0.001
+    ghg += raw_data.get("Waste to landfill",0) * 1.9
+    return round(ghg,2)
 
 # ---------------------------
-# Sidebar
+# Sidebar - Professional Style
 # ---------------------------
 st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
@@ -138,13 +146,16 @@ st.sidebar.markdown(
     """, unsafe_allow_html=True
 )
 
-# Sidebar navigation
+# Sidebar buttons
 if st.sidebar.button("Home"):
     st.session_state.menu = "Home"
 if st.sidebar.button("City Dashboard"):
     st.session_state.menu = "City Dashboard"
 if st.sidebar.button("Admin Panel"):
     st.session_state.menu = "Admin Panel"
+if st.session_state.authenticated:
+    if st.sidebar.button("CAP Preparation"):
+        st.session_state.menu = "CAP Preparation"
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("EinTrust | © 2025")
@@ -169,7 +180,7 @@ def admin_login():
 # Home Page
 # ---------------------------
 if menu == "Home":
-    st.header("Maharashtra Climate Action Plan Dashboard")
+    st.header("Maharashtra CAP Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
 
     df = st.session_state.data
@@ -196,26 +207,29 @@ elif menu == "City Dashboard":
         st.header("City Dashboard")
         st.markdown("View detailed information for each city.")
 
+        # Select city
         city_col = "City Name"
         city = st.selectbox("Select City", df[city_col].dropna().unique())
         city_row = df[df[city_col] == city].iloc[0]
 
         st.subheader(f"{city} Details")
 
+        # Basic Info
         with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
             st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
             st.write(f"**ULB Category:** {get_val(city_row, 'ULB Category')}")
             st.write(f"**CAP Status:** {get_val(city_row, 'CAP Status')}")
 
+        # Environment Department
         with st.expander("Environment Department"):
             st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
             st.write(f"**Dept Name:** {get_val(city_row, 'Department Name')}")
             st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
             st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
 
-        # Display last updated month & year
-        if "last_updated" in st.session_state:
+        # Last updated
+        if st.session_state.last_updated:
             last_updated = st.session_state.last_updated
         else:
             last_updated = pd.to_datetime(os.path.getmtime(DATA_FILE), unit='s')
@@ -229,142 +243,132 @@ elif menu == "Admin Panel":
         admin_login()
     else:
         st.header("Admin Panel")
-        st.write("Select the admin section below:")
+        st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
-        # Closed access buttons for admin sections
-        st.session_state.admin_section = st.radio("Choose Section", ["For Dashboard", "For CAP Preparation"])
+        df = st.session_state.data
+        cities_list = list(cities_districts.keys())
 
-        # ---------------------------
-        # Admin Dashboard Section
-        # ---------------------------
-        if st.session_state.admin_section == "For Dashboard":
-            st.subheader("City Data Management")
+        with st.form("admin_form"):
+            city_name = st.selectbox("Select City", cities_list)
+            district = st.text_input("District", value=cities_districts[city_name], disabled=True)
 
-            df = st.session_state.data
-            cities_list = list(cities_districts.keys())
+            population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
+            population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(population_val), step=1000, format="%d")
+            
+            ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
+            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+            
+            ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
+            env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
+            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
+            head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
+            dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
 
-            with st.form("admin_form"):
-                city_name = st.selectbox("Select City", cities_list)
-                district = st.text_input("District", value=cities_districts[city_name], disabled=True)
+            submit = st.form_submit_button("Add/Update City")
+            if submit:
+                new_row = {
+                    "City Name": city_name,
+                    "District": district,
+                    "Population": population,
+                    "ULB Category": ulb_cat,
+                    "CAP Status": cap_status,
+                    "GHG Emissions": ghg,
+                    "Environment Department Exist": env_exist,
+                    "Department Name": dept_name,
+                    "Head Name": head_name,
+                    "Department Email": dept_email
+                }
 
-                population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
-                population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(population_val), step=1000, format="%d")
+                if city_name in df.get("City Name", []):
+                    idx = df[df["City Name"] == city_name].index[0]
+                    df.loc[idx] = new_row
+                    st.success(f"{city_name} updated successfully.")
+                else:
+                    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                    st.success(f"{city_name} added successfully.")
+         
+                # Save data
+                st.session_state.data = df
+                df.to_csv(DATA_FILE, index=False)
+                st.session_state.last_updated = pd.Timestamp.now()
+
+# ---------------------------
+# CAP Preparation
+# ---------------------------
+elif menu == "CAP Preparation":
+    if not st.session_state.authenticated:
+        st.info("Admin login required for CAP preparation.")
+        admin_login()
+    else:
+        st.header("CAP Preparation - Raw Data Input & Climate Actions")
+        st.write("Fill in city-specific raw data to generate GHG inventory and automatic climate action recommendations.")
+
+        cities_list = list(cities_districts.keys())
+        city_name = st.selectbox("Select City for CAP", cities_list)
+
+        if city_name not in st.session_state.cap_raw_data:
+            st.session_state.cap_raw_data[city_name] = {}
+
+        raw_data = st.session_state.cap_raw_data[city_name]
+
+        with st.form("cap_form"):
+            st.subheader("Energy & Fuel Use")
+            raw_data["Diesel consumption"] = st.number_input("Diesel consumption (liters/year)", min_value=0, value=raw_data.get("Diesel consumption", 0))
+            raw_data["Petrol consumption"] = st.number_input("Petrol consumption (liters/year)", min_value=0, value=raw_data.get("Petrol consumption", 0))
+            raw_data["LPG consumption"] = st.number_input("LPG consumption (kg/year)", min_value=0, value=raw_data.get("LPG consumption", 0))
+            raw_data["Natural gas consumption"] = st.number_input("Natural gas consumption (m³/year)", min_value=0, value=raw_data.get("Natural gas consumption", 0))
+            raw_data["Electricity consumption"] = st.number_input("Electricity consumption (kWh/year)", min_value=0, value=raw_data.get("Electricity consumption", 0))
+
+            st.subheader("Transport & Mobility")
+            raw_data["Municipal vehicles km"] = st.number_input("Municipal fleet km traveled/year", min_value=0, value=raw_data.get("Municipal vehicles km", 0))
+            raw_data["Public buses km"] = st.number_input("Public buses km traveled/year", min_value=0, value=raw_data.get("Public buses km", 0))
+
+            st.subheader("Waste & Water")
+            raw_data["Waste generated"] = st.number_input("Municipal solid waste generated (tons/year)", min_value=0, value=raw_data.get("Waste generated", 0))
+            raw_data["Waste recycled %"] = st.slider("Waste recycled (%)", min_value=0, max_value=100, value=raw_data.get("Waste recycled %", 0))
+            raw_data["Waste to landfill"] = st.number_input("Waste sent to landfill (tons/year)", min_value=0, value=raw_data.get("Waste to landfill", 0))
+            raw_data["Water consumption"] = st.number_input("Municipal water consumption (m³/year)", min_value=0, value=raw_data.get("Water consumption", 0))
+            raw_data["Sewage treated"] = st.number_input("Sewage treated (m³/year)", min_value=0, value=raw_data.get("Sewage treated", 0))
+
+            submit = st.form_submit_button("Save CAP Raw Data & Generate Actions")
+            if submit:
+                st.session_state.cap_raw_data[city_name] = raw_data
+                # Save to CSV
+                pd.DataFrame.from_dict({city_name: raw_data}, orient="index").reset_index().rename(columns={"index":"City"}).to_csv(CAP_RAW_FILE, mode='a', header=not os.path.exists(CAP_RAW_FILE), index=False)
                 
-                ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
-                cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-                
-                ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
-                env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
-                dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
-                head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
-                dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
+                # Calculate GHG
+                ghg_total = calculate_ghg_inventory(raw_data)
+                st.success(f"Raw data saved for {city_name}. Estimated total GHG: {ghg_total} MTCO2e")
 
-                submit = st.form_submit_button("Add/Update City")
-                if submit:
-                    new_row = {
-                        "City Name": city_name,
-                        "District": district,
-                        "Population": population,
-                        "ULB Category": ulb_cat,
-                        "CAP Status": cap_status,
-                        "GHG Emissions": ghg,
-                        "Environment Department Exist": env_exist,
-                        "Department Name": dept_name,
-                        "Head Name": head_name,
-                        "Department Email": dept_email
-                    }
+                # ---------------------------
+                # Auto Climate Actions
+                # ---------------------------
+                st.subheader("Recommended Climate Actions for Net Zero by 2050")
 
-                    if city_name in df.get("City Name", []):
-                        idx = df[df["City Name"] == city_name].index[0]
-                        df.loc[idx] = new_row
-                        st.success(f"{city_name} updated successfully.")
-                    else:
-                        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                        st.success(f"{city_name} added successfully.")
-             
-                    # Save data
-                    st.session_state.data = df
-                    df.to_csv(DATA_FILE, index=False)
-                    update_last_updated()
+                actions = []
 
-        # ---------------------------
-        # CAP Preparation Section
-        # ---------------------------
-        elif st.session_state.admin_section == "For CAP Preparation":
-            st.subheader("CAP Preparation - GHG Inventory & Action Plan")
+                # Energy & Fuel
+                if raw_data.get("Diesel consumption", 0) > 10000 or raw_data.get("Petrol consumption", 0) > 10000:
+                    actions.append("Transition municipal vehicles to electric or CNG.")
+                if raw_data.get("Electricity consumption", 0) > 100000:
+                    actions.append("Install rooftop solar on municipal buildings and street lighting.")
+                    actions.append("Implement energy efficiency measures in municipal buildings.")
 
-            df = st.session_state.data
-            cities_list = list(cities_districts.keys())
+                # Waste
+                if raw_data.get("Waste to landfill", 0) > 5000:
+                    actions.append("Increase waste recycling and composting programs.")
+                    actions.append("Capture methane from landfill and explore waste-to-energy options.")
 
-            with st.form("cap_form"):
-                city_name = st.selectbox("Select City for CAP Preparation", cities_list)
-                district = st.text_input("District", value=cities_districts[city_name], disabled=True)
-                population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
-                population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(population_val), step=1000, format="%d")
+                # Water
+                if raw_data.get("Water consumption", 0) > 500000:
+                    actions.append("Promote water efficiency and reuse in municipal facilities.")
 
-                st.markdown("### Scope 1: Direct Emissions")
-                diesel = st.number_input("Diesel Consumption (liters)", min_value=0, value=0)
-                petrol = st.number_input("Petrol Consumption (liters)", min_value=0, value=0)
-                natural_gas = st.number_input("Natural Gas Consumption (m³)", min_value=0, value=0)
-                fugitive = st.number_input("Fugitive Emissions (kg CO2e)", min_value=0, value=0)
+                # Transport
+                if raw_data.get("Public buses km", 0) > 100000:
+                    actions.append("Electrify public bus fleet and promote public transport usage.")
 
-                st.markdown("### Scope 2: Indirect Emissions")
-                electricity = st.number_input("Electricity Consumption (kWh)", min_value=0, value=0)
-                heat = st.number_input("Purchased Heat/Steam/Cooling (GJ)", min_value=0, value=0)
+                if not actions:
+                    actions.append("City emissions are low; continue monitoring and improving efficiency.")
 
-                st.markdown("### Scope 3: Other Indirect Emissions")
-                waste = st.number_input("Waste Generated (tons)", min_value=0, value=0)
-                water = st.number_input("Water & Wastewater Treatment Emissions (kg CO2e)", min_value=0, value=0)
-                transport = st.number_input("Municipal Transportation Emissions (kg CO2e)", min_value=0, value=0)
-                procurement = st.number_input("Procurement & Supply Chain Emissions (kg CO2e)", min_value=0, value=0)
-
-                st.markdown("### Sectoral Breakdown")
-                buildings = st.number_input("Buildings Energy Use (kg CO2e)", min_value=0, value=0)
-                transport_sector = st.number_input("Transport Sector Emissions (kg CO2e)", min_value=0, value=0)
-                waste_sector = st.number_input("Waste Management Emissions (kg CO2e)", min_value=0, value=0)
-                industry = st.number_input("Industry Emissions (kg CO2e)", min_value=0, value=0)
-                green_cover = st.number_input("Urban Forestry & Green Cover (kg CO2e)", min_value=0, value=0)
-
-                st.markdown("### CAP Goals & Actions")
-                renewable = st.text_area("Renewable Energy Targets")
-                ev_transport = st.text_area("EV & Public Transport Targets")
-                energy_efficiency = st.text_area("Energy Efficiency Programs")
-                waste_energy = st.text_area("Waste-to-Energy Initiatives")
-                urban_greening = st.text_area("Urban Greening / Forestry Targets")
-                additional_notes = st.text_area("Additional Notes / References")
-
-                submit_cap = st.form_submit_button("Save CAP Preparation Data")
-                if submit_cap:
-                    new_cap_row = {
-                        "City Name": city_name,
-                        "District": district,
-                        "Population": population,
-                        "Diesel Consumption (liters)": diesel,
-                        "Petrol Consumption (liters)": petrol,
-                        "Natural Gas Consumption (m³)": natural_gas,
-                        "Fugitive Emissions (kg CO2e)": fugitive,
-                        "Electricity Consumption (kWh)": electricity,
-                        "Purchased Heat/Steam/Cooling (GJ)": heat,
-                        "Waste Generated (tons)": waste,
-                        "Water & Wastewater Treatment Emissions (kg CO2e)": water,
-                        "Municipal Transportation Emissions (kg CO2e)": transport,
-                        "Procurement & Supply Chain Emissions (kg CO2e)": procurement,
-                        "Buildings Energy Use (kg CO2e)": buildings,
-                        "Transport Sector Emissions (kg CO2e)": transport_sector,
-                        "Waste Management Emissions (kg CO2e)": waste_sector,
-                        "Industry Emissions (kg CO2e)": industry,
-                        "Urban Forestry & Green Cover (kg CO2e)": green_cover,
-                        "Renewable Energy Targets": renewable,
-                        "EV & Public Transport Targets": ev_transport,
-                        "Energy Efficiency Programs": energy_efficiency,
-                        "Waste-to-Energy Initiatives": waste_energy,
-                        "Urban Greening / Forestry Targets": urban_greening,
-                        "Additional Notes": additional_notes
-                    }
-
-                    cap_df = st.session_state.cap_data
-                    cap_df = pd.concat([cap_df, pd.DataFrame([new_cap_row])], ignore_index=True)
-                    st.session_state.cap_data = cap_df
-                    cap_df.to_csv(CAP_FILE, index=False)
-                    update_last_updated()
-                    st.success(f"CAP Preparation Data for {city_name} saved successfully.")
+                for idx, act in enumerate(actions, 1):
+                    st.write(f"{idx}. {act}")
