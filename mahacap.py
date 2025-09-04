@@ -85,20 +85,22 @@ def get_val(row: pd.Series, target: str, default="—"):
 def format_population(num):
     if pd.isna(num) or num == "":
         return "—"
-    return "{:,}".format(int(num))  # Indian format display
+    return "{:,}".format(int(num))
 
 # ---------------------------
-# Sidebar Logo
+# Professional Sidebar
 # ---------------------------
 st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
+st.sidebar.markdown("## Maharashtra CAP Dashboard")
+st.sidebar.markdown("**Engage • Enlighten • Empower**")
+st.sidebar.markdown("---")
 
-# ---------------------------
-# Navigation
-# ---------------------------
 menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Panel"])
+st.sidebar.markdown("---")
+st.sidebar.markdown("EinTrust | © 2025")
 
 # ---------------------------
 # Admin Login
@@ -125,10 +127,8 @@ if menu == "Home":
     if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
-        total_cities = df.shape[0]
-        cities_done = df[df["CAP Status"] == "Completed"].shape[0]
-        st.metric("Total Cities", total_cities)
-        st.metric("Cities with CAP Completed", cities_done)
+        st.metric("Total Cities", df.shape[0])
+        st.metric("Cities with CAP Completed", df[df["CAP Status"]=="Completed"].shape[0])
 
         if "District" in df.columns:
             district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x=="Completed").sum()).reset_index()
@@ -154,7 +154,6 @@ elif menu == "City Dashboard":
         city_row = df[df[city_col] == city].iloc[0]
 
         st.subheader(f"🏙️ {city} Details")
-
         with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
             st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
@@ -183,7 +182,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("Admin Panel")
+        st.header("🔑 Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
