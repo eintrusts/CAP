@@ -1,8 +1,9 @@
+# mahacap.py
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import io
-import os
+import re
 
 # ---------------------------
 # Page Config
@@ -10,195 +11,242 @@ import os
 st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", layout="wide")
 
 # ---------------------------
-# Admin/City Passwords
+# Admin Password
 # ---------------------------
 ADMIN_PASSWORD = "eintrust123"
-CITY_PASSWORD = "cityaccess123"
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
-if "access_level" not in st.session_state:
-    st.session_state.access_level = "public"
+if "admin_mode" not in st.session_state:
+    st.session_state.admin_mode = False
 
 # ---------------------------
-# Load Data Function
+# Column normalization helpers
+# ---------------------------
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = (
+        df.columns.astype(str)
+        .str.strip()
+        .str.replace("\n", " ", regex=False)
+        .str.replace(r"\s+", " ", regex=True)
+    )
+    return df
+
+ALIASES = {
+    "City Name": ["City Name", "City", "ULB", "City_Name"],
+    "District": ["District", "District Name", "Dist"],
+    "Population(as per 2011)": ["Population(as per 2011)", "Population (2011)", "Population 2011"],
+    "ULB Category": ["ULB Category", "ULB Type", "ULB_Category"],
+    "Environment Department Exist": ["Environment Department Exist", "Env Dept Exists", "Environment Dept Exists"],
+    "Department Name": ["Department Name", "Environment Department Name"],
+    "Head Name": ["Head Name", "Department Head Name"],
+    "Head Designantion": ["Head Designantion", "Head Designation"],
+    "Head Qualification": ["Head Qualification"],
+    "Department Email": ["Department Email", "Dept Email"],
+    "Dedicated Climate Officer": ["Dedicated Climate Officer", "Climate Officer"],
+    "Total Budget": ["Total Budget", "Budget Total", "Overall Budget", "ULB Total Budget"],
+    "Environment Budget": ["Environment Budget", "Env Budget", "Environmental Budget"],
+    "Budget % of Total": [
+        "Budget % of Total", "Budget Percent of Total", "Budget Percentage of Total",
+        "Environment Budget % of Total", "Env Budget % of Total", "Env Budget %", "Environment Budget %", "Budget %"
+    ],
+    "ESR Prepared": ["ESR Prepared"],
+    "Latest ESR Year": ["Latest ESR Year", "ESR Year"],
+    "CAP Status": ["CAP Status", "CAPStatus"],
+    "CAP Consultant (If Any)": ["CAP Consultant (If Any)", "CAP Consultant"],
+    "CSCAF Participation": ["CSCAF Participation"],
+    "CSCAF Rank (If Any)": ["CSCAF Rank (If Any)", "CSCAF Rank"],
+    "Majhi Vasundhara Abhiyan Participation": ["Majhi Vasundhara Abhiyan Participation", "MV Participation"],
+    "Majhi Vasundhara Abhiyan Rank (If Any)": ["Majhi Vasundhara Abhiyan Rank (If Any)", "MV Rank"],
+    "No. of Commissioner Transfers (Last 3 Years)": ["No. of Commissioner Transfers (Last 3 Years)", "Commissioner Transfers (3Y)"],
+    "Political Support": ["Political Support"],
+    "Any Green Initiative by Mayor/MLA": ["Any Green Initiative by Mayor/MLA", "Green Initiative by Mayor/MLA"],
+    "Political Party in Power": ["Political Party in Power", "Ruling Party"],
+    "Climate Risk Zone": ["Climate Risk Zone", "Risk Zone"],
+    "Recent Climate Disaster": ["Recent Climate Disaster", "Recent Disaster"],
+    "Citizen Awareness Programs Held": ["Citizen Awareness Programs Held", "Citizen Awareness Programs"],
+    "Active NGOs": ["Active NGOs", "Active NGO's", "Active NGO’S"],
+    "Climate Content on Website/Socials": ["Climate Content on Website/Socials", "Climate Content on Website", "Climate Content on Socials"],
+    "School/College Partnerships": ["School/College Partnerships", "School Partnerships", "College Partnerships"],
+    "City’s Top 3 Development Priorities": ["City’s Top 3 Development Priorities", "City's Top 3 Development Priorities", "Top 3 Development Priorities"],
+    "Environment Mentioned in ULB Vision/Mission": ["Environment Mentioned in ULB Vision/Mission", "Environment in ULB Vision/Mission"],
+    "Remarks": ["Remarks", "Comments"],
+    "Data Source": ["Data Source", "Source"],
+    "GHG Emissions": ["GHG Emissions", "Total Emissions"]
+}
+
+def canon(s: str) -> str:
+    s = str(s).lower().strip()
+    s = s.replace("\n", " ")
+    s = re.sub(r"\s+", "", s)
+    s = re.sub(r"[’'`\"()%/\.]", "", s)
+    return s
+
+def find_col(df: pd.DataFrame, target: str) -> str | None:
+    for alias in ALIASES.get(target, [target]):
+        for col in df.columns:
+            if canon(col) == canon(alias):
+                return col
+    for col in df.columns:
+        if canon(col) == canon(target):
+            return col
+    return None
+
+def get_val(row: pd.Series, df_cols: pd.Index, target: str, default="—"):
+    col = find_col(pd.DataFrame(columns=df_cols), target)
+    if col is None:
+        return default
+    val = row.get(col, default)
+    if pd.isna(val):
+        return default
+    return val
+
+# ---------------------------
+# Load Data
 # ---------------------------
 @st.cache_data
-def load_data(file_path="cities_data.xlsx"):
-    if not os.path.exists(file_path):
+def load_data():
+    try:
+        return normalize_columns(pd.read_excel("data/cities_data.xlsx"))
+    except FileNotFoundError:
+        st.warning("Data file not found. Admin must upload cities_data.xlsx")
         return None
-    return pd.read_excel(file_path)
 
 if "data" not in st.session_state:
     st.session_state.data = load_data()
 
 # ---------------------------
-# Helper: Generate CAP Actions
+# Admin Login
 # ---------------------------
-def generate_cap_actions(city_row):
-    ghg = city_row.get("GHG Emissions (tCO2e)", 0)
-    actions = []
-    if ghg > 100000:
-        actions += [
-            "Accelerate renewable energy adoption",
-            "Implement EV and public transport incentives",
-            "Waste-to-energy projects"
-        ]
-    elif ghg > 50000:
-        actions += [
-            "Increase solar rooftop installations",
-            "Energy efficiency in buildings",
-            "Smart traffic management"
-        ]
-    else:
-        actions += [
-            "Promote green buildings",
-            "Urban forestry initiatives"
-        ]
-    return actions
-
-# ---------------------------
-# Login Functions
-# ---------------------------
-def login(level="admin"):
-    with st.form(f"login_form_{level}"):
-        password = st.text_input(f"Enter {level.capitalize()} Password", type="password")
+def login():
+    with st.form("login_form"):
+        password = st.text_input("Enter Admin Password", type="password")
         submit = st.form_submit_button("Login")
         if submit:
-            if (level=="admin" and password==ADMIN_PASSWORD) or (level=="city" and password==CITY_PASSWORD):
+            if password == ADMIN_PASSWORD:
                 st.session_state.authenticated = True
-                st.session_state.access_level = level
-                st.success(f"{level.capitalize()} login successful")
+                st.session_state.admin_mode = True
+                st.success("Admin login successful")
             else:
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar Navigation
+# UI
 # ---------------------------
-st.sidebar.image("https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png", use_container_width=True)
-menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "CAP Generation", "Admin Login", "City Login"])
+st.title("🌍 Maharashtra CAP Dashboard")
+st.markdown("### Engage • Enlighten • Empower")
 
 # ---------------------------
-# Admin Upload if Data Missing
+# Sidebar Logo
 # ---------------------------
-if st.session_state.data is None:
-    st.warning("City data file not found. Admin needs to upload.")
-    uploaded_file = st.file_uploader("Upload cities_data.xlsx", type=["xlsx"])
-    if uploaded_file:
-        df = pd.read_excel(uploaded_file)
-        st.session_state.data = df
-        st.success("Data loaded successfully!")
-else:
-    df = st.session_state.data
+st.sidebar.image(
+    "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
+    use_container_width=True
+)
+
+menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Login"])
 
 # ---------------------------
 # Home Page
 # ---------------------------
 if menu == "Home":
-    st.title("🌍 Maharashtra CAP Dashboard - State Overview")
-    st.markdown("### Engage • Enlighten • Empower")
-
+    st.header("📊 State & District Overview")
+    df = st.session_state.data
     if df is not None:
-        st.subheader("CAP Status Across 43 Cities")
-        cap_status = df["CAP Status"].value_counts()
-        st.bar_chart(cap_status)
+        total_cities = df.shape[0]
+        cities_done = df[df["CAP Status"] == "Approved"].shape[0]
+        st.metric("Total Cities", total_cities)
+        st.metric("Cities with CAP Completed", cities_done)
 
-        st.subheader("District-wise CAP Summary")
-        district_cap = df.groupby("District")["CAP Status"].value_counts().unstack(fill_value=0)
-        st.dataframe(district_cap)
-
-        st.subheader("City-wise GHG Emissions (tCO2e)")
-        if "GHG Emissions (tCO2e)" in df.columns:
-            fig = px.bar(df, x="City Name", y="GHG Emissions (tCO2e)", text="GHG Emissions (tCO2e)")
+        if "District" in df.columns:
+            district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x=="Approved").sum()).reset_index()
+            district_summary.columns = ["District", "CAPs Done"]
+            fig = px.bar(district_summary, x="District", y="CAPs Done", text="CAPs Done",
+                         title="District-wise CAP Completion")
             st.plotly_chart(fig, use_container_width=True)
+
+        ghg_col = find_col(df, "GHG Emissions")
+        if ghg_col:
+            fig2 = px.bar(df, x="City Name", y=ghg_col, title="GHG Emissions by City", text=ghg_col)
+            st.plotly_chart(fig2, use_container_width=True)
     else:
-        st.info("No city data available. Admin upload required.")
+        st.info("No data loaded. Admin must upload dataset.")
 
 # ---------------------------
-# City Dashboard (Public)
+# City Dashboard
 # ---------------------------
 elif menu == "City Dashboard":
-    st.title("🏙️ City Dashboard")
+    df = st.session_state.data
     if df is not None:
-        city = st.selectbox("Select City", df["City Name"])
-        city_row = df[df["City Name"] == city].iloc[0]
+        city_col = find_col(df, "City Name")
+        if city_col:
+            city = st.selectbox("Select City", df[city_col].dropna().unique())
+            city_row = df[df[city_col] == city].iloc[0]
 
-        st.subheader(f"📌 {city} Details")
-        st.write(f"**District:** {city_row['District']}")
-        st.write(f"**Population (2011):** {city_row['Population (2011)']}")
-        st.write(f"**ULB Category:** {city_row['ULB Category']}")
-        st.write(f"**CAP Status:** {city_row['CAP Status']}")
-        st.write(f"**Total Budget:** {city_row['Total Budget']}")
-        st.write(f"**Environment Budget:** {city_row['Environment Budget']}")
-        st.write(f"**GHG Emissions (tCO2e):** {city_row['GHG Emissions (tCO2e)']}")
-        st.write(f"**Remarks:** {city_row['Remarks']}")
-        st.write(f"**Data Source:** {city_row['Data Source']}")
+            st.subheader(f"🏙️ {city} Details")
+
+            with st.expander("🏠 Basic Info", expanded=True):
+                st.write(f"**District:** {get_val(city_row, df.columns, 'District')}")
+                st.write(f"**Population (2011):** {get_val(city_row, df.columns, 'Population(as per 2011)')}")
+                st.write(f"**ULB Category:** {get_val(city_row, df.columns, 'ULB Category')}")
+
+            with st.expander("🏢 Environment Dept"):
+                st.write(f"**Exists:** {get_val(city_row, df.columns, 'Environment Department Exist')}")
+                st.write(f"**Dept Name:** {get_val(city_row, df.columns, 'Department Name')}")
+                st.write(f"**Head Name:** {get_val(city_row, df.columns, 'Head Name')}")
+                st.write(f"**Head Designation:** {get_val(city_row, df.columns, 'Head Designantion')}")
+                st.write(f"**Head Qualification:** {get_val(city_row, df.columns, 'Head Qualification')}")
+                st.write(f"**Email:** {get_val(city_row, df.columns, 'Department Email')}")
+                st.write(f"**Dedicated Climate Officer:** {get_val(city_row, df.columns, 'Dedicated Climate Officer')}")
+
+            with st.expander("💰 Budget & ESR"):
+                st.write(f"**Total Budget:** {get_val(city_row, df.columns, 'Total Budget')}")
+                st.write(f"**Environment Budget:** {get_val(city_row, df.columns, 'Environment Budget')}")
+                st.write(f"**% of Total:** {get_val(city_row, df.columns, 'Budget % of Total')}")
+                st.write(f"**ESR Prepared:** {get_val(city_row, df.columns, 'ESR Prepared')}")
+                st.write(f"**Latest ESR Year:** {get_val(city_row, df.columns, 'Latest ESR Year')}")
+
+            with st.expander("📑 CAP / CSCAF / Majhi Vasundhara"):
+                st.write(f"**CAP Status:** {get_val(city_row, df.columns, 'CAP Status')}")
+                st.write(f"**CAP Consultant:** {get_val(city_row, df.columns, 'CAP Consultant (If Any)')}")
+                st.write(f"**CSCAF Participation:** {get_val(city_row, df.columns, 'CSCAF Participation')}")
+                st.write(f"**CSCAF Rank:** {get_val(city_row, df.columns, 'CSCAF Rank (If Any)')}")
+                st.write(f"**MV Participation:** {get_val(city_row, df.columns, 'Majhi Vasundhara Abhiyan Participation')}")
+                st.write(f"**MV Rank:** {get_val(city_row, df.columns, 'Majhi Vasundhara Abhiyan Rank (If Any)')}")
+
+            with st.expander("🌡️ GHG & CAP Actions"):
+                st.write(f"**Total GHG Emissions:** {get_val(city_row, df.columns, 'GHG Emissions')} MTCO2e")
+                sectors = ["Energy", "Transport", "Waste", "Industry", "Other"]
+                emissions = [0.3, 0.25, 0.15, 0.2, 0.1]
+                total = pd.to_numeric(get_val(city_row, df.columns, 'GHG Emissions'), errors="coerce")
+                sector_values = [total*v if pd.notna(total) else 0 for v in emissions]
+                sector_df = pd.DataFrame({"Sector": sectors, "Emissions": sector_values})
+                fig3 = px.bar(sector_df, x="Sector", y="Emissions", title="Sectoral GHG Emissions")
+                st.plotly_chart(fig3, use_container_width=True)
+
+                st.write("**Suggested CAP Actions to reach Net Zero 2050:**")
+                st.write("- Increase renewable energy share")
+                st.write("- Enhance public transport & EV adoption")
+                st.write("- Waste to energy initiatives")
+                st.write("- Energy efficiency programs in buildings & industry")
+                st.write("- Urban forestry and green cover enhancement")
+
     else:
-        st.info("No city data available. Admin upload required.")
+        st.info("No data loaded. Admin must upload dataset.")
 
 # ---------------------------
-# CAP Generation (Closed Access)
-# ---------------------------
-elif menu == "CAP Generation":
-    if not st.session_state.authenticated or st.session_state.access_level != "city":
-        st.info("🔒 City login required to access CAP generation.")
-        login("city")
-    else:
-        st.title("⚡ Automatic CAP Generation")
-        city = st.selectbox("Select Your City", df["City Name"])
-        city_row = df[df["City Name"] == city].iloc[0]
-
-        st.subheader(f"📊 Sectoral GHG Emissions for {city}")
-        sectors = ["Energy", "Transport", "Waste", "Industrial", "Buildings", "AFOLU"]
-        ghg_values = [city_row.get(f"{s} Emissions (tCO2e)", 0) for s in sectors]
-        sector_df = pd.DataFrame({"Sector": sectors, "Emissions (tCO2e)": ghg_values})
-        st.dataframe(sector_df)
-        fig = px.bar(sector_df, x="Sector", y="Emissions (tCO2e)", title="Sectoral GHG Emissions")
-        st.plotly_chart(fig)
-
-        st.subheader("📝 Recommended Actions to Reach Net Zero by 2050")
-        actions = generate_cap_actions(city_row)
-        for a in actions:
-            st.write(f"- {a}")
-
-        st.subheader("📥 Download CAP Report")
-        with st.form("download_form"):
-            name = st.text_input("Your Name")
-            email = st.text_input("Your Work Email")
-            download = st.form_submit_button("Generate & Download Report")
-            if download:
-                if name and email:
-                    output = io.BytesIO()
-                    report_df = pd.DataFrame({
-                        "Parameter": ["City", "District", "Population (2011)", "CAP Status", "Total Budget", "Environment Budget", "GHG Emissions (tCO2e)"],
-                        "Value": [city_row["City Name"], city_row["District"], city_row["Population (2011)"], city_row["CAP Status"], city_row["Total Budget"], city_row["Environment Budget"], city_row["GHG Emissions (tCO2e)"]]
-                    })
-                    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-                        report_df.to_excel(writer, index=False, sheet_name="CAP Report")
-                        actions_df = pd.DataFrame({"Recommended Actions": actions})
-                        actions_df.to_excel(writer, index=False, sheet_name="Recommended Actions")
-                        sector_df.to_excel(writer, index=False, sheet_name="Sectoral Emissions")
-                    st.download_button(
-                        "📥 Download CAP Report",
-                        data=output.getvalue(),
-                        file_name=f"{city}_CAP_Report.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                    st.success("Report generated successfully!")
-                else:
-                    st.error("Please provide your name and email.")
-
-# ---------------------------
-# Admin Login & Update
+# Admin Login / Upload
 # ---------------------------
 elif menu == "Admin Login":
-    if not st.session_state.authenticated or st.session_state.access_level != "admin":
-        login("admin")
+    if not st.session_state.authenticated:
+        login()
     else:
-        st.title("🔑 Admin Panel")
-        st.write("Upload new data for all 43 cities")
-        uploaded = st.file_uploader("Upload Excel", type=["xlsx"])
+        st.header("🔑 Admin Panel")
+        st.write("Upload or update the dataset for all cities.")
+        uploaded = st.file_uploader("Upload Excel (cities_data.xlsx)", type=["xlsx"])
         if uploaded:
-            new_df = pd.read_excel(uploaded)
-            st.session_state.data = new_df
+            df_up = pd.read_excel(uploaded)
+            df_up = normalize_columns(df_up)
+            st.session_state.data = df_up
             st.success("Data updated successfully!")
