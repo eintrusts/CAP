@@ -97,26 +97,46 @@ def format_population(num):
     return "{:,}".format(int(num))  # Indian format
 
 # ---------------------------
-# Sidebar Logo
+# Sidebar - Professional Style
 # ---------------------------
 st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
+st.sidebar.markdown("## Maharashtra CAP Dashboard")
+st.sidebar.markdown("**Engage • Enlighten • Empower**")
+st.sidebar.markdown("---")
 
-# ---------------------------
-# Sidebar Professional Button
-# ---------------------------
+# Custom CSS for forest green buttons
 st.sidebar.markdown(
-    "<button style='background-color:forestgreen;color:white;width:100%;height:40px;border:none;border-radius:5px;'>Professional</button>",
-    unsafe_allow_html=True
+    """
+    <style>
+    .sidebar .sidebar-content button {
+        background-color: #228B22 !important;
+        color: white !important;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    .sidebar .sidebar-content button:hover {
+        background-color: #196619 !important;
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True
 )
 
-# ---------------------------
-# Navigation
-# ---------------------------
-menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Panel"])
+# Sidebar buttons for navigation
+if st.sidebar.button("Home"):
+    st.session_state.menu = "Home"
+if st.sidebar.button("City Dashboard"):
+    st.session_state.menu = "City Dashboard"
+if st.sidebar.button("Admin Panel"):
+    st.session_state.menu = "Admin Panel"
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("EinTrust | © 2025")
+
+menu = st.session_state.menu
 # ---------------------------
 # Admin Login
 # ---------------------------
