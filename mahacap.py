@@ -4,7 +4,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
-from datetime import datetime
 
 # ---------------------------
 # Page Configuration
@@ -279,8 +278,8 @@ elif menu == "CAP Preparation":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("CAP Preparation - Raw Data Input")
-        st.markdown("Enter detailed raw data to generate GHG Inventory and CAP.")
+        st.header("CAP Preparation - Detailed Raw Data Input")
+        st.markdown("Enter all city-level raw data to generate GHG Inventory and CAP.")
 
         df_cap = st.session_state.cap_data
 
@@ -301,6 +300,11 @@ elif menu == "CAP Preparation":
             buildings_count = st.number_input("Total Buildings", min_value=0, key="buildings_count")
             buildings_area = st.number_input("Total Built-up Area (sq.m)", min_value=0, key="buildings_area")
             buildings_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="buildings_file")
+            
+            st.subheader("Water Sector")
+            water_consumption = st.number_input("Total Water Consumption (ML/year)", min_value=0, key="water_consumption")
+            water_waste = st.number_input("Wastewater Generated (ML/year)", min_value=0, key="water_waste")
+            water_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="water_file")
             
             st.subheader("Waste Sector")
             waste_generated = st.number_input("Total Waste Generated (tonnes/year)", min_value=0, key="waste_generated")
@@ -330,6 +334,8 @@ elif menu == "CAP Preparation":
                     "Transport Fuel (L)": fuel_consumption,
                     "Buildings Count": buildings_count,
                     "Buildings Area (sq.m)": buildings_area,
+                    "Water Consumption (ML)": water_consumption,
+                    "Wastewater Generated (ML)": water_waste,
                     "Waste Generated (t)": waste_generated,
                     "Waste Recycled (t)": waste_recycled,
                     "Industry Units": industry_count,
