@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import os
 
 # ---------------------------
 # Page Config
@@ -13,6 +14,11 @@ st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", lay
 # Admin Password
 # ---------------------------
 ADMIN_PASSWORD = "eintrust123"
+
+# ---------------------------
+# Data File for Persistence
+# ---------------------------
+DATA_FILE = "cities_data.csv"
 
 # ---------------------------
 # Cities and Districts
@@ -69,14 +75,15 @@ cities_districts = {
 # ---------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
-if "data" not in st.session_state:
+
+if os.path.exists(DATA_FILE):
+    st.session_state.data = pd.read_csv(DATA_FILE)
+else:
     st.session_state.data = pd.DataFrame(columns=[
         "City Name", "District", "Population", "ULB Category", "CAP Status",
         "GHG Emissions", "Environment Department Exist", "Department Name",
         "Head Name", "Department Email"
     ])
-if "menu" not in st.session_state:
-    st.session_state.menu = "Home"
 
 # ---------------------------
 # Helper Functions
@@ -87,49 +94,28 @@ def get_val(row: pd.Series, target: str, default="—"):
 def format_population(num):
     if pd.isna(num) or num == "":
         return "—"
-    return "{:,}".format(int(num))
+    return "{:,}".format(int(num))  # Indian format
 
 # ---------------------------
-# Sidebar - Professional Style
+# Sidebar Logo
 # ---------------------------
 st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
-st.sidebar.markdown("## Maharashtra CAP Dashboard")
-st.sidebar.markdown("**Engage • Enlighten • Empower**")
-st.sidebar.markdown("---")
 
-# Custom CSS for forest green buttons
+# ---------------------------
+# Sidebar Professional Button
+# ---------------------------
 st.sidebar.markdown(
-    """
-    <style>
-    .sidebar .sidebar-content button {
-        background-color: #228B22 !important;
-        color: white !important;
-        width: 100%;
-        margin-bottom: 5px;
-    }
-    .sidebar .sidebar-content button:hover {
-        background-color: #196619 !important;
-        color: white !important;
-    }
-    </style>
-    """, unsafe_allow_html=True
+    "<button style='background-color:forestgreen;color:white;width:100%;height:40px;border:none;border-radius:5px;'>Professional</button>",
+    unsafe_allow_html=True
 )
 
-# Sidebar buttons for navigation
-if st.sidebar.button("🏠 Home"):
-    st.session_state.menu = "Home"
-if st.sidebar.button("📊 City Dashboard"):
-    st.session_state.menu = "City Dashboard"
-if st.sidebar.button("🔑 Admin Panel"):
-    st.session_state.menu = "Admin Panel"
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("EinTrust | © 2025")
-
-menu = st.session_state.menu
+# ---------------------------
+# Navigation
+# ---------------------------
+menu = st.sidebar.radio("Navigate", ["Home", "City Dashboard", "Admin Panel"])
 
 # ---------------------------
 # Admin Login
@@ -150,14 +136,16 @@ def admin_login():
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra CAP Dashboard")
-    st.markdown("### Engage • Enlighten • Empower")
+    st.markdown("Maharashtra's Net Zero Journey")
 
     df = st.session_state.data
     if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
-        st.metric("Total Cities", df.shape[0])
-        st.metric("Cities with CAP Completed", df[df["CAP Status"]=="Completed"].shape[0])
+        total_cities = df.shape[0]
+        cities_done = df[df["CAP Status"] == "Completed"].shape[0]
+        st.metric("Total Cities", total_cities)
+        st.metric("Cities with CAP Completed", cities_done)
 
         if "District" in df.columns:
             district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x=="Completed").sum()).reset_index()
@@ -173,7 +161,8 @@ if menu == "Home":
 # ---------------------------
 # City Dashboard
 # ---------------------------
-elif menu == "City Dashboard":
+if menu == "Home":
+    st.header("Maharashtra CAP Dashboard")
     df = st.session_state.data
     if df.empty:
         st.info("No city data available. Admin must add data.")
@@ -182,7 +171,8 @@ elif menu == "City Dashboard":
         city = st.selectbox("Select City", df[city_col].dropna().unique())
         city_row = df[df[city_col] == city].iloc[0]
 
-        st.subheader(f"🏙️ {city} Details")
+        st.subheader(f"{city} Details")
+
         with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
             st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
@@ -211,7 +201,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("🔑 Admin Panel")
+        st.header("Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
@@ -247,10 +237,15 @@ elif menu == "Admin Panel":
                     "Head Name": head_name,
                     "Department Email": dept_email
                 }
+
                 if city_name in df.get("City Name", []):
                     idx = df[df["City Name"] == city_name].index[0]
                     df.loc[idx] = new_row
                     st.success(f"{city_name} updated successfully.")
                 else:
-                    st.session_state.data = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                     st.success(f"{city_name} added successfully.")
+
+                # Save data to CSV for persistence
+                st.session_state.data = df
+                df.to_csv(DATA_FILE, index=False)
