@@ -212,15 +212,6 @@ elif menu == "City Dashboard":
             st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
             st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
 
-        # GHG & CAP Actions
-        with st.expander("GHG & CAP Actions"):
-            st.write(f"**Total GHG Emissions:** {get_val(city_row, 'GHG Emissions')} MTCO2e")
-            st.write("**Suggested CAP Actions:**")
-            st.write("- Renewable energy increase")
-            st.write("- Public transport & EV promotion")
-            st.write("- Waste to energy initiatives")
-            st.write("- Energy efficiency programs")
-            st.write("- Urban forestry & green cover")
 
         # Display last updated info
         if "last_updated" in st.session_state:
