@@ -104,6 +104,9 @@ st.sidebar.image(
     "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
+st.sidebar.markdown("## Maharashtra CAP Dashboard")
+st.sidebar.markdown("**Engage • Enlighten • Empower**")
+st.sidebar.markdown("---")
 
 # Custom CSS for forest green buttons
 st.sidebar.markdown(
@@ -239,16 +242,8 @@ elif menu == "Admin Panel":
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             
             ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
-            
-            # Environment Dept Exists
             env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
-
-            # Automatically fill Department Name if env_exist is "Yes"
-            if env_exist == "Yes":
-                dept_name = st.text_input("Department Name", value="Environment", disabled=True)
-            else:
-                dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
-            
+            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
             head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
             dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
 
