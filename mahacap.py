@@ -3,7 +3,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import re
 
 # ---------------------------
 # Page Config
@@ -71,7 +70,6 @@ cities_districts = {
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "data" not in st.session_state:
-    # Initialize empty DataFrame with required columns
     st.session_state.data = pd.DataFrame(columns=[
         "City Name", "District", "Population", "ULB Category", "CAP Status",
         "GHG Emissions", "Environment Department Exist", "Department Name",
@@ -79,15 +77,15 @@ if "data" not in st.session_state:
     ])
 
 # ---------------------------
-# Helpers
+# Helper Functions
 # ---------------------------
 def get_val(row: pd.Series, target: str, default="—"):
-    if target in row:
-        val = row[target]
-        if pd.isna(val):
-            return default
-        return val
-    return default
+    return row[target] if target in row and pd.notna(row[target]) else default
+
+def format_population(num):
+    if pd.isna(num) or num == "":
+        return "—"
+    return "{:,}".format(int(num))  # Indian format display
 
 # ---------------------------
 # Sidebar Logo
@@ -120,7 +118,7 @@ def admin_login():
 # Home Page
 # ---------------------------
 if menu == "Home":
-    st.header("Maharashtra CAP Dashboard")
+    st.header("📊 Maharashtra CAP Dashboard")
     st.markdown("### Engage • Enlighten • Empower")
 
     df = st.session_state.data
@@ -159,8 +157,9 @@ elif menu == "City Dashboard":
 
         with st.expander("🏠 Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
-            st.write(f"**Population:** {get_val(city_row, 'Population')}")
+            st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
             st.write(f"**ULB Category:** {get_val(city_row, 'ULB Category')}")
+            st.write(f"**CAP Status:** {get_val(city_row, 'CAP Status')}")
 
         with st.expander("🏢 Environment Dept"):
             st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
@@ -184,7 +183,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("Admin Panel")
+        st.header("🔑 Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
@@ -194,7 +193,8 @@ elif menu == "Admin Panel":
             city_name = st.selectbox("Select City", cities_list)
             district = st.text_input("District", value=cities_districts[city_name], disabled=True)
 
-            population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(df[df["City Name"]==city_name]["Population"].values[0]) if city_name in df.get("City Name", []) else 0, step=1000, format="%d")
+            population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
+            population = st.number_input("Population", min_value=0, value=int(population_val), step=1000, format="%d")
             
             ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
