@@ -13,7 +13,7 @@ st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", lay
 # ---------------------------
 # Admin Password
 # ---------------------------
-ADMIN_PASSWORD = "eintrust123"
+ADMIN_PASSWORD = "eintrust2025"
 
 # ---------------------------
 # Data File for Persistence
