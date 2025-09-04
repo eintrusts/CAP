@@ -25,8 +25,7 @@ if "data" not in st.session_state:
     st.session_state.data = pd.DataFrame(columns=[
         "City Name", "District", "Population", "ULB Category", "CAP Status",
         "GHG Emissions", "Environment Department Exist", "Department Name",
-        "Head Name", "Head Designantion", "Head Qualification", "Department Email",
-        "Dedicated Climate Officer"
+        "Head Name", "Department Email"
     ])
 
 # ---------------------------
@@ -86,12 +85,12 @@ if menu == "Home":
         st.info("No city data available. Admin must add data.")
     else:
         total_cities = df.shape[0]
-        cities_done = df[df.get("CAP Status") == "Approved"].shape[0]
+        cities_done = df[df.get("CAP Status") == "Completed"].shape[0]
         st.metric("Total Cities", total_cities)
         st.metric("Cities with CAP Completed", cities_done)
 
         if "District" in df.columns:
-            district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x=="Approved").sum()).reset_index()
+            district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x=="Completed").sum()).reset_index()
             district_summary.columns = ["District", "CAPs Done"]
             fig = px.bar(district_summary, x="District", y="CAPs Done", text="CAPs Done",
                          title="District-wise CAP Completion")
@@ -124,10 +123,7 @@ elif menu == "City Dashboard":
             st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
             st.write(f"**Dept Name:** {get_val(city_row, 'Department Name')}")
             st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
-            st.write(f"**Head Designation:** {get_val(city_row, 'Head Designantion')}")
-            st.write(f"**Head Qualification:** {get_val(city_row, 'Head Qualification')}")
             st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
-            st.write(f"**Dedicated Climate Officer:** {get_val(city_row, 'Dedicated Climate Officer')}")
 
         with st.expander("🌡️ GHG & CAP Actions"):
             st.write(f"**Total GHG Emissions:** {get_val(city_row, 'GHG Emissions')} MTCO2e")
@@ -148,20 +144,24 @@ elif menu == "Admin Panel":
         st.header("🔑 Admin Panel")
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
+        df = st.session_state.data
+        cities_list = df["City Name"].dropna().unique() if not df.empty else []
+
         with st.form("admin_form"):
-            city_name = st.text_input("City Name", "")
-            district = st.text_input("District", "")
-            population = st.text_input("Population", "")
-            ulb_cat = st.text_input("ULB Category", "")
-            cap_status = st.selectbox("CAP Status", ["Pending", "Approved", "In Progress"])
-            ghg = st.text_input("GHG Emissions (MTCO2e)", "")
-            env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"])
-            dept_name = st.text_input("Department Name", "")
-            head_name = st.text_input("Head Name", "")
-            head_design = st.text_input("Head Designation", "")
-            head_qual = st.text_input("Head Qualification", "")
-            dept_email = st.text_input("Department Email", "")
-            climate_officer = st.text_input("Dedicated Climate Officer", "")
+            city_name = st.selectbox("Select City", cities_list)
+            district_default = df[df["City Name"]==city_name]["District"].values[0] if city_name in cities_list else ""
+            district = st.text_input("District", district_default, disabled=True)
+
+            population = st.number_input("Population", min_value=0, value=int(df[df["City Name"]==city_name]["Population"].values[0]) if city_name in cities_list else 0, step=1000, format="%d")
+            
+            ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
+            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+            
+            ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in cities_list else "")
+            env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
+            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in cities_list else "")
+            head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in cities_list else "")
+            dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in cities_list else "")
 
             submit = st.form_submit_button("Add/Update City")
             if submit:
@@ -175,12 +175,8 @@ elif menu == "Admin Panel":
                     "Environment Department Exist": env_exist,
                     "Department Name": dept_name,
                     "Head Name": head_name,
-                    "Head Designantion": head_design,
-                    "Head Qualification": head_qual,
-                    "Department Email": dept_email,
-                    "Dedicated Climate Officer": climate_officer
+                    "Department Email": dept_email
                 }
-                df = st.session_state.data
                 if city_name in df.get("City Name", []):
                     idx = df[df["City Name"] == city_name].index[0]
                     df.loc[idx] = new_row
