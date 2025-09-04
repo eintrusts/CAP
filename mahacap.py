@@ -16,6 +16,56 @@ st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", lay
 ADMIN_PASSWORD = "eintrust123"
 
 # ---------------------------
+# Cities and Districts
+# ---------------------------
+cities_districts = {
+    "Mumbai": "Mumbai",
+    "Kalyan-Dombivli": "Thane",
+    "Mira-Bhayandar": "Thane",
+    "Navi Mumbai": "Thane",
+    "Bhiwandi": "Thane",
+    "Ulhasnagar": "Thane",
+    "Ambernath Council": "Thane",
+    "Vasai-Virar": "Thane",
+    "Thane": "Thane",
+    "Badlapur Council": "Thane",
+    "Pune": "Pune",
+    "Pimpri-Chinchwad": "Pune",
+    "Panvel": "Raigad",
+    "Raigad Council": "Raigad",
+    "Malegaon": "Nashik",
+    "Nashik": "Nashik",
+    "Nandurbar Council": "Nandurbar",
+    "Bhusawal Council": "Jalgaon",
+    "Jalgaon": "Jalgaon",
+    "Dhule": "Dhule",
+    "Ahmednagar": "Ahmednagar",
+    "Aurangabad": "Aurangabad",
+    "Jalna": "Jalna",
+    "Beed Council": "Beed",
+    "Satara Council": "Satara",
+    "Sangli-Miraj-Kupwad": "Sangli",
+    "Kolhapur": "Kolhapur",
+    "Ichalkaranji": "Kolhapur",
+    "Solapur": "Solapur",
+    "Barshi Council": "Solapur",
+    "Nanded-Waghala": "Nanded",
+    "Yawatmal Council": "Yawatmal",
+    "Osmanabad Council": "Osmanabad",
+    "Latur": "Latur",
+    "Udgir Coucil": "Latur",
+    "Akola": "Akola",
+    "Parbhani Council": "Parbhani",
+    "Amravati": "Amravati",
+    "Achalpur Council": "Amravati",
+    "Wardha Coumcil": "Wardha",
+    "Hinganghat Ciuncil": "Wardha",
+    "Nagpur": "Nagpur",
+    "Chandrapur": "Chandrapur",
+    "Gondia Council": "Gondia"
+}
+
+# ---------------------------
 # Session State Initialization
 # ---------------------------
 if "authenticated" not in st.session_state:
@@ -31,13 +81,6 @@ if "data" not in st.session_state:
 # ---------------------------
 # Helpers
 # ---------------------------
-def canon(s: str) -> str:
-    s = str(s).lower().strip()
-    s = s.replace("\n", " ")
-    s = re.sub(r"\s+", "", s)
-    s = re.sub(r"[’'`\"()%/\.]", "", s)
-    return s
-
 def get_val(row: pd.Series, target: str, default="—"):
     if target in row:
         val = row[target]
@@ -81,11 +124,11 @@ if menu == "Home":
     st.markdown("### Engage • Enlighten • Empower")
 
     df = st.session_state.data
-    if not isinstance(df, pd.DataFrame) or df.empty:
+    if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
         total_cities = df.shape[0]
-        cities_done = df[df.get("CAP Status") == "Completed"].shape[0]
+        cities_done = df[df["CAP Status"] == "Completed"].shape[0]
         st.metric("Total Cities", total_cities)
         st.metric("Cities with CAP Completed", cities_done)
 
@@ -105,7 +148,7 @@ if menu == "Home":
 # ---------------------------
 elif menu == "City Dashboard":
     df = st.session_state.data
-    if not isinstance(df, pd.DataFrame) or df.empty:
+    if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
         city_col = "City Name"
@@ -145,23 +188,22 @@ elif menu == "Admin Panel":
         st.write("Add or update city data below. Changes will reflect on the dashboard immediately.")
 
         df = st.session_state.data
-        cities_list = df["City Name"].dropna().unique() if not df.empty else []
+        cities_list = list(cities_districts.keys())
 
         with st.form("admin_form"):
             city_name = st.selectbox("Select City", cities_list)
-            district_default = df[df["City Name"]==city_name]["District"].values[0] if city_name in cities_list else ""
-            district = st.text_input("District", district_default, disabled=True)
+            district = st.text_input("District", value=cities_districts[city_name], disabled=True)
 
-            population = st.number_input("Population", min_value=0, value=int(df[df["City Name"]==city_name]["Population"].values[0]) if city_name in cities_list else 0, step=1000, format="%d")
+            population = st.number_input("Population", min_value=0, value=int(df[df["City Name"]==city_name]["Population"].values[0]) if city_name in df.get("City Name", []) else 0, step=1000, format="%d")
             
             ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             
-            ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in cities_list else "")
+            ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
             env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
-            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in cities_list else "")
-            head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in cities_list else "")
-            dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in cities_list else "")
+            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
+            head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
+            dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
 
             submit = st.form_submit_button("Add/Update City")
             if submit:
