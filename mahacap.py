@@ -183,8 +183,8 @@ if menu == "Home":
 # ---------------------------
 # City Dashboard
 # ---------------------------
-if menu == "Home":
-    st.header("Maharashtra CAP Dashboard")
+if menu == "City Information":
+    
     df = st.session_state.data
     if df.empty:
         st.info("No city data available. Admin must add data.")
