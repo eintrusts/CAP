@@ -6,7 +6,7 @@ import plotly.express as px
 import os
 
 # ---------------------------
-# Page Config
+# Page Confi
 # ---------------------------
 st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", layout="wide")
 
