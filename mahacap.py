@@ -183,30 +183,36 @@ if menu == "Home":
 # ---------------------------
 # City Dashboard
 # ---------------------------
-if menu == "City Information":
-    
+elif menu == "City Dashboard":
     df = st.session_state.data
     if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
+        st.header("City Dashboard")
+        st.markdown("View detailed information for each city.")
+
+        # Select city dropdown
         city_col = "City Name"
         city = st.selectbox("Select City", df[city_col].dropna().unique())
         city_row = df[df[city_col] == city].iloc[0]
 
         st.subheader(f"{city} Details")
 
+        # Basic Info
         with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
             st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
             st.write(f"**ULB Category:** {get_val(city_row, 'ULB Category')}")
             st.write(f"**CAP Status:** {get_val(city_row, 'CAP Status')}")
 
+        # Environment Department
         with st.expander("Environment Department"):
             st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
             st.write(f"**Dept Name:** {get_val(city_row, 'Department Name')}")
             st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
             st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
 
+        # GHG & CAP Actions
         with st.expander("GHG & CAP Actions"):
             st.write(f"**Total GHG Emissions:** {get_val(city_row, 'GHG Emissions')} MTCO2e")
             st.write("**Suggested CAP Actions:**")
