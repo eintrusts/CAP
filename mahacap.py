@@ -222,6 +222,13 @@ elif menu == "City Dashboard":
             st.write("- Energy efficiency programs")
             st.write("- Urban forestry & green cover")
 
+        # Display last updated info
+        if "last_updated" in st.session_state:
+            last_updated = st.session_state.last_updated
+        else:
+            last_updated = pd.to_datetime(os.path.getmtime(DATA_FILE), unit='s')
+        st.markdown(f"*Last Updated: {last_updated.strftime('%B %Y')}*")
+
 # ---------------------------
 # Admin Panel
 # ---------------------------
@@ -273,7 +280,14 @@ elif menu == "Admin Panel":
                 else:
                     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                     st.success(f"{city_name} added successfully.")
-
+         
+                
                 # Save data to CSV for lifetime persistence
                 st.session_state.data = df
                 df.to_csv(DATA_FILE, index=False)
+
+                # Update last updated timestamp
+                st.session_state.last_updated = pd.Timestamp.now()
+
+
+
