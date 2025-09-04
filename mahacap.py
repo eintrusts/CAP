@@ -234,7 +234,7 @@ elif menu == "Admin Panel":
             district = st.text_input("District", value=cities_districts[city_name], disabled=True)
 
             population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
-            population = st.number_input("Population", min_value=0, value=int(population_val), step=1000, format="%d")
+            population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(population_val), step=1000, format="%d")
             
             ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
