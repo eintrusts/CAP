@@ -75,7 +75,8 @@ cities_districts = {
 # ---------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
-
+if "menu" not in st.session_state:
+    st.session_state.menu = "Home"
 if os.path.exists(DATA_FILE):
     st.session_state.data = pd.read_csv(DATA_FILE)
 else:
@@ -94,7 +95,7 @@ def get_val(row: pd.Series, target: str, default="—"):
 def format_population(num):
     if pd.isna(num) or num == "":
         return "—"
-    return "{:,}".format(int(num))  # Indian format
+    return "{:,}".format(int(num))
 
 # ---------------------------
 # Sidebar - Professional Style
@@ -111,21 +112,24 @@ st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
     <style>
-    .sidebar .sidebar-content button {
-        background-color: #228B22 !important;
-        color: white !important;
+    .css-1d391kg button { 
+        background-color: #228B22 !important; 
+        color: white !important; 
         width: 100%;
         margin-bottom: 5px;
+        height: 40px;
+        font-size: 16px;
+        border-radius: 5px;
     }
-    .sidebar .sidebar-content button:hover {
-        background-color: #196619 !important;
-        color: white !important;
+    .css-1d391kg button:hover { 
+        background-color: #196619 !important; 
+        color: white !important; 
     }
     </style>
     """, unsafe_allow_html=True
 )
 
-# Sidebar buttons for navigation
+# Sidebar navigation buttons
 if st.sidebar.button("Home"):
     st.session_state.menu = "Home"
 if st.sidebar.button("City Dashboard"):
@@ -137,6 +141,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("EinTrust | © 2025")
 
 menu = st.session_state.menu
+
 # ---------------------------
 # Admin Login
 # ---------------------------
@@ -181,8 +186,7 @@ if menu == "Home":
 # ---------------------------
 # City Dashboard
 # ---------------------------
-if menu == "Home":
-    st.header("Maharashtra CAP Dashboard")
+elif menu == "City Dashboard":
     df = st.session_state.data
     if df.empty:
         st.info("No city data available. Admin must add data.")
@@ -266,6 +270,6 @@ elif menu == "Admin Panel":
                     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                     st.success(f"{city_name} added successfully.")
 
-                # Save data to CSV for persistence
+                # Save data to CSV for lifetime persistence
                 st.session_state.data = df
                 df.to_csv(DATA_FILE, index=False)
