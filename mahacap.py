@@ -321,30 +321,117 @@ elif menu=="Admin Panel":
 # CAP Preparation Page
 # ---------------------------
 elif menu=="CAP Preparation":
-    st.header("CAP Preparation — Sectoral Emissions Input")
+    st.header("CAP Preparation — City GHG Inventory Input")
+    
     if not st.session_state.authenticated:
         admin_login()
     else:
         with st.form("cap_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
-            st.markdown("### Enter Emissions (tCO2e) for each sector")
-            sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
-            cap_values = {}
-            for sec in sectors:
-                cap_values[sec] = st.number_input(f"{sec} Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            file_upload = st.file_uploader("Attach verification file (optional)", type=["pdf","xlsx","csv"])
+            
+            st.markdown("### 1️⃣ Energy & Buildings")
+            elec_city_buildings = st.number_input("Electricity consumed by city-owned buildings (kWh/year)", min_value=0.0, step=1.0)
+            elec_residential = st.number_input("Electricity consumed by residential sector (kWh/year, if available)", min_value=0.0, step=1.0)
+            elec_commercial = st.number_input("Electricity consumed by commercial sector (kWh/year, if available)", min_value=0.0, step=1.0)
+            lpg_buildings = st.number_input("LPG / Natural Gas consumed by municipal buildings (kg/year)", min_value=0.0, step=1.0)
+            diesel_buildings = st.number_input("Diesel/Petrol/Coal consumed by municipal buildings (liters/tons/year)", min_value=0.0, step=1.0)
+            streetlight_elec = st.number_input("Electricity for streetlights (kWh/year)", min_value=0.0, step=1.0)
+            
+            st.markdown("### 2️⃣ Transport Sector")
+            st.write("Public Transport:")
+            bus_count_diesel = st.number_input("Number of diesel buses", min_value=0, step=1)
+            bus_count_cng = st.number_input("Number of CNG buses", min_value=0, step=1)
+            bus_count_electric = st.number_input("Number of electric buses", min_value=0, step=1)
+            bus_fuel_diesel = st.number_input("Diesel consumption by public buses (liters/year)", min_value=0.0, step=1.0)
+            bus_fuel_cng = st.number_input("CNG consumption by public buses (kg/year)", min_value=0.0, step=1.0)
+            bus_energy_electric = st.number_input("Electricity consumption by electric buses (kWh/year)", min_value=0.0, step=1.0)
+            
+            st.write("Municipal Vehicles:")
+            municipal_diesel = st.number_input("Diesel consumed by municipal vehicles (liters/year)", min_value=0.0, step=1.0)
+            municipal_petrol = st.number_input("Petrol consumed by municipal vehicles (liters/year)", min_value=0.0, step=1.0)
+            municipal_electric = st.number_input("Electricity consumed by municipal vehicles (kWh/year)", min_value=0.0, step=1.0)
+            
+            st.markdown("### 3️⃣ Waste Management")
+            total_solid_waste = st.number_input("Total municipal solid waste collected (tons/year)", min_value=0.0, step=1.0)
+            fraction_landfill = st.number_input("Fraction of waste sent to landfill (%)", min_value=0.0, max_value=100.0, step=1.0)
+            fraction_composted = st.number_input("Fraction of waste composted or processed (%)", min_value=0.0, max_value=100.0, step=1.0)
+            fraction_incinerated = st.number_input("Fraction of waste incinerated (%)", min_value=0.0, max_value=100.0, step=1.0)
+            landfill_gas_mgmt = st.selectbox("Landfill gas management", ["No", "Captured & flared", "Open"])
+            
+            wastewater_total = st.number_input("Total wastewater generated (ML/year)", min_value=0.0, step=1.0)
+            wastewater_treated = st.number_input("Fraction treated (%)", min_value=0.0, max_value=100.0, step=1.0)
+            wastewater_untreated = st.number_input("Fraction untreated (%)", min_value=0.0, max_value=100.0, step=1.0)
+            wastewater_treatment_type = st.text_input("Type of wastewater treatment technology")
+            
+            st.markdown("### 4️⃣ Industrial & Commercial Sector")
+            industrial_count = st.number_input("Total number of registered industries", min_value=0, step=1)
+            industrial_fuel_diesel = st.number_input("Diesel consumed by industries (liters/year)", min_value=0.0, step=1.0)
+            industrial_fuel_coal = st.number_input("Coal consumed by industries (tons/year)", min_value=0.0, step=1.0)
+            industrial_fuel_gas = st.number_input("Gas consumed by industries (kg/year)", min_value=0.0, step=1.0)
+            industrial_electricity = st.number_input("Electricity consumed by industries (kWh/year)", min_value=0.0, step=1.0)
+            commercial_electricity = st.number_input("Electricity consumed by commercial buildings (kWh/year)", min_value=0.0, step=1.0)
+            
+            st.markdown("### 5️⃣ Urban Green / Land Use")
+            urban_green_area = st.number_input("Urban forest / parks area (ha)", min_value=0.0, step=1.0)
+            street_trees = st.number_input("Number of street trees planted / maintained by municipality", min_value=0, step=1)
+            tree_species_type = st.selectbox("Tree species type", ["Native", "Exotic", "Mixed"])
+            
+            st.markdown("### Attach Verification Documents (Optional)")
+            file_upload = st.file_uploader("Attach verification file (PDF, XLSX, CSV)", type=["pdf","xlsx","csv"])
+            
             submit_cap = st.form_submit_button("Save CAP Data")
-
+            
             if submit_cap:
-                new_row = {"City Name":city}
-                for sec,val in cap_values.items():
-                    new_row[f"{sec} Emissions (tCO2e)"] = val
+                # Prepare new row
+                new_row = {
+                    "City Name": city,
+                    # Energy & Buildings
+                    "Elec_City_Buildings": elec_city_buildings,
+                    "Elec_Residential": elec_residential,
+                    "Elec_Commercial": elec_commercial,
+                    "LPG_Buildings": lpg_buildings,
+                    "Diesel_Buildings": diesel_buildings,
+                    "Streetlight_Elec": streetlight_elec,
+                    # Transport
+                    "Bus_Diesel": bus_count_diesel,
+                    "Bus_CNG": bus_count_cng,
+                    "Bus_Electric": bus_count_electric,
+                    "Bus_Fuel_Diesel": bus_fuel_diesel,
+                    "Bus_Fuel_CNG": bus_fuel_cng,
+                    "Bus_Energy_Electric": bus_energy_electric,
+                    "Municipal_Diesel": municipal_diesel,
+                    "Municipal_Petrol": municipal_petrol,
+                    "Municipal_Electric": municipal_electric,
+                    # Waste
+                    "Total_Solid_Waste": total_solid_waste,
+                    "Fraction_Landfill": fraction_landfill,
+                    "Fraction_Composted": fraction_composted,
+                    "Fraction_Incinerated": fraction_incinerated,
+                    "Landfill_Gas_Mgmt": landfill_gas_mgmt,
+                    "Wastewater_Total": wastewater_total,
+                    "Wastewater_Treated": wastewater_treated,
+                    "Wastewater_Untreated": wastewater_untreated,
+                    "Wastewater_Treatment_Type": wastewater_treatment_type,
+                    # Industry & Commercial
+                    "Industrial_Count": industrial_count,
+                    "Industrial_Fuel_Diesel": industrial_fuel_diesel,
+                    "Industrial_Fuel_Coal": industrial_fuel_coal,
+                    "Industrial_Fuel_Gas": industrial_fuel_gas,
+                    "Industrial_Electricity": industrial_electricity,
+                    "Commercial_Electricity": commercial_electricity,
+                    # Urban Green
+                    "Urban_Green_Area": urban_green_area,
+                    "Street_Trees": street_trees,
+                    "Tree_Species_Type": tree_species_type
+                }
+                
                 df_cap = st.session_state.cap_data
                 if not df_cap.empty and city in df_cap["City Name"].values:
                     for k,v in new_row.items():
-                        df_cap.loc[df_cap["City Name"]==city,k] = v
+                        df_cap.loc[df_cap["City Name"]==city, k] = v
                 else:
                     df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
+                
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE,index=False)
                 st.session_state.last_updated = datetime.now()
