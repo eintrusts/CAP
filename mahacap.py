@@ -1,361 +1,260 @@
-
-# mahacap.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
-import io
+from io import BytesIO
 from datetime import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+import random
 
-# PDF support
-try:
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet
-    PDF_AVAILABLE = True
-except:
-    PDF_AVAILABLE = False
+# -----------------------
+# SharePoint Integration
+# -----------------------
+from office365.runtime.auth.client_credential import ClientCredential
+from office365.sharepoint.client_context import ClientContext
 
-# ---------------------------
-# Page Config
-# ---------------------------
-st.set_page_config(
-    page_title="Maharashtra CAP Dashboard",
-    page_icon="🌍",
-    layout="wide"
-)
+SHAREPOINT_SITE = "https://eintrusts.sharepoint.com/sites/EinTrust"
+SHAREPOINT_DOC = "/sites/EinTrust/Shared Documents/General/Work/CAP/CAP Dashboard"
+CLIENT_ID = "<YOUR_CLIENT_ID>"
+CLIENT_SECRET = "<YOUR_CLIENT_SECRET>"
 
-# ---------------------------
-# Admin Password
-# ---------------------------
-ADMIN_PASSWORD = "eintrust2025"
+credentials = ClientCredential(CLIENT_ID, CLIENT_SECRET)
+ctx = ClientContext(SHAREPOINT_SITE).with_credentials(credentials)
 
-# ---------------------------
-# Data Files
-# ---------------------------
-DATA_FILE = "cities_data.csv"
-CAP_DATA_FILE = "cap_raw_data.csv"
-
-# ---------------------------
-# Cities & Districts
-# ---------------------------
-cities_districts = {
-    "Mumbai": "Mumbai",
-    "Kalyan-Dombivli": "Thane",
-    "Mira-Bhayandar": "Thane",
-    "Navi Mumbai": "Thane",
-    "Bhiwandi": "Thane",
-    "Ulhasnagar": "Thane",
-    "Ambernath Council": "Thane",
-    "Vasai-Virar": "Thane",
-    "Thane": "Thane",
-    "Badlapur Council": "Thane",
-    "Pune": "Pune",
-    "Pimpri-Chinchwad": "Pune",
-    "Panvel": "Raigad",
-    "Malegaon": "Nashik",
-    "Nashik": "Nashik",
-    "Nandurbar Council": "Nandurbar",
-    "Bhusawal Council": "Jalgaon",
-    "Jalgaon": "Jalgaon",
-    "Dhule": "Dhule",
-    "Ahmednagar": "Ahmednagar",
-    "Aurangabad": "Aurangabad",
-    "Jalna": "Jalna",
-    "Beed Council": "Beed",
-    "Satara Council": "Satara",
-    "Sangli-Miraj-Kupwad": "Sangli",
-    "Kolhapur": "Kolhapur",
-    "Ichalkaranji": "Kolhapur",
-    "Solapur": "Solapur",
-    "Barshi Council": "Solapur",
-    "Nanded-Waghala": "Nanded",
-    "Yawatmal Council": "Yawatmal",
-    "Osmanabad Council": "Osmanabad",
-    "Latur": "Latur",
-    "Udgir Council": "Latur",
-    "Akola": "Akola",
-    "Parbhani Council": "Parbhani",
-    "Amravati": "Amravati",
-    "Achalpur Council": "Amravati",
-    "Wardha Council": "Wardha",
-    "Hinganghat Council": "Wardha",
-    "Nagpur": "Nagpur",
-    "Chandrapur": "Chandrapur",
-    "Gondia Council": "Gondia"
-}
-
-# ---------------------------
-# Session State
-# ---------------------------
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "menu" not in st.session_state:
-    st.session_state.menu = "Home"
-if "last_updated" not in st.session_state:
-    st.session_state.last_updated = None
-
-# ---------------------------
-# Load Data
-# ---------------------------
-def load_csv(file_path, default_cols):
-    if os.path.exists(file_path):
-        try:
-            return pd.read_csv(file_path)
-        except:
-            return pd.DataFrame(columns=default_cols)
-    else:
-        return pd.DataFrame(columns=default_cols)
-
-meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", "GHG Emissions", "Environment Department Exist", "Department Name", "Head Name", "Department Email"]
-cap_cols = []
-
-st.session_state.data = load_csv(DATA_FILE, meta_cols)
-st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
-
-# ---------------------------
-# Helper Functions
-# ---------------------------
-def format_population(num):
+def upload_to_sharepoint(city_name, file_buffer, file_name):
+    folder_url = f"{SHAREPOINT_DOC}/{city_name}"
     try:
-        if pd.isna(num) or num == "":
-            return "—"
-        return "{:,}".format(int(num))
+        ctx.web.folders.add(folder_url).execute_query()
     except:
-        return str(num)
+        pass
+    file_content = file_buffer.getvalue()
+    ctx.web.get_folder_by_server_relative_url(folder_url).upload_file(file_name, file_content).execute_query()
 
-def safe_get(row, col, default="—"):
-    try:
-        val = row.get(col, default)
-        return default if pd.isna(val) else val
-    except:
-        return default
-
-# ---------------------------
-# Dark / Professional CSS
-# ---------------------------
+# -----------------------
+# App Config & Theme
+# -----------------------
+st.set_page_config(page_title="Maharashtra CAP Dashboard", layout="wide")
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {background-color: #0f0f10; color: #E6E6E6;}
-[data-testid="stSidebar"] {background-color: #141518; color: #E6E6E6;}
-.stButton>button {background-color:#3E6BE6; color:#FFFFFF; border-radius:8px; height:40px;}
-.stButton>button:hover {background-color:#2e50b0;}
-[data-testid="stMetricValue"] {color:#3E6BE6; font-weight:700;}
-.stExpander>div>div>div>div {background-color:#141518; color:#E6E6E6;}
-input, textarea, select {background-color:#141518; color:#E6E6E6; border-color:#3E6BE6;}
+body {background-color: #0A0A0A; color: #E5E5E5;}
+.stButton>button {background-color:#00BFA6; color:white;}
+.stDataFrame div{color:white;}
+.stSelectbox>div>div>div>span {color:white;}
+.stTextInput>div>input, .stNumberInput>div>input, .stTextArea>div>textarea {background-color:#1F1F1F; color:white; border:none;}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------
-# Admin Login
-# ---------------------------
-def admin_login():
-    with st.form("login_form", clear_on_submit=False):
-        pw = st.text_input("Enter Admin Password", type="password")
-        submit = st.form_submit_button("Login")
-        if submit:
-            if pw == ADMIN_PASSWORD:
-                st.session_state.authenticated = True
-                st.success("Admin login successful")
-            else:
-                st.error("Incorrect password")
+LAST_UPDATED = "September 2025"
+ADMIN_PASSWORD = "eintrust123"
 
-# ---------------------------
-# Sidebar Buttons
-# ---------------------------
-st.sidebar.image(
-    "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
-    use_container_width=True
-)
+# -----------------------
+# Cities & Dummy Coordinates
+# -----------------------
+cities_districts = {
+    "Mumbai": "Mumbai","Kalyan-Dombivli": "Thane","Mira-Bhayandar": "Thane","Navi Mumbai": "Thane",
+    "Bhiwandi": "Thane","Ulhasnagar": "Thane","Ambernath Council": "Thane","Vasai-Virar": "Thane",
+    "Thane": "Thane","Badlapur Council": "Thane","Pune": "Pune","Pimpri-Chinchwad": "Pune",
+    "Panvel": "Raigad","Malegaon": "Nashik","Nashik": "Nashik","Nandurbar Council": "Nandurbar",
+    "Bhusawal Council": "Jalgaon","Jalgaon": "Jalgaon","Dhule": "Dhule","Ahmednagar": "Ahmednagar",
+    "Aurangabad": "Aurangabad","Jalna": "Jalna","Beed Council": "Beed","Satara Council": "Satara",
+    "Sangli-Miraj-Kupwad": "Sangli","Kolhapur": "Kolhapur","Ichalkaranji": "Kolhapur","Solapur": "Solapur",
+    "Barshi Council": "Solapur","Nanded-Waghala": "Nanded","Yawatmal Council": "Yawatmal","Osmanabad Council": "Osmanabad",
+    "Latur": "Latur","Udgir Council": "Latur","Akola": "Akola","Parbhani Council": "Parbhani",
+    "Amravati": "Amravati","Achalpur Council": "Amravati","Wardha Council": "Wardha","Hinganghat Council": "Wardha",
+    "Nagpur": "Nagpur","Chandrapur": "Chandrapur","Gondia Council": "Gondia"
+}
+city_coords = {city:(19+random.random()*5, 73+random.random()*5) for city in cities_districts.keys()}
 
-# Track which menu is selected
-for btn, name in [("Home","Home"), ("City Information","City Information"), ("Admin","Admin")]:
-    if st.sidebar.button(btn):
-        st.session_state.menu = name
-        if name != "Admin":
-            st.session_state.authenticated = False  # reset admin login if switching away
+# -----------------------
+# DataFrames Initialization
+# -----------------------
+city_data_columns = ["City Name","District","Population (2011)","Estimated Population (2025)",
+                     "Environment Department Exists?","Responsible Department","Contact Person",
+                     "CAP Status","CAP Link","City Website","Total Emissions","Per Capita Emissions"]
+city_data = pd.DataFrame([{ 
+    "City Name": city, "District": cities_districts[city],
+    "Population (2011)":0,"Estimated Population (2025)":0,
+    "Environment Department Exists?":"No","Responsible Department":"",
+    "Contact Person":"","CAP Status":"Not Started","CAP Link":"","City Website":"",
+    "Total Emissions":0,"Per Capita Emissions":0
+} for city in cities_districts.keys()], columns=city_data_columns)
 
-# Show CAP dropdown only if admin is authenticated
-if st.session_state.authenticated:
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### CAP")
-    
-    st.markdown("""
-    <style>
-    .css-1lcbmhc.e1fqkh3o3 select {
-        background-color: #141518 !important;
-        color: #E6E6E6 !important;
-        border: 1px solid #3E6BE6 !important;
-        border-radius: 8px !important;
-        padding: 5px !important;
-    }
-    .css-1lcbmhc.e1fqkh3o3 option {
-        background-color: #0f0f10 !important;
-        color: #E6E6E6 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+sector_columns = ["Energy","Transport","Waste","Industry","Buildings","Agriculture","Water","Other"]
+sector_emissions = pd.DataFrame([{ "City Name": city, **{s:0 for s in sector_columns} } for city in cities_districts.keys()])
 
-    cap_section = st.sidebar.selectbox(
-        "Select Section",
-        ["Select Section", "Data Collection", "GHG Inventory", "Actions", "Update Dashboard"]
-    )
+EMISSION_FACTORS = {s: random.uniform(0.1,1.2) for s in sector_columns}
+recommended_actions = {s:{"Short":[f"Action {i}" for i in range(1,11)],
+                           "Mid":[f"Action {i}" for i in range(11,21)],
+                           "Long":[f"Action {i}" for i in range(21,31)]} for s in EMISSION_FACTORS.keys()}
 
-# ---------------------------
-# Admin Page / Login
-# ---------------------------
-if st.session_state.menu == "Admin":
-    st.header("Admin Panel")
-    if not st.session_state.authenticated:
-        # Password input form
-        with st.form("login_form", clear_on_submit=False):
-            pw = st.text_input("Enter Admin Password", type="password")
-            submit = st.form_submit_button("Login")
-            if submit:
-                if pw == ADMIN_PASSWORD:
-                    st.session_state.authenticated = True
-                    st.success("Admin login successful")
-                else:
-                    st.error("Incorrect password")
-                    
+# -----------------------
+# Sidebar
+# -----------------------
+st.sidebar.title("Maharashtra CAP Dashboard")
+page = st.sidebar.radio("Navigate", ["Home", "City Information", "Admin"])
 st.sidebar.markdown("---")
-st.sidebar.markdown("EinTrust | © 2025")
+st.sidebar.markdown("© 2025 EinTrust Foundation")
 
-menu = st.session_state.menu
+# -----------------------
+# Helper Functions
+# -----------------------
+def calculate_city_emissions(city_inputs):
+    return {sector: city_inputs.get(sector,0)*EMISSION_FACTORS[sector] for sector in EMISSION_FACTORS.keys()}
 
-# ---------------------------
-# Home Page
-# ---------------------------
-if menu=="Home":
-    st.header("Maharashtra's Net Zero Journey")
-    st.markdown("Climate Action Plan Dashboard")
+def generate_cap_pdf(city_name, name, email):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width/2, height-2*cm, f"Maharashtra Climate Action Plan - {city_name}")
+    c.setFont("Helvetica", 10)
+    c.drawString(2*cm, height-3*cm, f"Generated for: {name} ({email})")
+    c.drawString(2*cm, height-3.5*cm, f"Last Updated: {LAST_UPDATED}")
+    city_info = city_data[city_data["City Name"]==city_name].iloc[0]
+    y = height-5*cm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(2*cm, y, "City Information:")
+    c.setFont("Helvetica", 10)
+    y -= 0.5*cm
+    for key in ["District","Population (2011)","Estimated Population (2025)","Environment Department Exists?",
+                "Responsible Department","Contact Person","CAP Status","CAP Link","City Website"]:
+        c.drawString(2*cm, y, f"{key}: {city_info.get(key,'')}")
+        y -= 0.4*cm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(2*cm, y, "Sector-wise GHG Emissions (tCO₂e):")
+    c.setFont("Helvetica", 10)
+    y -= 0.5*cm
+    sectors = sector_emissions[sector_emissions["City Name"]==city_name].iloc[0,1:]
+    for sector, value in sectors.items():
+        c.drawString(2*cm, y, f"{sector}: {round(value,2)}")
+        y -= 0.4*cm
+    c.setFont("Helvetica-Bold", 12)
+    y -= 0.2*cm
+    c.drawString(2*cm, y, "Recommended Actions:")
+    c.setFont("Helvetica", 10)
+    y -= 0.5*cm
+    for sector in recommended_actions.keys():
+        c.drawString(2*cm, y, f"{sector}:")
+        y -= 0.4*cm
+        for term in ["Short","Mid","Long"]:
+            c.drawString(3*cm, y, f"{term}-term: {', '.join(recommended_actions[sector][term])}")
+            y -= 0.3*cm
+        y -= 0.1*cm
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(width/2, 1*cm, "© 2025 EinTrust Foundation")
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_ghg_inventory_excel(city_name):
+    buffer = BytesIO()
+    df = sector_emissions[sector_emissions["City Name"]==city_name].copy()
+    df["Total Emissions"] = df[sector_columns].sum(axis=1)
+    df["Per Capita Emissions"] = df["Total Emissions"] / max(1, city_data.loc[city_data["City Name"]==city_name,"Estimated Population (2025)"].values[0])
+    df.to_excel(buffer, index=False)
+    buffer.seek(0)
+    return buffer
+
+def generate_actions_excel(city_name):
+    buffer = BytesIO()
+    rows = []
+    for sector in recommended_actions.keys():
+        for term in ["Short","Mid","Long"]:
+            for action in recommended_actions[sector][term]:
+                rows.append({"Sector":sector, "Term":term, "Action":action})
+    pd.DataFrame(rows).to_excel(buffer, index=False)
+    buffer.seek(0)
+    return buffer
+
+# -----------------------
+# Pages
+# -----------------------
+if page == "Home":
+    st.title("Maharashtra CAP Dashboard - Home")
+    st.markdown(f"**Last Updated:** {LAST_UPDATED}")
+    city_data["Total Emissions"] = city_data["Estimated Population (2025)"] * 1.2
+    top10 = city_data.sort_values("Total Emissions", ascending=False).head(10)
+    fig_bar = px.bar(top10, x="City Name", y="Total Emissions", color="District")
+    st.plotly_chart(fig_bar, use_container_width=True)
+    map_df = city_data.copy()
+    map_df["lat"] = map_df["City Name"].apply(lambda x: city_coords[x][0])
+    map_df["lon"] = map_df["City Name"].apply(lambda x: city_coords[x][1])
+    fig_map = px.scatter_mapbox(map_df, lat="lat", lon="lon", size="Total Emissions",
+                                hover_name="City Name", hover_data=["Total Emissions"],
+                                color="Total Emissions", color_continuous_scale="Viridis", zoom=5)
+    fig_map.update_layout(mapbox_style="carto-darkmatter", margin={"r":0,"t":0,"l":0,"b":0})
+    st.plotly_chart(fig_map, use_container_width=True)
+
+elif page == "City Information":
+    st.title("City Information")
+    st.markdown(f"**Last Updated:** {LAST_UPDATED}")
+    district_filter = st.selectbox("Filter by District", ["All"] + list(set(city_data["District"])))
+    cap_status_filter = st.selectbox("Filter by CAP Status", ["All","Not Started","Planned","In Progress","Completed"])
+    df_filtered = city_data.copy()
+    if district_filter != "All":
+        df_filtered = df_filtered[df_filtered["District"]==district_filter]
+    if cap_status_filter != "All":
+        df_filtered = df_filtered[df_filtered["CAP Status"]==cap_status_filter]
+    st.dataframe(df_filtered)
     
-    df = st.session_state.data.copy()
-    total_selected = len(cities_districts)
-    reporting = df.shape[0]
-    completed = df[df["CAP Status"].str.lower()=="completed"].shape[0] if "CAP Status" in df.columns else 0
+    selected_city = st.selectbox("Select City to Download CAP PDF", city_data["City Name"])
+    name = st.text_input("Enter Your Name")
+    email = st.text_input("Enter Official Email")
+    if st.button("Download CAP PDF"):
+        if not name or not email:
+            st.error("Please enter name and official email")
+        else:
+            pdf_buffer = generate_cap_pdf(selected_city, name, email)
+            st.download_button("Download PDF", pdf_buffer, file_name=f"{selected_city}_CAP.pdf")
+            upload_to_sharepoint(selected_city, pdf_buffer, f"{selected_city}_CAP.pdf")
+            # Also upload GHG Inventory and Actions Excel
+            ghg_buffer = generate_ghg_inventory_excel(selected_city)
+            upload_to_sharepoint(selected_city, ghg_buffer, f"{selected_city}_GHG_Inventory.xlsx")
+            actions_buffer = generate_actions_excel(selected_city)
+            upload_to_sharepoint(selected_city, actions_buffer, f"{selected_city}_Actions.xlsx")
+            st.success(f"CAP PDF, GHG Inventory, and Actions uploaded to SharePoint for {selected_city}")
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Cities Selected", f"{total_selected}")
-    col2.metric("Cities Reporting", f"{reporting}")
-    col3.metric("CAPs Completed", f"{completed}")
-
-    if not df.empty and "GHG Emissions" in df.columns:
-        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
-        fig2 = px.bar(df.sort_values("GHG Emissions", ascending=False), x="City Name", y="GHG Emissions",
-                      title="City-level GHG (tCO2e)", text="GHG Emissions", color_discrete_sequence=["#3E6BE6"])
-        fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-        st.plotly_chart(fig2, use_container_width=True)
-
-# ---------------------------
-# City Dashboard
-# ---------------------------
-elif menu=="City Information":
-    st.header("City Information")
-    df_meta = st.session_state.data.copy()
-    df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
-    
-    cities_for_select = list(cities_districts.keys())
-    city = st.selectbox("Select City", cities_for_select)
-    
-    meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
-    st.subheader(f"{city} — Overview")
-    
-    if meta_row is not None:
-        st.write(f"**District:** {safe_get(meta_row,'District')}")
-        st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row,'Population'))}")
-        st.write(f"**ULB Category:** {safe_get(meta_row,'ULB Category')}")
-        st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
+elif page == "Admin":
+    st.title("Admin Page - EinTrust Only")
+    pwd = st.text_input("Enter Admin Password", type="password")
+    if pwd != ADMIN_PASSWORD:
+        st.warning("Incorrect Password")
     else:
-        st.write(f"**District:** {cities_districts.get(city,'—')}")
-
-    if not df_cap.empty and city in df_cap["City Name"].values:
-        cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
-        sector_cols = [c for c in cap_row.index if c.endswith(" Emissions (tCO2e)")]
-        sectors = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols}
-        
-        if sectors:
-            chart_df = pd.DataFrame({"Sector":list(sectors.keys()),"Emissions":list(sectors.values())})
-            fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
-            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
-                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
-            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            st.write("### Emissions by Sector")
-            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v:f"{v:,.2f}")))
-
-    last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
-    st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
-
-    # PDF Download
-    if PDF_AVAILABLE:
-        st.subheader("Download GHG Inventory Report")
-        with st.form("pdf_form"):
-            user_name = st.text_input("Your Full Name")
-            user_email = st.text_input("Your Work Email")
-            user_contact = st.text_input("Contact Number")
-            submit_pdf = st.form_submit_button("Generate PDF")
-            if submit_pdf:
-                buffer = io.BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4)
-                elements = []
-                styles = getSampleStyleSheet()
-                elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
-                elements.append(Spacer(1,12))
-                data = [["Sector","Emissions (tCO2e)"]]+[[s,f"{v:,.2f}"] for s,v in sectors.items()]
-                t = Table(data, hAlign="LEFT")
-                t.setStyle(TableStyle([
-                    ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                    ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                    ('GRID',(0,0),(-1,-1),0.5,colors.white)
-                ]))
-                elements.append(t)
-                doc.build(elements)
-                buffer.seek(0)
-                st.download_button("Download PDF", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
-    else:
-        st.warning("PDF generation not available. Install reportlab library.")
-
-# ---------------------------
-# Admin Panel
-# ---------------------------
-elif menu=="Admin Panel":
-    st.header("Admin Board")
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        st.subheader("Add/Update City Data")
-        with st.form("admin_form", clear_on_submit=False):
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            cap_status = st.selectbox("CAP Status", ["Not Started","In Progress","Completed"])
-            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            dept_exist = st.selectbox("Environment Department Exist?", ["Yes","No"])
-            dept_name = st.text_input("Department Name")
-            head_name = st.text_input("Department Head Name")
-            dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Add/Update City Data")
-
-            if submit_admin:
-                new_row = {
-                    "City Name": city,
-                    "District": cities_districts.get(city, "—"),
-                    "CAP Status": cap_status,
-                    "GHG Emissions": ghg_val,
-                    "Environment Department Exist": dept_exist,
-                    "Department Name": dept_name,
-                    "Head Name": head_name,
-                    "Department Email": dept_email
-                }
-                df_meta = st.session_state.data
-                if city in df_meta["City Name"].values:
-                    df_meta.loc[df_meta["City Name"]==city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
-                else:
-                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.data = df_meta
-                df_meta.to_csv(DATA_FILE,index=False)
-                st.success(f"{city} data updated successfully!")
+        st.success("Access Granted")
+        admin_tab = st.radio("Admin Functions", ["CAP Update","Data Collection","GHG Inventory","Actions"])
+        selected_city = st.selectbox("Select City", city_data["City Name"])
+        if admin_tab == "CAP Update":
+            city_row = city_data[city_data["City Name"]==selected_city].iloc[0]
+            updated_status = st.selectbox("CAP Status", ["Not Started","Planned","In Progress","Completed"], index=["Not Started","Planned","In Progress","Completed"].index(city_row["CAP Status"]))
+            city_data.loc[city_data["City Name"]==selected_city,"CAP Status"] = updated_status
+            st.success(f"CAP Status Updated for {selected_city}")
+        elif admin_tab == "Data Collection":
+            st.subheader("Comprehensive Data Collection")
+            city_inputs = {}
+            for sector in sector_columns:
+                city_inputs[sector] = st.number_input(f"{sector} consumption/emission value", min_value=0.0, step=0.1)
+            if st.button("Save Data"):
+                emissions = calculate_city_emissions(city_inputs)
+                for sector, value in emissions.items():
+                    sector_emissions.loc[sector_emissions["City Name"]==selected_city, sector] = value
+                # Upload Data Collection Excel
+                excel_buffer = BytesIO()
+                pd.DataFrame([city_inputs]).to_excel(excel_buffer, index=False)
+                excel_buffer.seek(0)
+                upload_to_sharepoint(selected_city, excel_buffer, f"{selected_city}_DataCollection.xlsx")
+                # Upload GHG Inventory
+                ghg_buffer = generate_ghg_inventory_excel(selected_city)
+                upload_to_sharepoint(selected_city, ghg_buffer, f"{selected_city}_GHG_Inventory.xlsx")
+                # Upload Recommended Actions
+                actions_buffer = generate_actions_excel(selected_city)
+                upload_to_sharepoint(selected_city, actions_buffer, f"{selected_city}_Actions.xlsx")
+                st.success(f"All files uploaded to SharePoint for {selected_city}")
+        elif admin_tab == "GHG Inventory":
+            st.dataframe(sector_emissions[sector_emissions["City Name"]==selected_city])
+        elif admin_tab == "Actions":
+            for sector in recommended_actions.keys():
+                st.markdown(f"**{sector} Sector**")
+                for term in ["Short","Mid","Long"]:
+                    st.write(f"{term}-term: {', '.join(recommended_actions[sector][term])}")
