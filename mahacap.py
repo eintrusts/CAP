@@ -65,7 +65,7 @@ else:
     st.session_state.cap_data = pd.DataFrame()
 
 # ---------------------------
-# Helpers
+# Helper Functions
 # ---------------------------
 def get_val(row: pd.Series, target: str, default="—"):
     return row[target] if target in row and pd.notna(row[target]) else default
@@ -80,31 +80,37 @@ def format_population(num):
 # ---------------------------
 st.markdown("""
 <style>
-/* App background */
-[data-testid="stAppViewContainer"] {background-color: #0B1D0B; color: #FFFFFF;}
-[data-testid="stSidebar"] {background-color: #123012; color: #FFFFFF;}
+/* Background */
+[data-testid="stAppViewContainer"] {background-color: #121212; color: #E0E0E0;}
+[data-testid="stSidebar"] {background-color: #1C1C1C; color: #E0E0E0;}
 
 /* Buttons */
 .css-1d391kg button, .stButton>button {
-    background-color: #228B22 !important; color: white !important;
+    background-color: #228B22 !important; color: #FFFFFF !important;
     width: 100% !important; margin-bottom: 5px !important; height: 40px !important;
     font-size: 16px !important; border-radius: 5px !important;
 }
 .css-1d391kg button:hover, .stButton>button:hover {background-color: #196619 !important;}
 
 /* Metrics */
-[data-testid="stMetricValue"] {color: #4169E1 !important;}
+[data-testid="stMetricValue"] {color: #4169E1 !important; font-weight: bold;}
 
 /* Expander */
-.stExpander>div>div>div>div {background-color: #1A2B1A !important; color: #FFFFFF !important;}
+.stExpander>div>div>div>div {background-color: #1E1E1E !important; color: #E0E0E0 !important;}
 
 /* Headers */
 h1, h2, h3, h4, h5, h6 {color: #7CFC00 !important;}
 
 /* Inputs */
 .css-1hwfws3, .css-1r6slb0, .stTextInput>div>input, .stNumberInput>div>input {
-    background-color: #0B1D0B !important; color: #FFFFFF !important; border-color: #228B22 !important;
+    background-color: #1C1C1C !important; color: #E0E0E0 !important; border-color: #228B22 !important;
 }
+
+/* File Uploader */
+.stFileUploader>div>div {background-color:#1C1C1C !important; color:#E0E0E0 !important;}
+
+/* Selectbox */
+.css-1hwfws3 {background-color:#1C1C1C !important; color:#E0E0E0 !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,8 +151,8 @@ menu = st.session_state.menu
 if menu == "Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
-
     df = st.session_state.data
+
     if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
@@ -157,12 +163,10 @@ if menu == "Home":
         st.metric("Cities with CAP Completed", df[df["CAP Status"]=="Completed"].shape[0])
 
         if "GHG Emissions" in df.columns:
-            fig2 = px.bar(df, x="City Name", y="GHG Emissions",
-                          title="GHG Emissions by City", text="GHG Emissions",
-                          color_discrete_sequence=["#00FA9A"])
-            fig2.update_layout(plot_bgcolor="#0B1D0B", paper_bgcolor="#0B1D0B",
-                               font_color="#FFFFFF")
-            st.plotly_chart(fig2, use_container_width=True)
+            fig = px.bar(df, x="City Name", y="GHG Emissions", text="GHG Emissions",
+                         title="GHG Emissions by City", color_discrete_sequence=["#7CFC00"])
+            fig.update_layout(plot_bgcolor="#121212", paper_bgcolor="#121212", font_color="#E0E0E0")
+            st.plotly_chart(fig, use_container_width=True)
 
 # ---------------------------
 # City Dashboard
@@ -173,20 +177,21 @@ elif menu == "City Dashboard":
         st.info("No city data available. Admin must add data.")
     else:
         st.header("City Dashboard")
+        st.markdown("View detailed information for each city.")
         city = st.selectbox("Select City", df["City Name"].dropna().unique())
         city_row = df[df["City Name"] == city].iloc[0]
 
         with st.expander("Basic Info", expanded=True):
             st.write(f"**District:** {get_val(city_row, 'District')}")
-            st.write(f"**Population:** {format_population(get_val(city_row,'Population'))}")
+            st.write(f"**Population:** {format_population(get_val(city_row, 'Population'))}")
             st.write(f"**ULB Category:** {get_val(city_row, 'ULB Category')}")
-            st.write(f"**CAP Status:** {get_val(city_row,'CAP Status')}")
+            st.write(f"**CAP Status:** {get_val(city_row, 'CAP Status')}")
 
         with st.expander("Environment Department"):
-            st.write(f"**Exists:** {get_val(city_row,'Environment Department Exist')}")
-            st.write(f"**Dept Name:** {get_val(city_row,'Department Name')}")
-            st.write(f"**Head Name:** {get_val(city_row,'Head Name')}")
-            st.write(f"**Email:** {get_val(city_row,'Department Email')}")
+            st.write(f"**Exists:** {get_val(city_row, 'Environment Department Exist')}")
+            st.write(f"**Dept Name:** {get_val(city_row, 'Department Name')}")
+            st.write(f"**Head Name:** {get_val(city_row, 'Head Name')}")
+            st.write(f"**Email:** {get_val(city_row, 'Department Email')}")
 
         if os.path.exists(DATA_FILE):
             last_updated = pd.to_datetime(os.path.getmtime(DATA_FILE), unit='s')
@@ -199,7 +204,7 @@ elif menu == "Admin Panel":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("Admin Panel - City Data Management")
+        st.header("Admin Panel")
         df = st.session_state.data
         cities_list = list(cities_districts.keys())
 
@@ -207,11 +212,11 @@ elif menu == "Admin Panel":
             city_name = st.selectbox("Select City", cities_list)
             district = st.text_input("District", value=cities_districts[city_name], disabled=True)
             population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
-            population = st.number_input("Population (2011)", min_value=0, value=int(population_val), step=1000, format="%d")
+            population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(population_val), step=1000, format="%d")
             ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
-            env_exist = st.selectbox("Environment Dept Exists?", ["Yes","No"], index=0)
+            env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
             dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
             head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
             dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
@@ -225,14 +230,15 @@ elif menu == "Admin Panel":
                     "Head Name": head_name, "Department Email": dept_email
                 }
                 if city_name in df.get("City Name", []):
-                    idx = df[df["City Name"]==city_name].index[0]
+                    idx = df[df["City Name"] == city_name].index[0]
                     df.loc[idx] = new_row
+                    st.success(f"{city_name} updated successfully.")
                 else:
                     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-
+                    st.success(f"{city_name} added successfully.")
                 st.session_state.data = df
-                df.to_csv(DATA_FILE,index=False)
-                st.success(f"{city_name} saved successfully!")
+                df.to_csv(DATA_FILE, index=False)
+                st.session_state.last_updated = pd.Timestamp.now()
 
 # ---------------------------
 # CAP Preparation
@@ -250,60 +256,72 @@ elif menu == "CAP Preparation":
             st.subheader("Energy Sector")
             energy_elec = st.number_input("Annual Electricity Consumption (kWh)", min_value=0, key="energy_elec")
             energy_fuel = st.number_input("Annual Fossil Fuel Consumption (liters)", min_value=0, key="energy_fuel")
-            energy_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="energy_file")
-            
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="energy_file")
+
             st.subheader("Transport Sector")
-            vehicles_total = st.number_input("Total Vehicles", min_value=0, key="vehicles_total")
-            fuel_consumption = st.number_input("Annual Fuel Consumption (liters)", min_value=0, key="fuel_consumption")
-            transport_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="transport_file")
-            
+            vehicles_total = st.number_input("Total Vehicles in City", min_value=0, key="vehicles_total")
+            fuel_consumption = st.number_input("Annual Fuel Consumption by Vehicles (liters)", min_value=0, key="fuel_consumption")
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="transport_file")
+
             st.subheader("Buildings Sector")
             buildings_count = st.number_input("Total Buildings", min_value=0, key="buildings_count")
-            buildings_area = st.number_input("Built-up Area (sq.m)", min_value=0, key="buildings_area")
-            buildings_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="buildings_file")
-            
+            buildings_area = st.number_input("Total Built-up Area (sq.m)", min_value=0, key="buildings_area")
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="buildings_file")
+
             st.subheader("Water Sector")
-            water_consumption = st.number_input("Water Consumption (ML/year)", min_value=0, key="water_consumption")
+            water_consumption = st.number_input("Total Water Consumption (ML/year)", min_value=0, key="water_consumption")
             water_waste = st.number_input("Wastewater Generated (ML/year)", min_value=0, key="water_waste")
-            water_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="water_file")
-            
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="water_file")
+
             st.subheader("Waste Sector")
-            waste_generated = st.number_input("Total Waste Generated (t/year)", min_value=0, key="waste_generated")
-            waste_recycled = st.number_input("Waste Recycled (t/year)", min_value=0, key="waste_recycled")
-            waste_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="waste_file")
-            
+            waste_generated = st.number_input("Total Waste Generated (tonnes/year)", min_value=0, key="waste_generated")
+            waste_recycled = st.number_input("Waste Recycled (tonnes/year)", min_value=0, key="waste_recycled")
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="waste_file")
+
             st.subheader("Industry Sector")
             industry_count = st.number_input("Number of Industrial Units", min_value=0, key="industry_count")
             industry_energy = st.number_input("Industrial Energy Consumption (kWh/year)", min_value=0, key="industry_energy")
-            industry_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="industry_file")
-            
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="industry_file")
+
             st.subheader("Urban Forestry & Land Use")
             green_cover = st.number_input("Urban Green Cover (ha)", min_value=0, key="green_cover")
-            forestry_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="forestry_file")
-            
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="forestry_file")
+
             st.subheader("Other Emissions")
             other_emissions = st.number_input("Other City Emissions (MTCO2e)", min_value=0, key="other_emissions")
-            other_upload = st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="other_file")
-            
+            st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="other_file")
+
             submit = st.form_submit_button("Save CAP Raw Data & Download CSV")
             if submit:
                 new_data = {
                     "City Name": city_name,
-                    "Energy Electricity (kWh)": energy_elec, "Energy Fuel (L)": energy_fuel,
-                    "Transport Vehicles": vehicles_total, "Transport Fuel (L)": fuel_consumption,
-                    "Buildings Count": buildings_count, "Buildings Area (sq.m)": buildings_area,
-                    "Water Consumption (ML)": water_consumption, "Wastewater Generated (ML)": water_waste,
-                    "Waste Generated (t)": waste_generated, "Waste Recycled (t)": waste_recycled,
-                    "Industry Units": industry_count, "Industry Energy (kWh)": industry_energy,
-                    "Urban Green Cover (ha)": green_cover, "Other Emissions (MTCO2e)": other_emissions
+                    "Energy Electricity (kWh)": energy_elec,
+                    "Energy Fuel (L)": energy_fuel,
+                    "Transport Vehicles": vehicles_total,
+                    "Transport Fuel (L)": fuel_consumption,
+                    "Buildings Count": buildings_count,
+                    "Buildings Area (sq.m)": buildings_area,
+                    "Water Consumption (ML)": water_consumption,
+                    "Wastewater Generated (ML)": water_waste,
+                    "Waste Generated (t)": waste_generated,
+                    "Waste Recycled (t)": waste_recycled,
+                    "Industry Units": industry_count,
+                    "Industry Energy (kWh)": industry_energy,
+                    "Urban Green Cover (ha)": green_cover,
+                    "Other Emissions (MTCO2e)": other_emissions
                 }
                 if city_name in df_cap.get("City Name", []):
                     idx = df_cap[df_cap["City Name"] == city_name].index[0]
                     df_cap.loc[idx] = new_data
                 else:
                     df_cap = pd.concat([df_cap, pd.DataFrame([new_data])], ignore_index=True)
-
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
-                st.success(f"CAP raw data saved for {city_name}!")
-                st.download_button("Download CAP CSV", df_cap.to_csv(index=False).encode('utf-8'), file_name="CAP_Raw_Data.csv", mime="text/csv")
+                st.success(f"CAP Raw Data for {city_name} saved successfully!")
+
+                st.download_button(
+                    label="Download CAP Raw Data CSV",
+                    data=df_cap.to_csv(index=False).encode('utf-8'),
+                    file_name=f"{city_name}_CAP_Data.csv",
+                    mime="text/csv"
+                )
