@@ -107,43 +107,71 @@ def format_population(num):
     return "{:,}".format(int(num))
 
 # ---------------------------
-# Custom CSS for Energy-Saving Theme
+# Custom CSS for Professional Theme
 # ---------------------------
 st.markdown("""
 <style>
-/* Sidebar */
+/* Body background */
+body, .stApp {
+    background-color: #f5f7fa;
+    color: #0b3d91;
+}
+
+/* Sidebar buttons */
 .css-1d391kg button, .stButton>button {
     background-color: #228B22 !important; 
     color: white !important; 
     width: 100% !important;
     margin-bottom: 5px !important;
-    height: 40px !important;
+    height: 45px !important;
     font-size: 16px !important;
-    border-radius: 5px !important;
+    border-radius: 6px !important;
+    font-weight: 500;
 }
 .css-1d391kg button:hover, .stButton>button:hover {
     background-color: #196619 !important;
-    color: white !important;
 }
 
 /* Metrics */
 [data-testid="stMetricValue"] {
     color: #4169E1 !important;
+    font-size: 28px !important;
 }
 
 /* Expander */
 .stExpander>div>div>div>div {
-    background-color: #E6F2FF !important;
+    background-color: #e6f2ff !important;
+    border-left: 4px solid #228B22;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 /* Headers */
 h1, h2, h3, h4, h5, h6 {
     color: #228B22 !important;
+    font-weight: 700;
 }
 
 /* Selectbox and Inputs */
 .css-1hwfws3, .css-1r6slb0 {
     border-color: #228B22 !important;
+    border-radius: 5px !important;
+    padding: 5px !important;
+}
+
+/* File uploader */
+.stFileUploader>div>div>input {
+    border-radius: 5px !important;
+}
+
+/* Download button */
+.stDownloadButton>button {
+    background-color: #4169E1 !important;
+    color: white !important;
+    font-weight: 500;
+}
+.stDownloadButton>button:hover {
+    background-color: #2b4b90 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -170,26 +198,6 @@ st.sidebar.image(
     use_container_width=True
 )
 
-st.sidebar.markdown(
-    """
-    <style>
-    .css-1d391kg button { 
-        background-color: #228B22 !important; 
-        color: white !important; 
-        width: 100%;
-        margin-bottom: 5px;
-        height: 40px;
-        font-size: 16px;
-        border-radius: 5px;
-    }
-    .css-1d391kg button:hover { 
-        background-color: #196619 !important; 
-        color: white !important; 
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
-
 if st.sidebar.button("Home"):
     st.session_state.menu = "Home"
 if st.sidebar.button("City Dashboard"):
@@ -211,7 +219,7 @@ menu = st.session_state.menu
 if menu == "Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
-
+    
     df = st.session_state.data
     if df.empty:
         st.info("No city data available. Admin must add data.")
@@ -222,12 +230,14 @@ if menu == "Home":
 
         total_cities = df.shape[0]
         cities_done = df[df["CAP Status"] == "Completed"].shape[0]
-        st.metric("Total Cities", total_cities)
-        st.metric("Cities with CAP Completed", cities_done)
+        col1, col2 = st.columns(2)
+        col1.metric("Total Cities", total_cities)
+        col2.metric("Cities with CAP Completed", cities_done)
 
         if "GHG Emissions" in df.columns:
             fig2 = px.bar(df, x="City Name", y="GHG Emissions",
-                          title="GHG Emissions by City", text="GHG Emissions")
+                          title="GHG Emissions by City", text="GHG Emissions",
+                          color_discrete_sequence=["#4169E1"])
             st.plotly_chart(fig2, use_container_width=True)
 
 # ---------------------------
