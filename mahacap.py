@@ -107,16 +107,16 @@ def format_population(num):
     return "{:,}".format(int(num))
 
 # ---------------------------
-# Custom Professional Theme CSS
+# Custom Energy-Saving Theme CSS
 # ---------------------------
 st.markdown("""
 <style>
-/* Page background & font */
-body, .stApp { background-color: #f8f9fa; color: #0b3d91; font-family: 'Arial', sans-serif; }
+/* Page background */
+body, .stApp { background-color: #f0f4f2; color: #0b3d91; font-family: 'Arial', sans-serif; }
 
 /* Sidebar buttons */
 .css-1d391kg button, .stButton>button {
-    background-color: #228B22 !important; 
+    background-color: #2e7d32 !important; 
     color: white !important; 
     width: 100% !important;
     margin-bottom: 5px !important;
@@ -124,36 +124,36 @@ body, .stApp { background-color: #f8f9fa; color: #0b3d91; font-family: 'Arial', 
     font-size: 16px !important;
     border-radius: 6px !important;
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
-.css-1d391kg button:hover, .stButton>button:hover { background-color: #196619 !important; }
+.css-1d391kg button:hover, .stButton>button:hover { background-color: #1b5e20 !important; }
 
 /* Metrics style */
-[data-testid="stMetricValue"] { color: #4169E1 !important; font-size: 28px !important; font-weight: 600; }
+[data-testid="stMetricValue"] { color: #1b5e20 !important; font-size: 28px !important; font-weight: 600; }
 
 /* Expander */
 .stExpander>div>div>div>div {
-    background-color: #e6f2ff !important;
-    border-left: 5px solid #228B22;
+    background-color: #d0e8d0 !important;
+    border-left: 5px solid #2e7d32;
     padding: 12px;
-    border-radius: 5px;
+    border-radius: 6px;
 }
 
 /* Headers */
-h1, h2, h3, h4, h5, h6 { color: #228B22 !important; font-weight: 700; }
+h1, h2, h3, h4, h5, h6 { color: #2e7d32 !important; font-weight: 700; }
 
 /* Inputs */
-.css-1hwfws3, .css-1r6slb0 { border-color: #228B22 !important; border-radius: 5px !important; padding: 5px !important; }
+.css-1hwfws3, .css-1r6slb0 { border-color: #2e7d32 !important; border-radius: 5px !important; padding: 5px !important; background-color: #e8f5e9; color: #0b3d91; }
 
 /* File uploader */
 .stFileUploader>div>div>input { border-radius: 5px !important; }
 
 /* Download button */
-.stDownloadButton>button { background-color: #4169E1 !important; color: white !important; font-weight: 500; }
-.stDownloadButton>button:hover { background-color: #2b4b90 !important; }
+.stDownloadButton>button { background-color: #1b5e20 !important; color: white !important; font-weight: 500; }
+.stDownloadButton>button:hover { background-color: #145a1f !important; }
 
 /* Plotly chart container */
-.css-1aumxhk { border-radius: 8px; padding: 10px; background-color: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.css-1aumxhk { border-radius: 8px; padding: 10px; background-color: #c8e6c9; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
