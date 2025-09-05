@@ -19,11 +19,7 @@ except:
 # ---------------------------
 # Page Config
 # ---------------------------
-st.set_page_config(
-    page_title="Maharashtra CAP Dashboard",
-    page_icon="🌍",
-    layout="wide"
-)
+st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", layout="wide")
 
 # ---------------------------
 # Admin Password
@@ -58,7 +54,7 @@ cities_districts = {
 }
 
 # ---------------------------
-# Session State Initialization
+# Session State
 # ---------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -81,8 +77,9 @@ def load_csv(file_path, default_cols):
     else:
         return pd.DataFrame(columns=default_cols)
 
-meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", "GHG Emissions",
-             "Environment Department Exist", "Department Name", "Head Name", "Department Email"]
+meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", 
+             "GHG Emissions", "Environment Department Exist", "Department Name", 
+             "Head Name", "Department Email"]
 cap_cols = []
 
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
@@ -91,9 +88,18 @@ st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 # ---------------------------
 # Helper Functions
 # ---------------------------
-def format_indian(num):
+def format_population(num):
     try:
-        return "{:,}".format(int(num))
+        if pd.isna(num) or num == "":
+            return "—"
+        x = int(num)
+        s = f"{x:,}"
+        # Convert to Indian format
+        parts = s.split(',')
+        if len(parts) <= 1:
+            return s
+        else:
+            return parts[0]+','+','.join([p if i==0 else p for i,p in enumerate(parts[1:])])
     except:
         return str(num)
 
@@ -141,16 +147,12 @@ st.sidebar.image(
     use_container_width=True
 )
 
-# Always visible
-for btn, name in [("Home", "Home"), ("City Dashboard", "City Dashboard"), ("Admin Panel", "Admin Panel")]:
+for btn, name in [("Home","Home"), ("City Dashboard","City Dashboard"), ("Admin Panel","Admin Panel")]:
     if st.sidebar.button(btn):
         st.session_state.menu = name
 
-# Admin only
 if st.session_state.authenticated:
-    for btn, name in [("CAP Preparation", "CAP Preparation"), 
-                      ("GHG Inventory", "GHG Inventory"), 
-                      ("Actions", "Actions")]:
+    for btn, name in [("CAP Preparation","CAP Preparation"), ("GHG Inventory","GHG Inventory"), ("Actions","Actions")]:
         if st.sidebar.button(btn):
             st.session_state.menu = name
 
@@ -162,7 +164,7 @@ menu = st.session_state.menu
 # ---------------------------
 # Home Page
 # ---------------------------
-if menu == "Home":
+if menu=="Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
     df = st.session_state.data.copy()
@@ -176,26 +178,25 @@ if menu == "Home":
 
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
-        fig2 = px.bar(df.sort_values("GHG Emissions", ascending=False), 
-                      x="City Name", y="GHG Emissions", 
-                      title="City-level GHG (tCO2e)", text="GHG Emissions",
-                      color_discrete_sequence=px.colors.qualitative.Plotly)
+        fig2 = px.bar(df.sort_values("GHG Emissions", ascending=False), x="City Name", y="GHG Emissions",
+                      title="City-level GHG (tCO2e)", text="GHG Emissions", color_discrete_sequence=["#3E6BE6"])
         fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig2, use_container_width=True)
 
 # ---------------------------
 # City Dashboard
 # ---------------------------
-elif menu == "City Dashboard":
+elif menu=="City Dashboard":
     st.header("City Dashboard")
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
-    city = st.selectbox("Select City", list(cities_districts.keys()))
-    st.subheader(f"{city} — Overview")
+    cities_for_select = list(cities_districts.keys())
+    city = st.selectbox("Select City", cities_for_select)
     meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
+    st.subheader(f"{city} — Overview")
     if meta_row is not None:
         st.write(f"**District:** {safe_get(meta_row,'District')}")
-        st.write(f"**Population (2011):** {format_indian(safe_get(meta_row,'Population'))}")
+        st.write(f"**Population (2011):** {format_population(safe_get(meta_row,'Population'))}")
         st.write(f"**ULB Category:** {safe_get(meta_row,'ULB Category')}")
         st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
     else:
@@ -204,7 +205,7 @@ elif menu == "City Dashboard":
 # ---------------------------
 # Admin Panel
 # ---------------------------
-elif menu == "Admin Panel":
+elif menu=="Admin Panel":
     st.header("Admin Panel")
     if not st.session_state.authenticated:
         admin_login()
@@ -219,7 +220,6 @@ elif menu == "Admin Panel":
             head_name = st.text_input("Department Head Name")
             dept_email = st.text_input("Department Email")
             submit_admin = st.form_submit_button("Save CAP Metadata")
-
             if submit_admin:
                 new_row = {
                     "City Name": city,
@@ -241,9 +241,9 @@ elif menu == "Admin Panel":
                 st.success(f"{city} data updated successfully!")
 
 # ---------------------------
-# CAP Preparation Page
+# CAP Preparation
 # ---------------------------
-elif menu == "CAP Preparation":
+elif menu=="CAP Preparation":
     st.header("CAP Preparation — Sectoral Emissions Input")
     if not st.session_state.authenticated:
         admin_login()
@@ -255,10 +255,7 @@ elif menu == "CAP Preparation":
             cap_values = {}
             for sec in sectors:
                 cap_values[sec] = st.number_input(f"{sec} Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-
-            file_upload = st.file_uploader("Attach verification file (optional)", type=["pdf","xlsx","csv"])
             submit_cap = st.form_submit_button("Save CAP Data")
-
             if submit_cap:
                 new_row = {"City Name":city}
                 for sec,val in cap_values.items():
@@ -271,145 +268,7 @@ elif menu == "CAP Preparation":
                     df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE,index=False)
-                st.session_state.selected_city = city  # store selected city
+                st.session_state.selected_city = city
                 st.session_state.last_updated = datetime.now()
                 st.success(f"CAP data for {city} saved successfully!")
-                st.session_state.menu = "GHG Inventory"
-                st.experimental_rerun()
-
-# ---------------------------
-# GHG Inventory Page
-# ---------------------------
-elif menu == "GHG Inventory":
-    st.header("GHG Inventory")
-    city = st.session_state.selected_city
-    if not city:
-        st.warning("Please select or enter a city in CAP Preparation first.")
-    else:
-        df_cap = st.session_state.cap_data
-        if not df_cap.empty and city in df_cap["City Name"].values:
-            cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
-            sector_cols = [c for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
-            sectors = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols}
-
-            # Metrics
-            total_emissions = sum(sectors.values())
-            col1, col2 = st.columns(2)
-            col1.metric("Total GHG Emissions (tCO2e)", f"{format_indian(total_emissions)}")
-            col2.metric("City", city)
-
-            # Pie chart
-            chart_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions": list(sectors.values())})
-            fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
-            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-            # Bar chart
-            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions", 
-                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
-            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            st.write("### Emissions by Sector")
-            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: f"{v:,.2f}")))
-
-            # Last Updated
-            last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
-            st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
-
-            # Buttons
-            col1, col2 = st.columns(2)
-            with col1:
-                if PDF_AVAILABLE:
-                    buffer = io.BytesIO()
-                    doc = SimpleDocTemplate(buffer, pagesize=A4)
-                    elements = []
-                    styles = getSampleStyleSheet()
-                    elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
-                    elements.append(Spacer(1,12))
-                    data = [["Sector","Emissions (tCO2e)"]]+[[s,f"{v:,.2f}"] for s,v in sectors.items()]
-                    t = Table(data, hAlign="LEFT")
-                    t.setStyle(TableStyle([
-                        ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                        ('GRID',(0,0),(-1,-1),0.5,colors.white)
-                    ]))
-                    elements.append(t)
-                    doc.build(elements)
-                    buffer.seek(0)
-                    st.download_button("Download GHG Inventory (PDF)", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
-                else:
-                    st.warning("PDF generation not available. Install reportlab library.")
-
-            with col2:
-                if st.button("Suggested Actions"):
-                    st.session_state.menu = "Actions"
-                    st.experimental_rerun()
-        else:
-            st.warning(f"No CAP data found for {city}. Please enter sectoral emissions first.")
-
-# ---------------------------
-# Actions Page
-# ---------------------------
-elif menu == "Actions":
-    st.header("Suggested Actions to Achieve Net Zero by 2050")
-    city = st.session_state.selected_city
-    if not city:
-        st.warning("Please select or enter a city first in CAP Preparation.")
-    else:
-        df_cap = st.session_state.cap_data
-        if not df_cap.empty and city in df_cap["City Name"].values:
-            cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
-            sectors = [c.replace(" Emissions (tCO2e)","") for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
-            
-            # Budget recommendation example (can be adjusted)
-            st.subheader("Recommended Budget Allocation")
-            budget_dict = {sec: f"{5+5*idx}%" for idx, sec in enumerate(sectors)}
-            st.table(pd.DataFrame(list(budget_dict.items()), columns=["Sector","Recommended Budget %"]))
-
-            # Suggested actions example
-            timeframes = ["Short-term (by 2030)", "Mid-term (by 2040)", "Long-term (by 2050)"]
-            actions_dict = {sec: {tf: [f"{sec} action {i+1} ({tf})" for i in range(10)] for tf in timeframes} for sec in sectors}
-
-            for sec in sectors:
-                st.markdown(f"### {sec}")
-                for tf in timeframes:
-                    st.markdown(f"**{tf}**")
-                    for act in actions_dict[sec][tf]:
-                        st.write(f"- {act}")
-
-            # Download CAP (Inventory + Actions)
-            if PDF_AVAILABLE:
-                buffer = io.BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4)
-                elements = []
-                styles = getSampleStyleSheet()
-                elements.append(Paragraph(f"{city} — Climate Action Plan Summary", styles["Title"]))
-                elements.append(Spacer(1,12))
-
-                # Inventory
-                data_inv = [["Sector","Emissions (tCO2e)"]]+[[s,f"{float(cap_row[f'{s} Emissions (tCO2e)']):,.2f}"] for s in sectors]
-                t_inv = Table(data_inv, hAlign="LEFT")
-                t_inv.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                                           ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                                           ('GRID',(0,0),(-1,-1),0.5,colors.white)]))
-                elements.append(Paragraph("GHG Inventory", styles["Heading2"]))
-                elements.append(t_inv)
-                elements.append(Spacer(1,12))
-
-                # Actions
-                for sec in sectors:
-                    elements.append(Paragraph(sec, styles["Heading3"]))
-                    for tf in timeframes:
-                        elements.append(Paragraph(tf, styles["Heading4"]))
-                        for act in actions_dict[sec][tf]:
-                            elements.append(Paragraph(f"- {act}", styles["Normal"]))
-                        elements.append(Spacer(1,6))
-
-                doc.build(elements)
-                buffer.seek(0)
-                st.download_button("Download CAP (PDF)", buffer, file_name=f"{city}_CAP_Summary.pdf", mime="application/pdf")
-            else:
-                st.warning("PDF generation not available. Install reportlab library.")
-        else:
-            st.warning(f"No CAP data found for {city}. Please enter sectoral emissions first.")
+                st.experimental_rerun()  # Redirect to GHG Inventory
