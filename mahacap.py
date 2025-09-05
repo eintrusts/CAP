@@ -176,6 +176,23 @@ for btn, name in [("Home","Home"), ("City Information","City Information"), ("Ad
 if st.session_state.authenticated:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### CAP")
+    
+    st.markdown("""
+    <style>
+    .css-1lcbmhc.e1fqkh3o3 select {
+        background-color: #141518 !important;
+        color: #E6E6E6 !important;
+        border: 1px solid #3E6BE6 !important;
+        border-radius: 8px !important;
+        padding: 5px !important;
+    }
+    .css-1lcbmhc.e1fqkh3o3 option {
+        background-color: #0f0f10 !important;
+        color: #E6E6E6 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     cap_section = st.sidebar.selectbox(
         "Select Section",
         ["Select Section", "Data Collection", "GHG Inventory", "Actions"]
