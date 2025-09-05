@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from fpdf import FPDF
 from io import BytesIO
 from datetime import datetime
 import random
