@@ -137,7 +137,7 @@ def safe_get(df_row, col, default="—"):
         return default
 
 # ---------------------------
-# Dark / Energy-saving CSS (keeps sidebar/logo untouched)
+# Dark / Energy-saving CSS
 # ---------------------------
 st.markdown("""
 <style>
@@ -196,7 +196,7 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (unchanged placement of logo/navigation)
+# Sidebar
 # ---------------------------
 st.sidebar.image(
     "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
@@ -223,7 +223,7 @@ menu = st.session_state.menu
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
-    st.markdown("Maharashtra's Net Zero Journey — CAP tracking for selected cities.")
+    st.markdown("Maharashtra's Net Zero Journey")
     df = st.session_state.data.copy()
 
     # Show counts: total selected vs reporting
@@ -234,7 +234,7 @@ if menu == "Home":
         completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
     col1, col2, col3 = st.columns(3)
     col1.metric("Cities Selected", f"{total_selected}")
-    col2.metric("Cities Reporting (in DB)", f"{reporting}")
+    col2.metric("Cities Reporting", f"{reporting}")
     col3.metric("CAPs Completed", f"{completed}")
 
     # District-wise CAP completion if we have data
@@ -324,7 +324,7 @@ elif menu == "City Dashboard":
                 st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
 
             # PDF download with mandatory contact form
-            st.subheader("📥 Download GHG Inventory Report (PDF)")
+            st.subheader("Download GHG Inventory Report (PDF)")
             if not PDF_AVAILABLE:
                 st.warning("PDF generation library not available on this environment. Install `reportlab` to enable PDF downloads.")
             else:
@@ -373,7 +373,7 @@ elif menu == "City Dashboard":
                         elements.append(table)
                         doc.build(elements)
                         buffer.seek(0)
-                        st.download_button("⬇️ Download PDF Report", data=buffer, file_name=f"{city}_GHG_Inventory.pdf", mime="application/pdf")
+                        st.download_button("Download PDF Report", data=buffer, file_name=f"{city}_GHG_Inventory.pdf", mime="application/pdf")
         else:
             st.info("CAP raw data present for this city but sector emissions not found. Please check CAP data.")
 
@@ -403,7 +403,7 @@ elif menu == "Admin Panel":
             head_name = st.text_input("Head Name", value=str(df_meta[df_meta["City Name"]==city_name]["Head Name"].values[0]) if (not df_meta.empty and city_name in df_meta["City Name"].values) else "")
             dept_email = st.text_input("Department Email", value=str(df_meta[df_meta["City Name"]==city_name]["Department Email"].values[0]) if (not df_meta.empty and city_name in df_meta["City Name"].values) else "")
 
-            submit_meta = st.form_submit_button("Add / Update City Metadata")
+            submit_meta = st.form_submit_button("Add / Update City")
 
         if submit_meta:
             # remove existing entry for city (if any) then append new
@@ -424,7 +424,7 @@ elif menu == "Admin Panel":
             st.session_state.data = df_meta
             df_meta.to_csv(DATA_FILE, index=False)
             st.session_state.last_updated = datetime.now()
-            st.success(f"{city_name} metadata saved.")
+            st.success(f"{city_name} information saved.")
 
 # ---------------------------
 # CAP Preparation (Unified) — only accessible if admin logged in and clicked CAP Preparation
