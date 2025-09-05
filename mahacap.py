@@ -291,37 +291,40 @@ elif menu == "CAP Preparation":
             other_emissions = st.number_input("Other City Emissions (MTCO2e)", min_value=0, key="other_emissions")
             st.file_uploader("Upload supporting file (optional)", type=["xlsx","csv","pdf"], key="other_file")
 
-            submit = st.form_submit_button("Save CAP Raw Data & Download CSV")
-            if submit:
-                new_data = {
-                    "City Name": city_name,
-                    "Energy Electricity (kWh)": energy_elec,
-                    "Energy Fuel (L)": energy_fuel,
-                    "Transport Vehicles": vehicles_total,
-                    "Transport Fuel (L)": fuel_consumption,
-                    "Buildings Count": buildings_count,
-                    "Buildings Area (sq.m)": buildings_area,
-                    "Water Consumption (ML)": water_consumption,
-                    "Wastewater Generated (ML)": water_waste,
-                    "Waste Generated (t)": waste_generated,
-                    "Waste Recycled (t)": waste_recycled,
-                    "Industry Units": industry_count,
-                    "Industry Energy (kWh)": industry_energy,
-                    "Urban Green Cover (ha)": green_cover,
-                    "Other Emissions (MTCO2e)": other_emissions
-                }
-                if city_name in df_cap.get("City Name", []):
-                    idx = df_cap[df_cap["City Name"] == city_name].index[0]
-                    df_cap.loc[idx] = new_data
-                else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([new_data])], ignore_index=True)
-                st.session_state.cap_data = df_cap
-                df_cap.to_csv(CAP_DATA_FILE, index=False)
-                st.success(f"CAP Raw Data for {city_name} saved successfully!")
+            submit = st.form_submit_button("Save CAP Raw Data")
+        
+        # ---- Outside the form ----
+        if submit:
+            new_data = {
+                "City Name": city_name,
+                "Energy Electricity (kWh)": energy_elec,
+                "Energy Fuel (L)": energy_fuel,
+                "Transport Vehicles": vehicles_total,
+                "Transport Fuel (L)": fuel_consumption,
+                "Buildings Count": buildings_count,
+                "Buildings Area (sq.m)": buildings_area,
+                "Water Consumption (ML)": water_consumption,
+                "Wastewater Generated (ML)": water_waste,
+                "Waste Generated (t)": waste_generated,
+                "Waste Recycled (t)": waste_recycled,
+                "Industry Units": industry_count,
+                "Industry Energy (kWh)": industry_energy,
+                "Urban Green Cover (ha)": green_cover,
+                "Other Emissions (MTCO2e)": other_emissions
+            }
+            if city_name in df_cap.get("City Name", []):
+                idx = df_cap[df_cap["City Name"] == city_name].index[0]
+                df_cap.loc[idx] = new_data
+            else:
+                df_cap = pd.concat([df_cap, pd.DataFrame([new_data])], ignore_index=True)
+            st.session_state.cap_data = df_cap
+            df_cap.to_csv(CAP_DATA_FILE, index=False)
+            st.success(f"CAP Raw Data for {city_name} saved successfully!")
 
-                st.download_button(
-                    label="Download CAP Raw Data CSV",
-                    data=df_cap.to_csv(index=False).encode('utf-8'),
-                    file_name=f"{city_name}_CAP_Data.csv",
-                    mime="text/csv"
-                )
+            # Download button OUTSIDE the form
+            st.download_button(
+                label="Download CAP Raw Data CSV",
+                data=df_cap.to_csv(index=False).encode('utf-8'),
+                file_name=f"{city_name}_CAP_Data.csv",
+                mime="text/csv"
+            )
