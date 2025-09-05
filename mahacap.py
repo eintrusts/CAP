@@ -209,7 +209,7 @@ menu = st.session_state.menu
 # Home Page
 # ---------------------------
 if menu == "Home":
-    st.header("Maharashtra CAP Dashboard")
+    st.header("Maharashtra Climate Action Plan Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
 
     df = st.session_state.data
