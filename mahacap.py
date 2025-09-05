@@ -80,7 +80,8 @@ def load_csv(file_path, default_cols):
         return pd.DataFrame(columns=default_cols)
 
 meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", 
-             "GHG Emissions", "Environment Department Exist", "Department Name", 
+             "GHG Emissions", "Per Capita GHG (tCO2e/person)",
+             "Environment Department Exist", "Department Name", 
              "Head Name", "Department Email"]
 cap_cols = []
 
@@ -90,18 +91,17 @@ st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 # ---------------------------
 # Helper Functions
 # ---------------------------
-def format_population(num):
+def format_indian_number(num):
     try:
         if pd.isna(num) or num == "":
             return "—"
-        return "{:,}".format(int(num))
-    except:
-        return str(num)
-
-def format_indian_number(num):
-    """Format number in Indian style (lakh/crore)"""
-    try:
-        return "{:,}".format(int(num))
+        s, *d = str(round(num,2)).split(".")
+        n = ""
+        while len(s) > 3:
+            n = "," + s[-2:] + n
+            s = s[:-2]
+        n = s + n
+        return n + ("." + d[0] if d else "")
     except:
         return str(num)
 
@@ -112,18 +112,16 @@ def safe_get(row, col, default="—"):
     except:
         return default
 
-def calculate_ghg(df_meta):
-    df = df_meta.copy()
-    df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
-    df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce")
-    df["GHG Emissions"] = df.apply(
-        lambda x: 0.005 * x["Population"] if pd.isna(x["GHG Emissions"]) or x["GHG Emissions"]==0 else x["GHG Emissions"],
-        axis=1
-    )
-    df["Per Capita GHG (tCO2e/person)"] = df.apply(
-        lambda x: x["GHG Emissions"]/x["Population"] if x["Population"]>0 else 0,
-        axis=1
-    )
+def calculate_ghg(df):
+    """Automatically calculate GHG emissions based on population"""
+    df = df.copy()
+    if "Population" in df.columns:
+        df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
+        df["GHG Emissions"] = df["Population"] * 1.5  # Assume 1.5 tCO2e per capita
+        df["Per Capita GHG (tCO2e/person)"] = df["GHG Emissions"] / df["Population"].replace({0:1})
+    else:
+        df["GHG Emissions"] = 0
+        df["Per Capita GHG (tCO2e/person)"] = 0
     return df
 
 # ---------------------------
@@ -178,39 +176,30 @@ menu = st.session_state.menu
 if menu=="Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
-
-    # Recalculate GHG dynamically
     df = calculate_ghg(st.session_state.data)
-    total_selected = len(cities_districts)
-    reporting = df.shape[0]
-    completed = df[df["CAP Status"].str.lower()=="completed"].shape[0]
-
+    
+    total_cities = len(cities_districts)
+    reporting_cities = df.shape[0]
+    completed_caps = df[df["CAP Status"].str.lower()=="completed"].shape[0] if "CAP Status" in df.columns else 0
+    total_ghg = df["GHG Emissions"].sum()
     avg_per_capita = df["Per Capita GHG (tCO2e/person)"].mean() if not df.empty else 0
-    total_ghg = df["GHG Emissions"].sum() if not df.empty else 0
 
-    # Dashboard blocks
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("Cities Selected", f"{format_indian_number(total_selected)}")
-    col2.metric("Cities Reporting", f"{format_indian_number(reporting)}")
-    col3.metric("CAPs Completed", f"{format_indian_number(completed)}")
-    col4.metric("Average Per Capita GHG", f"{avg_per_capita:.4f} tCO₂e/person")
-    col5.metric("Total GHG Emissions", f"{format_indian_number(total_ghg)} tCO₂e")
+    col1.metric("Cities Selected", f"{total_cities}")
+    col2.metric("Cities Reporting", f"{reporting_cities}")
+    col3.metric("CAPs Completed", f"{completed_caps}")
+    col4.metric("Total GHG Emissions", f"{format_indian_number(total_ghg)} tCO₂e")
+    col5.metric("Average Per Capita GHG", f"{avg_per_capita:.4f} tCO₂e/person")
 
-    # Charts
+    # Total GHG Bar Chart
     if not df.empty:
-        fig_total = px.bar(df.sort_values("GHG Emissions", ascending=False),
-                           x="City Name", y="GHG Emissions",
-                           text="GHG Emissions", color_discrete_sequence=["#3E6BE6"],
-                           title="City-level Total GHG Emissions (tCO2e)")
+        df_sorted = df.sort_values("GHG Emissions", ascending=False)
+        fig_total = px.bar(df_sorted, x="City Name", y="GHG Emissions",
+                           text=df_sorted["GHG Emissions"].map(format_indian_number),
+                           title="City-wise Total GHG Emissions (tCO₂e)",
+                           color="City Name", color_discrete_sequence=px.colors.qualitative.Bold)
         fig_total.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_total, use_container_width=True)
-
-        fig_pc = px.bar(df.sort_values("Per Capita GHG (tCO2e/person)", ascending=False),
-                        x="City Name", y="Per Capita GHG (tCO2e/person)",
-                        text="Per Capita GHG (tCO2e/person)", color_discrete_sequence=["#3E6BE6"],
-                        title="Per Capita GHG Emissions by City (tCO2e/person)")
-        fig_pc.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-        st.plotly_chart(fig_pc, use_container_width=True)
 
 # ---------------------------
 # City Dashboard
@@ -219,88 +208,5 @@ elif menu=="City Dashboard":
     st.header("City Dashboard")
     df_meta = calculate_ghg(st.session_state.data)
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
-    cities_for_select = list(cities_districts.keys())
-    city = st.selectbox("Select City", cities_for_select)
-    meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
-    st.subheader(f"{city} — Overview")
-    if meta_row is not None:
-        st.write(f"**District:** {safe_get(meta_row,'District')}")
-        st.write(f"**Population (2011):** {format_indian_number(safe_get(meta_row,'Population'))}")
-        st.write(f"**ULB Category:** {safe_get(meta_row,'ULB Category')}")
-        st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
-        st.write(f"**GHG Emissions:** {format_indian_number(meta_row['GHG Emissions'])} tCO₂e")
-        st.write(f"**Per Capita GHG:** {meta_row['Per Capita GHG (tCO2e/person)']:.4f} tCO₂e/person")
-    else:
-        st.write(f"**District:** {cities_districts.get(city,'—')}")
-
-# ---------------------------
-# Admin Panel
-# ---------------------------
-elif menu=="Admin Panel":
-    st.header("Admin Panel")
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        st.subheader("Upload / Update CAP Data")
-        with st.form("admin_form", clear_on_submit=False):
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            cap_status = st.selectbox("CAP Status", ["Not Started","In Progress","Completed"])
-            population = st.number_input("Population", min_value=0, value=0, step=1)
-            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            dept_exist = st.selectbox("Environment Department Exist?", ["Yes","No"])
-            dept_name = st.text_input("Department Name")
-            head_name = st.text_input("Department Head Name")
-            dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Save CAP Metadata")
-            if submit_admin:
-                new_row = {
-                    "City Name": city,
-                    "District": cities_districts.get(city, "—"),
-                    "CAP Status": cap_status,
-                    "Population": population,
-                    "GHG Emissions": ghg_val,
-                    "Environment Department Exist": dept_exist,
-                    "Department Name": dept_name,
-                    "Head Name": head_name,
-                    "Department Email": dept_email
-                }
-                df_meta = st.session_state.data
-                if city in df_meta["City Name"].values:
-                    df_meta.loc[df_meta["City Name"]==city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
-                else:
-                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.data = df_meta
-                df_meta.to_csv(DATA_FILE,index=False)
-                st.success(f"{city} data updated successfully!")
-
-# ---------------------------
-# CAP Preparation Page
-# ---------------------------
-elif menu=="CAP Preparation":
-    st.header("CAP Preparation — Sectoral Emissions Input")
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        with st.form("cap_form", clear_on_submit=False):
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            st.markdown("### Enter Emissions (tCO2e) for each sector")
-            sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
-            cap_values = {}
-            for sec in sectors:
-                cap_values[sec] = st.number_input(f"{sec} Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            file_upload = st.file_uploader("Attach verification file (optional)", type=["pdf","xlsx","csv"])
-            submit_cap = st.form_submit_button("Save CAP Data")
-            if submit_cap:
-                new_row = {"City Name":city}
-                for sec,val in cap_values.items():
-                    new_row[f"{sec} Emissions (tCO2e)"] = val
-                df_cap = st.session_state.cap_data
-                if not df_cap.empty and city in df_cap["City Name"].values:
-                    for k,v in new_row.items():
-                        df_cap.loc[df_cap["City Name"]==city,k] = v
-                else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.cap_data = df_cap
-                df_cap.to_csv(CAP_DATA_FILE,index=False)
-                st.session_state.last_updated = datetime.now()
-                st.success(f"CAP data for {city} saved successfully!")
+    city = st.selectbox("Select City", list(cities_districts.keys()))
+    meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in
