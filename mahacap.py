@@ -168,7 +168,7 @@ st.sidebar.image(
     use_container_width=True
 )
 
-for btn, name in [("Home","Home"), ("City Information","City Information"), ("Admin Panel","Admin Panel")]:
+for btn, name in [("Home","Home"), ("City Information","City Information"), ("Admin","Admin")]:
     if st.sidebar.button(btn):
         st.session_state.menu = name
 
