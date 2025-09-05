@@ -162,17 +162,21 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar
+# Sidebar Buttons
 # ---------------------------
 st.sidebar.image(
     "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
 
+# Track which menu is selected
 for btn, name in [("Home","Home"), ("City Information","City Information"), ("Admin","Admin")]:
     if st.sidebar.button(btn):
         st.session_state.menu = name
+        if name != "Admin":
+            st.session_state.authenticated = False  # reset admin login if switching away
 
+# Show CAP dropdown only if admin is authenticated
 if st.session_state.authenticated:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### CAP")
@@ -195,9 +199,26 @@ if st.session_state.authenticated:
 
     cap_section = st.sidebar.selectbox(
         "Select Section",
-        ["Select Section", "Update Dashboard", "Data Collection", "GHG Inventory", "Actions" ]
+        ["Select Section", "Data Collection", "GHG Inventory", "Actions", "Update Dashboard"]
     )
 
+# ---------------------------
+# Admin Page / Login
+# ---------------------------
+if st.session_state.menu == "Admin":
+    st.header("Admin Panel")
+    if not st.session_state.authenticated:
+        # Password input form
+        with st.form("login_form", clear_on_submit=False):
+            pw = st.text_input("Enter Admin Password", type="password")
+            submit = st.form_submit_button("Login")
+            if submit:
+                if pw == ADMIN_PASSWORD:
+                    st.session_state.authenticated = True
+                    st.success("Admin login successful")
+                else:
+                    st.error("Incorrect password")
+                    
 st.sidebar.markdown("---")
 st.sidebar.markdown("EinTrust | © 2025")
 
