@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from fpdf import FPDF
+from fpdf import FPDF  # fpdf2 compatible
 from io import BytesIO
 from datetime import datetime
 import random
@@ -146,15 +146,6 @@ def generate_cap_pdf(city_name, name, email):
     pdf.set_font("Arial","I",8)
     pdf.cell(0,10,"© 2025 EinTrust Foundation", ln=True, align="C")
     pdf.output(buffer)
-    buffer.seek(0)
-    return buffer
-
-def generate_ghg_inventory_excel(city_name):
-    buffer = BytesIO()
-    df = sector_emissions[sector_emissions["City Name"]==city_name].copy()
-    df["Total Emissions"] = df[sector_columns].sum(axis=1)
-    df["Per Capita Emissions"] = df["Total Emissions"] / max(1, city_data.loc[city_data["City Name"]==city_name,"Estimated Population (2025)"].values[0])
-    df.to_excel(buffer, index=False)
     buffer.seek(0)
     return buffer
 
