@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import io
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 
 # ---------------------------
 # Page Configuration
@@ -216,6 +221,65 @@ elif menu == "City Dashboard":
                 fig2.update_layout(plot_bgcolor="#121212", paper_bgcolor="#121212", font_color="#E0E0E0")
                 st.plotly_chart(fig2, use_container_width=True)
 
+            # ---------------- PDF Download Section ----------------
+            st.subheader("📥 Download GHG Inventory Report (PDF)")
+            with st.form("download_form"):
+                name = st.text_input("Full Name")
+                email = st.text_input("Email Address")
+                contact = st.text_input("Contact Number")
+                submit_download = st.form_submit_button("Generate PDF Report")
+
+            if submit_download:
+                if not name or not email or not contact:
+                    st.error("Please fill in all details before downloading.")
+                else:
+                    # Generate PDF
+                    buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=A4)
+                    styles = getSampleStyleSheet()
+                    elements = []
+
+                    elements.append(Paragraph("City GHG Inventory Report", styles['Title']))
+                    elements.append(Spacer(1, 12))
+                    elements.append(Paragraph(f"City: {city}", styles['Normal']))
+                    elements.append(Paragraph(f"District: {city_row['District']}", styles['Normal']))
+                    elements.append(Paragraph(f"Generated for: {name}", styles['Normal']))
+                    elements.append(Paragraph(f"Email: {email}", styles['Normal']))
+                    elements.append(Paragraph(f"Contact: {contact}", styles['Normal']))
+                    elements.append(Paragraph(f"Last Updated: {last_updated.strftime('%B %Y')}", styles['Normal']))
+                    elements.append(Spacer(1, 12))
+
+                    # Table of emissions
+                    table_data = [["Sector", "Emissions (tCO2e)"]]
+                    total = 0
+                    for sector, value in sectors.items():
+                        table_data.append([sector, f"{value:.2f}"])
+                        total += float(value)
+
+                    table_data.append(["Total Emissions", f"{total:.2f}"])
+                    table = Table(table_data, hAlign="LEFT")
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2E7D32")),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#1E1E1E")),
+                        ('TEXTCOLOR', (0, 1), (-1, -1), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ]))
+
+                    elements.append(table)
+                    doc.build(elements)
+
+                    buffer.seek(0)
+                    st.download_button(
+                        label="⬇️ Download PDF",
+                        data=buffer,
+                        file_name=f"{city}_GHG_Inventory.pdf",
+                        mime="application/pdf"
+                    )
+
 # ---------------------------
 # Admin Panel
 # ---------------------------
@@ -229,15 +293,14 @@ elif menu == "Admin Panel":
         with st.form("admin_form"):
             city_name = st.selectbox("Select City", cities_list)
             district = st.text_input("District", value=cities_districts[city_name], disabled=True)
-            population_val = df[df["City Name"]==city_name]["Population"].values[0] if city_name in df.get("City Name", []) else 0
-            population = st.number_input("Population(as per 2011 census)", min_value=0, value=int(population_val), step=1000, format="%d")
+            population = st.number_input("Population(as per 2011 census)", min_value=0, step=1000, format="%d")
             ulb_cat = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council"])
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-            ghg = st.text_input("GHG Emissions (MTCO2e)", df[df["City Name"]==city_name]["GHG Emissions"].values[0] if city_name in df.get("City Name", []) else "")
+            ghg = st.text_input("GHG Emissions (MTCO2e)", "")
             env_exist = st.selectbox("Environment Dept Exists?", ["Yes", "No"], index=0)
-            dept_name = st.text_input("Department Name", df[df["City Name"]==city_name]["Department Name"].values[0] if city_name in df.get("City Name", []) else "")
-            head_name = st.text_input("Head Name", df[df["City Name"]==city_name]["Head Name"].values[0] if city_name in df.get("City Name", []) else "")
-            dept_email = st.text_input("Department Email", df[df["City Name"]==city_name]["Department Email"].values[0] if city_name in df.get("City Name", []) else "")
+            dept_name = st.text_input("Department Name", "")
+            head_name = st.text_input("Head Name", "")
+            dept_email = st.text_input("Department Email", "")
             submit = st.form_submit_button("Add/Update City")
             if submit:
                 new_row = {
@@ -245,18 +308,14 @@ elif menu == "Admin Panel":
                     "CAP Status": cap_status, "GHG Emissions": ghg, "Environment Department Exist": env_exist,
                     "Department Name": dept_name, "Head Name": head_name, "Department Email": dept_email
                 }
-                if city_name in df.get("City Name", []):
-                    idx = df[df["City Name"] == city_name].index[0]
-                    df.loc[idx] = new_row
-                    st.success(f"{city_name} updated successfully.")
-                else:
-                    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                    st.success(f"{city_name} added successfully.")
+                df = df[df["City Name"] != city_name]
+                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                 st.session_state.data = df
                 df.to_csv(DATA_FILE, index=False)
+                st.success(f"{city_name} saved successfully.")
 
 # ---------------------------
-# CAP Preparation (modified)
+# CAP Preparation (fixed)
 # ---------------------------
 elif menu == "CAP Preparation":
     if not st.session_state.authenticated:
@@ -265,15 +324,15 @@ elif menu == "CAP Preparation":
         st.header("CAP Preparation - Unified Input Form")
         df_cap = st.session_state.cap_data
 
-        # Default emission factors (IPCC / CPCB approx values)
+        # Default emission factors
         EF = {
-            "electricity": 0.82,      # tCO2e/MWh (India grid avg)
+            "electricity": 0.82,      # tCO2e/MWh
             "diesel": 2.68,          # kgCO2e/litre
             "petrol": 2.31,          # kgCO2e/litre
             "waste": 1.2,            # tCO2e/tonne MSW
-            "water": 0.5,            # tCO2e/ML (pumping & treatment)
+            "water": 0.5,            # tCO2e/ML
             "wastewater": 0.7,       # tCO2e/ML
-            "industry_energy": 0.82  # same as electricity grid factor
+            "industry_energy": 0.82  # tCO2e/MWh
         }
 
         with st.form("cap_form"):
@@ -311,5 +370,4 @@ elif menu == "CAP Preparation":
             emissions = {}
             emissions["Energy Emissions (tCO2e)"] = energy_elec * EF["electricity"] + (energy_diesel * EF["diesel"]/1000) + (energy_petrol * EF["petrol"]/1000)
             emissions["Transport Emissions (tCO2e)"] = (transport_fuel_diesel * EF["diesel"]/1000) + (transport_fuel_petrol * EF["petrol"]/1000)
-            emissions["Buildings Emissions (tCO2e)"] = (buildings_area * 0.05)/1000  # proxy factor
-            emissions["Water Emissions (tCO2e)"] = water_consumption * EF["water"] + wastewater_generated * EF[
+            emissions["Buildings Emissions (tCO2e)"] = (buildings_area * 0.05)/
