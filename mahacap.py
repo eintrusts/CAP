@@ -1,46 +1,33 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from fpdf import FPDF  # fpdf2
+from fpdf import FPDF
 from io import BytesIO
 from datetime import datetime
 import random
-
-# -------------------------------
-# Load Secrets (Local or Streamlit Cloud)
-# -------------------------------
-try:
-    CLIENT_ID = st.secrets["CLIENT_ID"]
-    CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
-    SHAREPOINT_SITE = st.secrets["SHAREPOINT_SITE"]
-    SHAREPOINT_DOC = st.secrets["SHAREPOINT_DOC"]
-except:
-    from dotenv import load_dotenv
-    import os
-    load_dotenv()
-    CLIENT_ID = os.getenv("CLIENT_ID")
-    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-    SHAREPOINT_SITE = os.getenv("SHAREPOINT_SITE")
-    SHAREPOINT_DOC = os.getenv("SHAREPOINT_DOC")
-
-# SharePoint imports
-from office365.runtime.auth.client_credential import ClientCredential
+import os
+from dotenv import load_dotenv
 from office365.sharepoint.client_context import ClientContext
+from office365.runtime.auth.client_credential import ClientCredential
+
+# -------------------------------
+# Load SharePoint credentials
+# -------------------------------
+load_dotenv()
+SHAREPOINT_SITE = os.getenv("SHAREPOINT_SITE")
+SHAREPOINT_DOC = os.getenv("SHAREPOINT_DOC")
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 credentials = ClientCredential(CLIENT_ID, CLIENT_SECRET)
 ctx = ClientContext(SHAREPOINT_SITE).with_credentials(credentials)
 
-def upload_to_sharepoint(city_name, file_buffer, file_name):
-    folder_url = f"{SHAREPOINT_DOC}/{city_name}"
-    try:
-        ctx.web.folders.add(folder_url).execute_query()
-    except:
-        pass
-    file_content = file_buffer.getvalue()
-    ctx.web.get_folder_by_server_relative_url(folder_url).upload_file(file_name, file_content).execute_query()
+def upload_to_sharepoint(file_buffer, file_name):
+    target_folder = ctx.web.get_folder_by_server_relative_url(SHAREPOINT_DOC)
+    target_folder.upload_file(file_name, file_buffer.read()).execute_query()
 
 # -------------------------------
-# App Config & Theme
+# Streamlit config & theme
 # -------------------------------
 st.set_page_config(page_title="Maharashtra CAP Dashboard", layout="wide")
 st.markdown("""
@@ -75,11 +62,12 @@ cities_districts = {
 city_coords = {city:(19+random.random()*5, 73+random.random()*5) for city in cities_districts.keys()}
 
 # -------------------------------
-# DataFrames Initialization
+# DataFrames
 # -------------------------------
 city_data_columns = ["City Name","District","Population (2011)","Estimated Population (2025)",
                      "Environment Department Exists?","Responsible Department","Contact Person",
                      "CAP Status","CAP Link","City Website","Total Emissions","Per Capita Emissions"]
+
 city_data = pd.DataFrame([{ 
     "City Name": city, "District": cities_districts[city],
     "Population (2011)":0,"Estimated Population (2025)":0,
@@ -105,7 +93,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("© 2025 EinTrust Foundation")
 
 # -------------------------------
-# Helper Functions
+# Helper functions
 # -------------------------------
 def calculate_city_emissions(city_inputs):
     return {sector: city_inputs.get(sector,0)*EMISSION_FACTORS[sector] for sector in EMISSION_FACTORS.keys()}
@@ -155,7 +143,6 @@ def generate_cap_pdf(city_name, name, email):
 if page == "Home":
     st.title("Maharashtra CAP Dashboard")
     st.markdown(f"**Last Updated: {LAST_UPDATED}**")
-    # Map
     map_df = pd.DataFrame({
         "City": list(city_coords.keys()),
         "Lat":[c[0] for c in city_coords.values()],
@@ -164,7 +151,6 @@ if page == "Home":
     })
     st.subheader("City-wise Emissions Map")
     st.map(map_df.rename(columns={"Lat":"lat","Lon":"lon"}))
-    # Top 10 Emitters
     map_df = map_df.sort_values("Total Emissions", ascending=False)
     st.subheader("Top 10 Highest Emitting Cities")
     st.bar_chart(map_df.head(10).set_index("City")["Total Emissions"])
@@ -185,41 +171,29 @@ elif page == "City Information":
         else:
             pdf_buffer = generate_cap_pdf(selected_city, name, email)
             st.download_button("Download PDF", pdf_buffer, file_name=f"CAP_{selected_city}.pdf", mime="application/pdf")
-            upload_to_sharepoint(selected_city, pdf_buffer, f"CAP_{selected_city}.pdf")
+            
+            # Upload to SharePoint automatically
+            try:
+                pdf_buffer.seek(0)
+                upload_to_sharepoint(pdf_buffer, f"CAP_{selected_city}.pdf")
+                st.success(f"PDF uploaded to SharePoint folder successfully!")
+            except Exception as e:
+                st.error(f"Failed to upload to SharePoint: {e}")
 
 elif page == "Admin":
     st.title("Admin Panel - EinTrust Only")
     st.markdown(f"**Last Updated: {LAST_UPDATED}**")
-    password = st.text_input("Enter Admin Password", type="password")
-    if password != ADMIN_PASSWORD:
+    pwd = st.text_input("Enter Admin Password", type="password")
+    if pwd != ADMIN_PASSWORD:
         st.warning("Incorrect password")
     else:
-        admin_tab = st.radio("Select Admin Function", ["CAP Update","Data Collection","GHG Inventory","Actions"])
-        selected_city = st.selectbox("Select City", list(cities_districts.keys()))
-        if admin_tab == "CAP Update":
-            city_row = city_data[city_data["City Name"]==selected_city].iloc[0]
-            for col in city_data_columns[2:10]:
-                city_row[col] = st.text_input(col, city_row[col])
-            if st.button("Save City Info"):
-                for col in city_data_columns[2:10]:
-                    city_data.loc[city_data["City Name"]==selected_city,col] = city_row[col]
-                st.success(f"Updated {selected_city}")
-        elif admin_tab == "Data Collection":
-            st.write("Enter sector-wise data for GHG inventory")
-            city_inputs = {}
-            for sector in sector_columns:
-                city_inputs[sector] = st.number_input(f"{sector} Consumption/Activity Data", min_value=0.0, value=0.0)
-            if st.button("Save Data"):
-                emissions = calculate_city_emissions(city_inputs)
-                for sector, value in emissions.items():
-                    sector_emissions.loc[sector_emissions["City Name"]==selected_city, sector] = value
-                st.success(f"Data saved for {selected_city}")
-        elif admin_tab == "GHG Inventory":
-            st.subheader("Sector-wise GHG Emissions")
-            st.dataframe(sector_emissions[sector_emissions["City Name"]==selected_city])
-        elif admin_tab == "Actions":
-            st.subheader("Recommended Actions")
-            for sector in recommended_actions.keys():
-                st.markdown(f"**{sector} Sector**")
-                for term in ["Short","Mid","Long"]:
-                    st.write(f"{term}-term: {', '.join(recommended_actions[sector][term])}")
+        sub_page = st.radio("Admin Functions", ["CAP Update","Data Collection","GHG Inventory","Actions"])
+        st.success("Access Granted")
+        if sub_page=="CAP Update":
+            st.write("Editable CAP Update Form (update city_data)")
+        elif sub_page=="Data Collection":
+            st.write("Data Collection Form for GHG Inventory")
+        elif sub_page=="GHG Inventory":
+            st.write("Sector-wise Emissions Dashboard")
+        elif sub_page=="Actions":
+            st.write("Recommended Actions per Sector with Short/Mid/Long-term")
