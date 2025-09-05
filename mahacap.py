@@ -282,11 +282,11 @@ elif menu=="City Information":
 # Admin Panel
 # ---------------------------
 elif menu=="Admin Panel":
-    st.header("Admin Panel")
+    st.header("Admin Board")
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.subheader("Upload / Update CAP Data")
+        st.subheader("Add/Update City Data")
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
             cap_status = st.selectbox("CAP Status", ["Not Started","In Progress","Completed"])
@@ -295,7 +295,7 @@ elif menu=="Admin Panel":
             dept_name = st.text_input("Department Name")
             head_name = st.text_input("Department Head Name")
             dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Save CAP Metadata")
+            submit_admin = st.form_submit_button("Add/Update City Data")
 
             if submit_admin:
                 new_row = {
