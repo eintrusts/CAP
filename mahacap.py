@@ -237,19 +237,6 @@ if menu == "Home":
     col2.metric("Cities Reporting", f"{reporting}")
     col3.metric("CAPs Completed", f"{completed}")
 
-    # District-wise CAP completion if we have data
-    if not df.empty and "District" in df.columns:
-        # count per district how many completed
-        district_summary = df.groupby("District")["CAP Status"].apply(lambda x: (x.str.lower() == "completed").sum()).reset_index()
-        district_summary.columns = ["District", "CAPs Done"]
-        if not district_summary.empty:
-            fig = px.bar(district_summary.sort_values("CAPs Done", ascending=False),
-                         x="District", y="CAPs Done", text="CAPs Done",
-                         title="District-wise CAP Completion",
-                         color_discrete_sequence=["#3E6BE6"])
-            fig.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig, use_container_width=True)
-
     # State-level GHG stacked (if available)
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
