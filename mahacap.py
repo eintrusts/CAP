@@ -294,7 +294,7 @@ elif menu=="Admin Panel":
             dept_name = st.text_input("Department Name")
             head_name = st.text_input("Department Head Name")
             dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Save CAP Metadata")
+            submit_admin = st.form_submit_button("Add/Update City Data")
 
             if submit_admin:
                 new_row = {
