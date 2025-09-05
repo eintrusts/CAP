@@ -6,22 +6,29 @@ from io import BytesIO
 from datetime import datetime
 import random
 import os
-from dotenv import load_dotenv
-from office365.sharepoint.client_context import ClientContext
-from office365.runtime.auth.client_credential import ClientCredential
 
-# -------------------------------
-# Load SharePoint credentials
-# -------------------------------
-load_dotenv()
-SHAREPOINT_SITE = os.getenv("SHAREPOINT_SITE")
-SHAREPOINT_DOC = os.getenv("SHAREPOINT_DOC")
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-credentials = ClientCredential(CLIENT_ID, CLIENT_SECRET)
-ctx = ClientContext(SHAREPOINT_SITE).with_credentials(credentials)
+# Optional SharePoint upload
+try:
+    from dotenv import load_dotenv
+    from office365.sharepoint.client_context import ClientContext
+    from office365.runtime.auth.client_credential import ClientCredential
+    load_dotenv()
+    SHAREPOINT_SITE = os.getenv("SHAREPOINT_SITE")
+    SHAREPOINT_DOC = os.getenv("SHAREPOINT_DOC")
+    CLIENT_ID = os.getenv("CLIENT_ID")
+    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+    if SHAREPOINT_SITE and CLIENT_ID and CLIENT_SECRET and SHAREPOINT_DOC:
+        credentials = ClientCredential(CLIENT_ID, CLIENT_SECRET)
+        ctx = ClientContext(SHAREPOINT_SITE).with_credentials(credentials)
+        SHAREPOINT_ENABLED = True
+    else:
+        SHAREPOINT_ENABLED = False
+except Exception as e:
+    SHAREPOINT_ENABLED = False
 
 def upload_to_sharepoint(file_buffer, file_name):
+    if not SHAREPOINT_ENABLED:
+        return
     target_folder = ctx.web.get_folder_by_server_relative_url(SHAREPOINT_DOC)
     target_folder.upload_file(file_name, file_buffer.read()).execute_query()
 
@@ -156,55 +163,42 @@ if page == "Home":
 elif page == "City Information":
     st.title("City Information")
     st.markdown(f"**Last Updated: {LAST_UPDATED}**")
-    city_options = list(cities_districts.keys())
-    selected_city = st.selectbox("Select City", city_options)
-    st.dataframe(city_data[city_data["City Name"]==selected_city])
-    
-    st.subheader("Download CAP PDF")
-    name = st.text_input("Your Name")
-    email = st.text_input("Official Email")
-    if st.button("Download CAP PDF"):
-        if not name or not email:
-            st.warning("Please provide your name and official email")
-        else:
+    st.dataframe(city_data)
+
+    selected_city = st.selectbox("Select City for CAP PDF", city_data["City Name"])
+    st.markdown("### Download CAP PDF")
+    with st.form("download_form"):
+        name = st.text_input("Your Name")
+        email = st.text_input("Official Email ID")
+        submitted = st.form_submit_button("Download PDF")
+        if submitted:
             pdf_buffer = generate_cap_pdf(selected_city, name, email)
-            st.download_button("Download PDF", pdf_buffer, file_name=f"CAP_{selected_city}.pdf", mime="application/pdf")
-            
-            # Upload to SharePoint automatically
-            try:
-                pdf_buffer.seek(0)
-                upload_to_sharepoint(pdf_buffer, f"CAP_{selected_city}.pdf")
-                st.success(f"PDF uploaded to SharePoint folder successfully!")
-            except Exception as e:
-                st.error(f"Failed to upload to SharePoint: {e}")
+            st.download_button("Download CAP PDF", data=pdf_buffer, file_name=f"{selected_city}_CAP.pdf", mime="application/pdf")
+            if SHAREPOINT_ENABLED:
+                upload_to_sharepoint(pdf_buffer, f"{selected_city}_CAP.pdf")
 
 elif page == "Admin":
-    st.title("Admin Panel - EinTrust Only")
-    st.markdown(f"**Last Updated: {LAST_UPDATED}**")
-    
-    pwd = st.text_input("Enter Admin Password", type="password")
-    if pwd != ADMIN_PASSWORD:
+    st.title("Admin Panel (EinTrust Only)")
+    password = st.text_input("Enter Admin Password", type="password")
+    if password != ADMIN_PASSWORD:
         st.warning("Incorrect password")
     else:
-        st.success("Access Granted")
-        sub_page = st.radio("Admin Functions", ["CAP Update","Data Collection","GHG Inventory","Actions"])
+        st.success("Access granted")
+        sub_page = st.selectbox("Admin Pages", ["CAP Update","Data Collection","GHG Inventory","Actions"])
         
-        # -----------------------------
         # CAP Update
-        # -----------------------------
         if sub_page == "CAP Update":
-            st.subheader("Update City CAP Information")
             selected_city = st.selectbox("Select City", city_data["City Name"])
-            city_row = city_data[city_data["City Name"]==selected_city]
+            city_row = city_data[city_data["City Name"]==selected_city].iloc[0]
             with st.form("cap_update_form"):
                 updated_population = st.number_input("Population (2011)", value=int(city_row["Population (2011)"]))
                 updated_est_pop = st.number_input("Estimated Population (2025)", value=int(city_row["Estimated Population (2025)"]))
-                env_dept = st.selectbox("Environment Department Exists?", ["Yes","No"], index=0 if city_row["Environment Department Exists?"].values[0]=="Yes" else 1)
-                resp_dept = st.text_input("Responsible Department", value=city_row["Responsible Department"].values[0])
-                contact = st.text_input("Contact Person (Name & Email)", value=city_row["Contact Person"].values[0])
-                cap_status = st.selectbox("CAP Status", ["Not Started","Planned","In Progress","Completed"], index=["Not Started","Planned","In Progress","Completed"].index(city_row["CAP Status"].values[0]))
-                cap_link = st.text_input("CAP Link", value=city_row["CAP Link"].values[0])
-                city_website = st.text_input("City Website", value=city_row["City Website"].values[0])
+                env_dept = st.selectbox("Environment Department Exists?", ["Yes","No"], index=0 if city_row["Environment Department Exists?"]=="Yes" else 1)
+                resp_dept = st.text_input("Responsible Department", value=city_row["Responsible Department"])
+                contact = st.text_input("Contact Person (Name & Email)", value=city_row["Contact Person"])
+                cap_status = st.selectbox("CAP Status", ["Not Started","Planned","In Progress","Completed"], index=["Not Started","Planned","In Progress","Completed"].index(city_row["CAP Status"]))
+                cap_link = st.text_input("CAP Link", value=city_row["CAP Link"])
+                city_website = st.text_input("City Website", value=city_row["City Website"])
                 submitted = st.form_submit_button("Save/Update")
                 if submitted:
                     city_data.loc[city_data["City Name"]==selected_city, ["Population (2011)","Estimated Population (2025)",
@@ -212,30 +206,22 @@ elif page == "Admin":
                         updated_population, updated_est_pop, env_dept, resp_dept, contact, cap_status, cap_link, city_website]
                     st.success(f"{selected_city} CAP data updated successfully!")
 
-        # -----------------------------
         # Data Collection
-        # -----------------------------
         elif sub_page == "Data Collection":
             st.subheader("Collect City-level Data for GHG Inventory")
             selected_city = st.selectbox("Select City", city_data["City Name"])
-            city_row = sector_emissions[sector_emissions["City Name"]==selected_city]
+            city_row = sector_emissions[sector_emissions["City Name"]==selected_city].iloc[0]
             with st.form("data_collection_form"):
-                energy = st.number_input("Energy Consumption (MWh)", value=float(city_row["Energy"]))
-                transport = st.number_input("Transport Data (Vehicle km)", value=float(city_row["Transport"]))
-                waste = st.number_input("Waste Generated (t)", value=float(city_row["Waste"]))
-                industry = st.number_input("Industrial Emissions (tCO2e)", value=float(city_row["Industry"]))
-                buildings = st.number_input("Building Emissions (tCO2e)", value=float(city_row["Buildings"]))
-                agriculture = st.number_input("Agriculture Emissions (tCO2e)", value=float(city_row["Agriculture"]))
-                water = st.number_input("Water & Wastewater Emissions (tCO2e)", value=float(city_row["Water"]))
-                other = st.number_input("Other Sources (tCO2e)", value=float(city_row["Other"]))
+                inputs = {}
+                for s in sector_columns:
+                    inputs[s] = st.number_input(f"{s} Emissions", value=float(city_row[s]))
                 submitted = st.form_submit_button("Save Data")
                 if submitted:
-                    sector_emissions.loc[sector_emissions["City Name"]==selected_city, sector_columns] = [energy, transport, waste, industry, buildings, agriculture, water, other]
+                    for s in sector_columns:
+                        sector_emissions.loc[sector_emissions["City Name"]==selected_city, s] = inputs[s]
                     st.success(f"{selected_city} GHG data saved successfully!")
 
-        # -----------------------------
         # GHG Inventory
-        # -----------------------------
         elif sub_page == "GHG Inventory":
             st.subheader("Sector-wise GHG Inventory")
             selected_city = st.selectbox("Select City", city_data["City Name"])
@@ -251,9 +237,7 @@ elif page == "Admin":
             fig = px.pie(values=city_sector[sector_columns].values[0], names=sector_columns, title=f"{selected_city} Sector-wise Emissions")
             st.plotly_chart(fig)
 
-        # -----------------------------
         # Actions
-        # -----------------------------
         elif sub_page == "Actions":
             st.subheader("Recommended Actions")
             selected_city = st.selectbox("Select City", city_data["City Name"])
