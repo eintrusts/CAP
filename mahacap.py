@@ -181,6 +181,14 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
+# Last updated timestamp helper
+# ---------------------------
+def get_last_updated():
+    files = [DATA_FILE, CAP_DATA_FILE]
+    last_mod_ts = max([os.path.getmtime(f) for f in files if os.path.exists(f)])
+    return datetime.fromtimestamp(last_mod_ts)
+
+# ---------------------------
 # Home Page
 # ---------------------------
 if menu=="Home":
@@ -203,30 +211,25 @@ if menu=="Home":
                       title="City-level GHG (tCO2e)", text="GHG Emissions", color_discrete_sequence=["#3E6BE6"])
         fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig2, use_container_width=True)
-        
-last_mod = st.session_state.last_updated or datetime.fromtimestamp(
-    max(os.path.getmtime(DATA_FILE), os.path.getmtime(CAP_DATA_FILE))
-)
-st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
+    
+    st.markdown(f"*Last Updated: {get_last_updated().strftime('%B %Y')}*")
+
 
 # ---------------------------
-# City Dashboard
+# City Information Page
 # ---------------------------
 elif menu=="City Information":
     st.header("City Information")
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
     
-    cities_for_select = list(cities_districts.keys())
-    city = st.selectbox("Select City", cities_for_select)
+    city = st.selectbox("Select City", list(cities_districts.keys()))
     
-    # Combine metadata + CAP data
+    # Get metadata row
     meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else pd.Series()
     cap_row = df_cap[df_cap["City Name"]==city].iloc[0] if (not df_cap.empty and city in df_cap["City Name"].values) else pd.Series()
     
-    st.subheader(f"{city} — Overview")
-    
-    # Merge all data for display
+    # Combine all data
     combined_data = {}
     for col in df_meta.columns:
         combined_data[col] = safe_get(meta_row, col, default="NA")
@@ -234,14 +237,13 @@ elif menu=="City Information":
         if col != "City Name":
             combined_data[col] = safe_get(cap_row, col, default="NA")
     
-    # Display as table
     display_df = pd.DataFrame(list(combined_data.items()), columns=["Parameter","Value"])
     st.table(display_df)
     
-    # Sector-wise charts (if available)
+    # Sector-wise charts if emissions exist
     sector_cols = [c for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
     sectors = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols} if not cap_row.empty else {}
-    
+
     if sectors:
         chart_df = pd.DataFrame({"Sector":list(sectors.keys()),"Emissions":list(sectors.values())})
         fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
@@ -252,12 +254,9 @@ elif menu=="City Information":
                          title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
         fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_bar, use_container_width=True)
+    
+    st.markdown(f"*Last Updated: {get_last_updated().strftime('%B %Y')}*")
 
-    # Last updated info
-    last_mod = st.session_state.last_updated or datetime.fromtimestamp(
-        max(os.path.getmtime(DATA_FILE), os.path.getmtime(CAP_DATA_FILE))
-    )
-    st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
 
 # ---------------------------
 # Admin Panel
@@ -276,7 +275,7 @@ elif menu=="Admin Panel":
             dept_name = st.text_input("Department Name")
             head_name = st.text_input("Department Head Name")
             dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Add/Update City Data")
+            submit_admin = st.form_submit_button("Save CAP Metadata")
 
             if submit_admin:
                 new_row = {
@@ -296,10 +295,14 @@ elif menu=="Admin Panel":
                     df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE,index=False)
+                st.session_state.last_updated = datetime.now()
                 st.success(f"{city} data updated successfully!")
+        
+        st.markdown(f"*Last Updated: {get_last_updated().strftime('%B %Y')}*")
+
 
 # ---------------------------
-# CAP Preparation Page
+# CAP Preparation
 # ---------------------------
 elif menu=="CAP Preparation":
     st.header("CAP : Data Collection")
@@ -330,3 +333,5 @@ elif menu=="CAP Preparation":
                 df_cap.to_csv(CAP_DATA_FILE,index=False)
                 st.session_state.last_updated = datetime.now()
                 st.success(f"CAP data for {city} saved successfully!")
+
+        st.markdown(f"*Last Updated: {get_last_updated().strftime('%B %Y')}*")
