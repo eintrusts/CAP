@@ -53,7 +53,6 @@ cities_districts = {
     "Pune": "Pune",
     "Pimpri-Chinchwad": "Pune",
     "Panvel": "Raigad",
-    "Raigad Council": "Raigad",
     "Malegaon": "Nashik",
     "Nashik": "Nashik",
     "Nandurbar Council": "Nandurbar",
@@ -169,7 +168,7 @@ st.sidebar.image(
     use_container_width=True
 )
 
-for btn, name in [("Home","Home"), ("City Dashboard","City Dashboard"), ("Admin Panel","Admin Panel")]:
+for btn, name in [("Home","Home"), ("City Information","City Information"), ("Admin Panel","Admin Panel")]:
     if st.sidebar.button(btn):
         st.session_state.menu = name
 
@@ -185,8 +184,8 @@ menu = st.session_state.menu
 # Home Page
 # ---------------------------
 if menu=="Home":
-    st.header("Maharashtra Climate Action Plan Dashboard")
-    st.markdown("Maharashtra's Net Zero Journey")
+    st.header("Maharashtra's Net Zero Journey")
+    st.markdown("Climate Action Plan Dashboard")
     
     df = st.session_state.data.copy()
     total_selected = len(cities_districts)
@@ -208,8 +207,8 @@ if menu=="Home":
 # ---------------------------
 # City Dashboard
 # ---------------------------
-elif menu=="City Dashboard":
-    st.header("City Dashboard")
+elif menu=="City Information":
+    st.header("City Information")
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
     
@@ -221,7 +220,7 @@ elif menu=="City Dashboard":
     
     if meta_row is not None:
         st.write(f"**District:** {safe_get(meta_row,'District')}")
-        st.write(f"**Population (2011):** {format_population(safe_get(meta_row,'Population'))}")
+        st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row,'Population'))}")
         st.write(f"**ULB Category:** {safe_get(meta_row,'ULB Category')}")
         st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
     else:
@@ -251,7 +250,7 @@ elif menu=="City Dashboard":
 
     # PDF Download
     if PDF_AVAILABLE:
-        st.subheader("Download GHG Inventory Report (PDF)")
+        st.subheader("Download GHG Inventory Report")
         with st.form("pdf_form"):
             user_name = st.text_input("Your Full Name")
             user_email = st.text_input("Your Work Email")
@@ -321,7 +320,7 @@ elif menu=="Admin Panel":
 # CAP Preparation Page
 # ---------------------------
 elif menu=="CAP Preparation":
-    st.header("CAP Preparation — Sectoral Emissions Input")
+    st.header("CAP : Data Collection")
     if not st.session_state.authenticated:
         admin_login()
     else:
