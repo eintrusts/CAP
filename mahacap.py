@@ -59,13 +59,13 @@ cities_districts = {
     "Yawatmal Council": "Yawatmal",
     "Osmanabad Council": "Osmanabad",
     "Latur": "Latur",
-    "Udgir Coucil": "Latur",
+    "Udgir Council": "Latur",
     "Akola": "Akola",
     "Parbhani Council": "Parbhani",
     "Amravati": "Amravati",
     "Achalpur Council": "Amravati",
-    "Wardha Coumcil": "Wardha",
-    "Hinganghat Ciuncil": "Wardha",
+    "Wardha Council": "Wardha",
+    "Hinganghat Council": "Wardha",
     "Nagpur": "Nagpur",
     "Chandrapur": "Chandrapur",
     "Gondia Council": "Gondia"
@@ -174,13 +174,18 @@ if menu == "Home":
     if df.empty:
         st.info("No city data available. Admin must add data.")
     else:
+        # Fill missing GHG Emissions with 0
+        if "GHG Emissions" in df.columns:
+            df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors='coerce').fillna(0)
+
         total_cities = df.shape[0]
         cities_done = df[df["CAP Status"] == "Completed"].shape[0]
         st.metric("Total Cities", total_cities)
         st.metric("Cities with CAP Completed", cities_done)
 
         if "GHG Emissions" in df.columns:
-            fig2 = px.bar(df, x="City Name", y="GHG Emissions", title="GHG Emissions by City", text="GHG Emissions")
+            fig2 = px.bar(df, x="City Name", y="GHG Emissions",
+                          title="GHG Emissions by City", text="GHG Emissions")
             st.plotly_chart(fig2, use_container_width=True)
 
 # ---------------------------
