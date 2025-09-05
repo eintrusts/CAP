@@ -203,6 +203,11 @@ if menu=="Home":
                       title="City-level GHG (tCO2e)", text="GHG Emissions", color_discrete_sequence=["#3E6BE6"])
         fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig2, use_container_width=True)
+        
+last_mod = st.session_state.last_updated or datetime.fromtimestamp(
+    max(os.path.getmtime(DATA_FILE), os.path.getmtime(CAP_DATA_FILE))
+)
+st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
 
 # ---------------------------
 # City Dashboard
@@ -215,67 +220,44 @@ elif menu=="City Information":
     cities_for_select = list(cities_districts.keys())
     city = st.selectbox("Select City", cities_for_select)
     
-    meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
+    # Combine metadata + CAP data
+    meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else pd.Series()
+    cap_row = df_cap[df_cap["City Name"]==city].iloc[0] if (not df_cap.empty and city in df_cap["City Name"].values) else pd.Series()
+    
     st.subheader(f"{city} — Overview")
     
-    if meta_row is not None:
-        st.write(f"**District:** {safe_get(meta_row,'District')}")
-        st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row,'Population'))}")
-        st.write(f"**ULB Category:** {safe_get(meta_row,'ULB Category')}")
-        st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
-    else:
-        st.write(f"**District:** {cities_districts.get(city,'—')}")
+    # Merge all data for display
+    combined_data = {}
+    for col in df_meta.columns:
+        combined_data[col] = safe_get(meta_row, col, default="NA")
+    for col in df_cap.columns:
+        if col != "City Name":
+            combined_data[col] = safe_get(cap_row, col, default="NA")
+    
+    # Display as table
+    display_df = pd.DataFrame(list(combined_data.items()), columns=["Parameter","Value"])
+    st.table(display_df)
+    
+    # Sector-wise charts (if available)
+    sector_cols = [c for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
+    sectors = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols} if not cap_row.empty else {}
+    
+    if sectors:
+        chart_df = pd.DataFrame({"Sector":list(sectors.keys()),"Emissions":list(sectors.values())})
+        fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
+        fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig_pie, use_container_width=True)
 
-    if not df_cap.empty and city in df_cap["City Name"].values:
-        cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
-        sector_cols = [c for c in cap_row.index if c.endswith(" Emissions (tCO2e)")]
-        sectors = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols}
-        
-        if sectors:
-            chart_df = pd.DataFrame({"Sector":list(sectors.keys()),"Emissions":list(sectors.values())})
-            fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
-            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_pie, use_container_width=True)
+        fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
+                         title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
+        fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig_bar, use_container_width=True)
 
-            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
-                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
-            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            st.write("### Emissions by Sector")
-            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v:f"{v:,.2f}")))
-
-    last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
+    # Last updated info
+    last_mod = st.session_state.last_updated or datetime.fromtimestamp(
+        max(os.path.getmtime(DATA_FILE), os.path.getmtime(CAP_DATA_FILE))
+    )
     st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
-
-    # PDF Download
-    if PDF_AVAILABLE:
-        st.subheader("Download GHG Inventory Report")
-        with st.form("pdf_form"):
-            user_name = st.text_input("Your Full Name")
-            user_email = st.text_input("Your Work Email")
-            user_contact = st.text_input("Contact Number")
-            submit_pdf = st.form_submit_button("Generate PDF")
-            if submit_pdf:
-                buffer = io.BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4)
-                elements = []
-                styles = getSampleStyleSheet()
-                elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
-                elements.append(Spacer(1,12))
-                data = [["Sector","Emissions (tCO2e)"]]+[[s,f"{v:,.2f}"] for s,v in sectors.items()]
-                t = Table(data, hAlign="LEFT")
-                t.setStyle(TableStyle([
-                    ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                    ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                    ('GRID',(0,0),(-1,-1),0.5,colors.white)
-                ]))
-                elements.append(t)
-                doc.build(elements)
-                buffer.seek(0)
-                st.download_button("Download PDF", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
-    else:
-        st.warning("PDF generation not available. Install reportlab library.")
 
 # ---------------------------
 # Admin Panel
