@@ -40,20 +40,20 @@ CAP_DATA_FILE = "cap_raw_data.csv"
 # Cities & Districts
 # ---------------------------
 cities_districts = {
-    "Mumbai": "Mumbai", "Kalyan-Dombivli": "Thane", "Mira-Bhayandar": "Thane", 
-    "Navi Mumbai": "Thane", "Bhiwandi": "Thane", "Ulhasnagar": "Thane", 
-    "Ambernath Council": "Thane", "Vasai-Virar": "Thane", "Thane": "Thane", 
-    "Badlapur Council": "Thane", "Pune": "Pune", "Pimpri-Chinchwad": "Pune", 
-    "Panvel": "Raigad", "Raigad Council": "Raigad", "Malegaon": "Nashik", 
-    "Nashik": "Nashik", "Nandurbar Council": "Nandurbar", "Bhusawal Council": "Jalgaon", 
-    "Jalgaon": "Jalgaon", "Dhule": "Dhule", "Ahmednagar": "Ahmednagar", 
-    "Aurangabad": "Aurangabad", "Jalna": "Jalna", "Beed Council": "Beed", 
-    "Satara Council": "Satara", "Sangli-Miraj-Kupwad": "Sangli", "Kolhapur": "Kolhapur", 
-    "Ichalkaranji": "Kolhapur", "Solapur": "Solapur", "Barshi Council": "Solapur", 
-    "Nanded-Waghala": "Nanded", "Yawatmal Council": "Yawatmal", "Osmanabad Council": "Osmanabad", 
-    "Latur": "Latur", "Udgir Council": "Latur", "Akola": "Akola", 
-    "Parbhani Council": "Parbhani", "Amravati": "Amravati", "Achalpur Council": "Amravati", 
-    "Wardha Council": "Wardha", "Hinganghat Council": "Wardha", "Nagpur": "Nagpur", 
+    "Mumbai": "Mumbai", "Kalyan-Dombivli": "Thane", "Mira-Bhayandar": "Thane",
+    "Navi Mumbai": "Thane", "Bhiwandi": "Thane", "Ulhasnagar": "Thane",
+    "Ambernath Council": "Thane", "Vasai-Virar": "Thane", "Thane": "Thane",
+    "Badlapur Council": "Thane", "Pune": "Pune", "Pimpri-Chinchwad": "Pune",
+    "Panvel": "Raigad", "Raigad Council": "Raigad", "Malegaon": "Nashik",
+    "Nashik": "Nashik", "Nandurbar Council": "Nandurbar", "Bhusawal Council": "Jalgaon",
+    "Jalgaon": "Jalgaon", "Dhule": "Dhule", "Ahmednagar": "Ahmednagar",
+    "Aurangabad": "Aurangabad", "Jalna": "Jalna", "Beed Council": "Beed",
+    "Satara Council": "Satara", "Sangli-Miraj-Kupwad": "Sangli", "Kolhapur": "Kolhapur",
+    "Ichalkaranji": "Kolhapur", "Solapur": "Solapur", "Barshi Council": "Solapur",
+    "Nanded-Waghala": "Nanded", "Yawatmal Council": "Yawatmal", "Osmanabad Council": "Osmanabad",
+    "Latur": "Latur", "Udgir Council": "Latur", "Akola": "Akola",
+    "Parbhani Council": "Parbhani", "Amravati": "Amravati", "Achalpur Council": "Amravati",
+    "Wardha Council": "Wardha", "Hinganghat Council": "Wardha", "Nagpur": "Nagpur",
     "Chandrapur": "Chandrapur", "Gondia Council": "Gondia"
 }
 
@@ -79,8 +79,8 @@ def load_csv(file_path, default_cols):
     else:
         return pd.DataFrame(columns=default_cols)
 
-meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", 
-             "GHG Emissions", "Environment Department Exist", "Department Name", 
+meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status",
+             "GHG Emissions", "Environment Department Exist", "Department Name",
              "Head Name", "Department Email"]
 cap_cols = []
 
@@ -90,11 +90,17 @@ st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 # ---------------------------
 # Helper Functions
 # ---------------------------
-def format_population(num):
+def format_indian_number(num):
     try:
         if pd.isna(num) or num == "":
             return "—"
-        return "{:,}".format(int(num))
+        num = int(num)
+        s = "{:,}".format(num)
+        # Convert to Indian style
+        s_parts = s.split(',')
+        if len(s_parts) > 2:
+            s = s_parts[0] + ',' + ''.join([s_parts[i] + (',' if i < len(s_parts)-1 else '') for i in range(1, len(s_parts))])
+        return s
     except:
         return str(num)
 
@@ -152,7 +158,7 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
-# Home Page
+# HOME PAGE
 # ---------------------------
 if menu=="Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
@@ -163,72 +169,73 @@ if menu=="Home":
     reporting = df.shape[0]
     completed = df[df["CAP Status"].str.lower()=="completed"].shape[0] if "CAP Status" in df.columns else 0
 
-    # -----------------------------
-    # Calculate per capita GHG
-    # -----------------------------
-    if not df.empty and "GHG Emissions" in df.columns and "Population" in df.columns:
-        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
+    # Auto-calculate GHG based on population if empty
+    if not df.empty:
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
+        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce")
+        df["GHG Emissions"] = df.apply(
+            lambda x: 0.005 * x["Population"] if pd.isna(x["GHG Emissions"]) else x["GHG Emissions"],
+            axis=1
+        )
         df["Per Capita GHG (tCO2e/person)"] = df.apply(
             lambda x: x["GHG Emissions"]/x["Population"] if x["Population"]>0 else 0,
             axis=1
         )
         avg_per_capita = df["Per Capita GHG (tCO2e/person)"].mean()
+        total_ghg = df["GHG Emissions"].sum()
     else:
         avg_per_capita = 0
+        total_ghg = 0
 
-    # -----------------------------
-    # Metrics
-    # -----------------------------
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Cities Selected", f"{total_selected}")
-    col2.metric("Cities Reporting", f"{reporting}")
-    col3.metric("CAPs Completed", f"{completed}")
+    # Dashboard blocks
+    col1, col2, col3, col4, col5 = st.columns(5)
+    col1.metric("Cities Selected", f"{format_indian_number(total_selected)}")
+    col2.metric("Cities Reporting", f"{format_indian_number(reporting)}")
+    col3.metric("CAPs Completed", f"{format_indian_number(completed)}")
     col4.metric("Average Per Capita GHG", f"{avg_per_capita:.4f} tCO₂e/person")
+    col5.metric("Total GHG Emissions", f"{format_indian_number(total_ghg)} tCO₂e")
 
-    # -----------------------------
-    # Total GHG Bar Chart
-    # -----------------------------
-    if not df.empty and "GHG Emissions" in df.columns:
-        fig2 = px.bar(
-            df.sort_values("GHG Emissions", ascending=False),
-            x="City Name", y="GHG Emissions",
-            title="City-level Total GHG Emissions (tCO2e)",
-            text="GHG Emissions",
-            color_discrete_sequence=["#3E6BE6"]
-        )
-        fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-        st.plotly_chart(fig2, use_container_width=True)
+    # Bar chart for total GHG
+    fig_total = px.bar(
+        df.sort_values("GHG Emissions", ascending=False),
+        x="City Name", y="GHG Emissions",
+        title="City-level Total GHG Emissions (tCO2e)",
+        text="GHG Emissions",
+        color_discrete_sequence=["#3E6BE6"]
+    )
+    fig_total.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+    st.plotly_chart(fig_total, use_container_width=True)
 
-    # -----------------------------
-    # Per Capita GHG Bar Chart
-    # -----------------------------
-    if not df.empty and "Per Capita GHG (tCO2e/person)" in df.columns:
-        fig_pc = px.bar(
-            df.sort_values("Per Capita GHG (tCO2e/person)", ascending=False),
-            x="City Name", y="Per Capita GHG (tCO2e/person)",
-            title="Per Capita GHG Emissions by City (tCO2e/person)",
-            text="Per Capita GHG (tCO2e/person)",
-            color_discrete_sequence=["#3E6BE6"]
-        )
-        fig_pc.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-        st.plotly_chart(fig_pc, use_container_width=True)
+    # Bar chart for per capita GHG
+    fig_pc = px.bar(
+        df.sort_values("Per Capita GHG (tCO2e/person)", ascending=False),
+        x="City Name", y="Per Capita GHG (tCO2e/person)",
+        title="Per Capita GHG Emissions by City (tCO2e/person)",
+        text="Per Capita GHG (tCO2e/person)",
+        color_discrete_sequence=["#3E6BE6"]
+    )
+    fig_pc.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+    st.plotly_chart(fig_pc, use_container_width=True)
 
 # ---------------------------
-# City Dashboard
+# CITY DASHBOARD
 # ---------------------------
 elif menu=="City Dashboard":
+    st.header("City Dashboard")
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
     cities_for_select = list(cities_districts.keys())
     city = st.selectbox("Select City", cities_for_select)
     meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
-    st.header(f"{city} — Overview")
+    st.subheader(f"{city} — Overview")
     if meta_row is not None:
         st.write(f"**District:** {safe_get(meta_row,'District')}")
-        st.write(f"**Population (2011):** {format_population(safe_get(meta_row,'Population'))}")
+        st.write(f"**Population (2011):** {format_indian_number(safe_get(meta_row,'Population'))}")
         st.write(f"**ULB Category:** {safe_get(meta_row,'ULB Category')}")
         st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
+        st.write(f"**Total GHG Emissions:** {format_indian_number(safe_get(meta_row,'GHG Emissions'))} tCO₂e")
+        per_capita = float(meta_row["GHG Emissions"])/float(meta_row["Population"]) if meta_row["Population"]>0 else 0
+        st.write(f"**Per Capita GHG:** {per_capita:.4f} tCO₂e/person")
     else:
         st.write(f"**District:** {cities_districts.get(city,'—')}")
 
@@ -280,7 +287,7 @@ elif menu=="City Dashboard":
                 st.warning("PDF generation not available. Install reportlab library.")
 
 # ---------------------------
-# Admin Panel
+# ADMIN PANEL
 # ---------------------------
 elif menu=="Admin Panel":
     st.header("Admin Panel")
@@ -291,16 +298,20 @@ elif menu=="Admin Panel":
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
             cap_status = st.selectbox("CAP Status", ["Not Started","In Progress","Completed"])
-            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
+            population = st.number_input("Population", min_value=0, value=0, step=1)
+            ghg_val = st.number_input("Total GHG Emissions (tCO2e, optional)", min_value=0.0, value=0.0, step=1.0)
             dept_exist = st.selectbox("Environment Department Exist?", ["Yes","No"])
             dept_name = st.text_input("Department Name")
             head_name = st.text_input("Department Head Name")
             dept_email = st.text_input("Department Email")
             submit_admin = st.form_submit_button("Save CAP Metadata")
             if submit_admin:
+                # Auto-calculate if GHG not entered
+                ghg_val = ghg_val if ghg_val>0 else 0.005*population
                 new_row = {
                     "City Name": city,
                     "District": cities_districts.get(city, "—"),
+                    "Population": population,
                     "CAP Status": cap_status,
                     "GHG Emissions": ghg_val,
                     "Environment Department Exist": dept_exist,
@@ -318,7 +329,7 @@ elif menu=="Admin Panel":
                 st.success(f"{city} data updated successfully!")
 
 # ---------------------------
-# CAP Preparation Page
+# CAP PREPARATION PAGE
 # ---------------------------
 elif menu=="CAP Preparation":
     st.header("CAP Preparation — Sectoral Emissions Input")
@@ -343,8 +354,8 @@ elif menu=="CAP Preparation":
                     for k,v in new_row.items():
                         df_cap.loc[df_cap["City Name"]==city,k] = v
                 else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
+                    df_cap = pd.concat([df_cap,pd.DataFrame([new_row])], ignore_index=True)
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE,index=False)
                 st.session_state.last_updated = datetime.now()
-                st.success(f"CAP data for {city} saved successfully!")
+                st.success(f"{city} CAP data saved successfully!")
