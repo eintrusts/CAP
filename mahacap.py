@@ -157,34 +157,73 @@ menu = st.session_state.menu
 if menu=="Home":
     st.header("Maharashtra Climate Action Plan Dashboard")
     st.markdown("Maharashtra's Net Zero Journey")
+
     df = st.session_state.data.copy()
     total_selected = len(cities_districts)
     reporting = df.shape[0]
     completed = df[df["CAP Status"].str.lower()=="completed"].shape[0] if "CAP Status" in df.columns else 0
-    col1, col2, col3 = st.columns(3)
+
+    # -----------------------------
+    # Calculate per capita GHG
+    # -----------------------------
+    if not df.empty and "GHG Emissions" in df.columns and "Population" in df.columns:
+        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
+        df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
+        df["Per Capita GHG (tCO2e/person)"] = df.apply(
+            lambda x: x["GHG Emissions"]/x["Population"] if x["Population"]>0 else 0,
+            axis=1
+        )
+        avg_per_capita = df["Per Capita GHG (tCO2e/person)"].mean()
+    else:
+        avg_per_capita = 0
+
+    # -----------------------------
+    # Metrics
+    # -----------------------------
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Cities Selected", f"{total_selected}")
     col2.metric("Cities Reporting", f"{reporting}")
     col3.metric("CAPs Completed", f"{completed}")
+    col4.metric("Average Per Capita GHG", f"{avg_per_capita:.4f} tCO₂e/person")
 
+    # -----------------------------
+    # Total GHG Bar Chart
+    # -----------------------------
     if not df.empty and "GHG Emissions" in df.columns:
-        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
-        fig2 = px.bar(df.sort_values("GHG Emissions", ascending=False),
-                      x="City Name", y="GHG Emissions", title="City-level GHG (tCO2e)",
-                      text="GHG Emissions", color_discrete_sequence=["#3E6BE6"])
+        fig2 = px.bar(
+            df.sort_values("GHG Emissions", ascending=False),
+            x="City Name", y="GHG Emissions",
+            title="City-level Total GHG Emissions (tCO2e)",
+            text="GHG Emissions",
+            color_discrete_sequence=["#3E6BE6"]
+        )
         fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig2, use_container_width=True)
+
+    # -----------------------------
+    # Per Capita GHG Bar Chart
+    # -----------------------------
+    if not df.empty and "Per Capita GHG (tCO2e/person)" in df.columns:
+        fig_pc = px.bar(
+            df.sort_values("Per Capita GHG (tCO2e/person)", ascending=False),
+            x="City Name", y="Per Capita GHG (tCO2e/person)",
+            title="Per Capita GHG Emissions by City (tCO2e/person)",
+            text="Per Capita GHG (tCO2e/person)",
+            color_discrete_sequence=["#3E6BE6"]
+        )
+        fig_pc.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig_pc, use_container_width=True)
 
 # ---------------------------
 # City Dashboard
 # ---------------------------
 elif menu=="City Dashboard":
-    st.header("City Dashboard")
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
     cities_for_select = list(cities_districts.keys())
     city = st.selectbox("Select City", cities_for_select)
     meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
-    st.subheader(f"{city} — Overview")
+    st.header(f"{city} — Overview")
     if meta_row is not None:
         st.write(f"**District:** {safe_get(meta_row,'District')}")
         st.write(f"**Population (2011):** {format_population(safe_get(meta_row,'Population'))}")
