@@ -280,3 +280,131 @@ elif menu == "CAP Preparation":
                 st.session_state.selected_city = city
                 st.success(f"CAP data for {city} saved successfully! Redirecting to GHG Inventory...")
                 st.experimental_rerun()
+# ---------------------------
+# GHG Inventory Page
+# ---------------------------
+elif menu == "GHG Inventory":
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        city = st.session_state.selected_city
+        if not city:
+            st.warning("Please select and save CAP data for a city first.")
+        else:
+            st.header(f"{city} — GHG Inventory")
+            df_cap = st.session_state.cap_data
+            if city not in df_cap["City Name"].values:
+                st.warning("No CAP data found for this city.")
+            else:
+                cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
+                sector_cols = [c for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
+                sectors = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols}
+
+                # Metrics
+                total_emissions = sum(sectors.values())
+                col1, col2 = st.columns(2)
+                col1.metric("Total GHG Emissions (tCO2e)", f"{total_emissions:,.2f}")
+                col2.metric("Number of Sectors Reported", len(sectors))
+
+                # Charts
+                chart_df = pd.DataFrame({"Sector":list(sectors.keys()),"Emissions":list(sectors.values())})
+                fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
+                fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+                st.plotly_chart(fig_pie, use_container_width=True)
+
+                fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
+                                 title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
+                fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+                # Download GHG PDF
+                if PDF_AVAILABLE:
+                    buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=A4)
+                    elements = []
+                    styles = getSampleStyleSheet()
+                    elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
+                    elements.append(Spacer(1,12))
+                    data = [["Sector","Emissions (tCO2e)"]]+[[s,f"{v:,.2f}"] for s,v in sectors.items()]
+                    t = Table(data, hAlign="LEFT")
+                    t.setStyle(TableStyle([
+                        ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
+                        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+                        ('GRID',(0,0),(-1,-1),0.5,colors.white)
+                    ]))
+                    elements.append(t)
+                    doc.build(elements)
+                    buffer.seek(0)
+                    st.download_button("Download GHG Inventory (PDF)", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
+                else:
+                    st.warning("PDF generation not available. Install reportlab library.")
+
+                # Actions Button
+                if st.button("Actions"):
+                    st.session_state.menu = "Actions"
+                    st.experimental_rerun()
+
+# ---------------------------
+# Actions Page
+# ---------------------------
+elif menu == "Actions":
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        city = st.session_state.selected_city
+        st.header(f"{city} — Suggested Actions to Achieve Net Zero 2050")
+
+        # Example: Sectors + 10+ suggestions
+        sectors_actions = {
+            "Energy": ["Increase rooftop solar adoption","Upgrade to LED street lighting","Promote solar water heaters","Incentivize renewable energy in industries","Grid decarbonization","Energy efficiency audits for buildings","Smart metering deployment","Municipal solar parks","Promote electric pumps in water supply","Shift municipal vehicles to EVs"],
+            "Transport": ["Electrify public buses","Promote metro & public transport","Develop cycling lanes","EV charging stations","Restrict diesel vehicles","Encourage car-pooling","Low emission zones","Bus rapid transit expansion","Urban freight electrification","Traffic signal optimization"],
+            "Buildings": ["Mandatory energy audits","Green building codes","Retrofitting old buildings","Incentives for EE appliances","Solar water heating","Efficient HVAC systems","Smart lighting controls","Public awareness campaigns","Heat-resilient building design","Water-efficient appliances"],
+            "Industry": ["Energy efficiency audits","Waste heat recovery","Electrify processes","Renewable energy procurement","Industrial symbiosis","Carbon capture trials","Process optimization","Water recycling","Sustainable logistics","Green certifications"],
+            "Water": ["Leakage detection","Solar pumping","Rainwater harvesting","Efficient treatment plants","Water reuse","Smart irrigation","Energy efficient pumps","Wastewater heat recovery","Water demand management","Awareness campaigns"],
+            "Waste": ["Segregation at source","Composting programs","Waste to energy","Landfill gas capture","Recycling incentives","Plastic bans","Circular economy initiatives","Smart bins","Construction waste recycling","Community awareness"],
+            "Urban Green / Other": ["Urban forestry","Tree plantation drives","Green roofs","Community gardens","Wetland restoration","Parks and open spaces","Biodiversity corridors","Pollution control measures","Green buffer zones","Eco-parks"]
+        }
+
+        st.subheader("Recommended Actions by Term")
+        terms = {"Short-term (by 2030)":0.3,"Mid-term (by 2040)":0.35,"Long-term (by 2050)":0.35}  # Budget %
+
+        for term, budget_pct in terms.items():
+            st.markdown(f"### {term} — Recommended Budget: {budget_pct*100:.0f}% of climate budget")
+            for sector, actions in sectors_actions.items():
+                st.markdown(f"**{sector}**")
+                for i, action in enumerate(actions):
+                    st.markdown(f"{i+1}. {action}")
+
+        # Download CAP Summary PDF
+        if PDF_AVAILABLE:
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4)
+            elements = []
+            styles = getSampleStyleSheet()
+            elements.append(Paragraph(f"{city} — Climate Action Plan Summary", styles["Title"]))
+            elements.append(Spacer(1,12))
+            # Include GHG Inventory table
+            elements.append(Paragraph("GHG Inventory", styles["Heading2"]))
+            data = [["Sector","Emissions (tCO2e)"]]+[[s,f"{v:,.2f}"] for s,v in sectors.items()]
+            t = Table(data, hAlign="LEFT")
+            t.setStyle(TableStyle([
+                ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
+                ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+                ('GRID',(0,0),(-1,-1),0.5,colors.white)
+            ]))
+            elements.append(t)
+            elements.append(Spacer(1,12))
+            # Include Suggested Actions
+            elements.append(Paragraph("Suggested Actions", styles["Heading2"]))
+            for term, budget_pct in terms.items():
+                elements.append(Paragraph(f"{term} — Recommended Budget: {budget_pct*100:.0f}%", styles["Heading3"]))
+                for sector, actions in sectors_actions.items():
+                    elements.append(Paragraph(f"{sector}:", styles["Heading4"]))
+                    for i, action in enumerate(actions):
+                        elements.append(Paragraph(f"{i+1}. {action}", styles["Normal"]))
+                elements.append(Spacer(1,12))
+            doc.build(elements)
+            buffer.seek(0)
+            st.download_button("Download CAP (PDF)", buffer, file_name=f"{city}_CAP_Summary.pdf", mime="application/pdf")
+        else:
+            st.warning("PDF generation not available. Install reportlab library.")
