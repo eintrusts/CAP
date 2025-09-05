@@ -195,7 +195,7 @@ if st.session_state.authenticated:
 
     cap_section = st.sidebar.selectbox(
         "Select Section",
-        ["Select Section", "Data Collection", "GHG Inventory", "Actions"]
+        ["Select Section", "Update Dashboard", "Data Collection", "GHG Inventory", "Actions" ]
     )
 
 st.sidebar.markdown("---")
