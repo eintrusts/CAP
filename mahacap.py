@@ -173,8 +173,13 @@ for btn, name in [("Home","Home"), ("City Information","City Information"), ("Ad
     if st.sidebar.button(btn):
         st.session_state.menu = name
 
-if st.session_state.authenticated and st.sidebar.button("CAP Preparation"):
-    st.session_state.menu = "CAP Preparation"
+if st.session_state.authenticated:
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### CAP")
+    cap_section = st.sidebar.selectbox(
+        "Select Section",
+        ["Select Section", "Data Collection", "GHG Inventory", "Actions"]
+    )
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("EinTrust | © 2025")
@@ -316,36 +321,3 @@ elif menu=="Admin Panel":
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE,index=False)
                 st.success(f"{city} data updated successfully!")
-
-# ---------------------------
-# CAP Preparation Page
-# ---------------------------
-elif menu=="CAP Preparation":
-    st.header("CAP : Data Collection")
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        with st.form("cap_form", clear_on_submit=False):
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            st.markdown("### Enter Emissions (tCO2e) for each sector")
-            sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
-            cap_values = {}
-            for sec in sectors:
-                cap_values[sec] = st.number_input(f"{sec} Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            file_upload = st.file_uploader("Attach verification file (optional)", type=["pdf","xlsx","csv"])
-            submit_cap = st.form_submit_button("Save CAP Data")
-
-            if submit_cap:
-                new_row = {"City Name":city}
-                for sec,val in cap_values.items():
-                    new_row[f"{sec} Emissions (tCO2e)"] = val
-                df_cap = st.session_state.cap_data
-                if not df_cap.empty and city in df_cap["City Name"].values:
-                    for k,v in new_row.items():
-                        df_cap.loc[df_cap["City Name"]==city,k] = v
-                else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.cap_data = df_cap
-                df_cap.to_csv(CAP_DATA_FILE,index=False)
-                st.session_state.last_updated = datetime.now()
-                st.success(f"CAP data for {city} saved successfully!")
