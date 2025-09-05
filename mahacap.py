@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from fpdf import FPDF
 from io import BytesIO
 from datetime import datetime
 import random
@@ -17,7 +18,6 @@ SHAREPOINT_SITE = os.getenv("SHAREPOINT_SITE")
 SHAREPOINT_DOC = os.getenv("SHAREPOINT_DOC")
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-
 credentials = ClientCredential(CLIENT_ID, CLIENT_SECRET)
 ctx = ClientContext(SHAREPOINT_SITE).with_credentials(credentials)
 
@@ -66,7 +66,6 @@ city_coords = {city:(19+random.random()*5, 73+random.random()*5) for city in cit
 city_data_columns = ["City Name","District","Population (2011)","Estimated Population (2025)",
                      "Environment Department Exists?","Responsible Department","Contact Person",
                      "CAP Status","CAP Link","City Website","Total Emissions","Per Capita Emissions"]
-
 city_data = pd.DataFrame([{ 
     "City Name": city, "District": cities_districts[city],
     "Population (2011)":0,"Estimated Population (2025)":0,
@@ -182,17 +181,83 @@ elif page == "City Information":
 elif page == "Admin":
     st.title("Admin Panel - EinTrust Only")
     st.markdown(f"**Last Updated: {LAST_UPDATED}**")
+    
     pwd = st.text_input("Enter Admin Password", type="password")
     if pwd != ADMIN_PASSWORD:
         st.warning("Incorrect password")
     else:
-        sub_page = st.radio("Admin Functions", ["CAP Update","Data Collection","GHG Inventory","Actions"])
         st.success("Access Granted")
-        if sub_page=="CAP Update":
-            st.write("Editable CAP Update Form (update city_data)")
-        elif sub_page=="Data Collection":
-            st.write("Data Collection Form for GHG Inventory")
-        elif sub_page=="GHG Inventory":
-            st.write("Sector-wise Emissions Dashboard")
-        elif sub_page=="Actions":
-            st.write("Recommended Actions per Sector with Short/Mid/Long-term")
+        sub_page = st.radio("Admin Functions", ["CAP Update","Data Collection","GHG Inventory","Actions"])
+        
+        # -----------------------------
+        # CAP Update
+        # -----------------------------
+        if sub_page == "CAP Update":
+            st.subheader("Update City CAP Information")
+            selected_city = st.selectbox("Select City", city_data["City Name"])
+            city_row = city_data[city_data["City Name"]==selected_city]
+            with st.form("cap_update_form"):
+                updated_population = st.number_input("Population (2011)", value=int(city_row["Population (2011)"]))
+                updated_est_pop = st.number_input("Estimated Population (2025)", value=int(city_row["Estimated Population (2025)"]))
+                env_dept = st.selectbox("Environment Department Exists?", ["Yes","No"], index=0 if city_row["Environment Department Exists?"].values[0]=="Yes" else 1)
+                resp_dept = st.text_input("Responsible Department", value=city_row["Responsible Department"].values[0])
+                contact = st.text_input("Contact Person (Name & Email)", value=city_row["Contact Person"].values[0])
+                cap_status = st.selectbox("CAP Status", ["Not Started","Planned","In Progress","Completed"], index=["Not Started","Planned","In Progress","Completed"].index(city_row["CAP Status"].values[0]))
+                cap_link = st.text_input("CAP Link", value=city_row["CAP Link"].values[0])
+                city_website = st.text_input("City Website", value=city_row["City Website"].values[0])
+                submitted = st.form_submit_button("Save/Update")
+                if submitted:
+                    city_data.loc[city_data["City Name"]==selected_city, ["Population (2011)","Estimated Population (2025)",
+                        "Environment Department Exists?","Responsible Department","Contact Person","CAP Status","CAP Link","City Website"]] = [
+                        updated_population, updated_est_pop, env_dept, resp_dept, contact, cap_status, cap_link, city_website]
+                    st.success(f"{selected_city} CAP data updated successfully!")
+
+        # -----------------------------
+        # Data Collection
+        # -----------------------------
+        elif sub_page == "Data Collection":
+            st.subheader("Collect City-level Data for GHG Inventory")
+            selected_city = st.selectbox("Select City", city_data["City Name"])
+            city_row = sector_emissions[sector_emissions["City Name"]==selected_city]
+            with st.form("data_collection_form"):
+                energy = st.number_input("Energy Consumption (MWh)", value=float(city_row["Energy"]))
+                transport = st.number_input("Transport Data (Vehicle km)", value=float(city_row["Transport"]))
+                waste = st.number_input("Waste Generated (t)", value=float(city_row["Waste"]))
+                industry = st.number_input("Industrial Emissions (tCO2e)", value=float(city_row["Industry"]))
+                buildings = st.number_input("Building Emissions (tCO2e)", value=float(city_row["Buildings"]))
+                agriculture = st.number_input("Agriculture Emissions (tCO2e)", value=float(city_row["Agriculture"]))
+                water = st.number_input("Water & Wastewater Emissions (tCO2e)", value=float(city_row["Water"]))
+                other = st.number_input("Other Sources (tCO2e)", value=float(city_row["Other"]))
+                submitted = st.form_submit_button("Save Data")
+                if submitted:
+                    sector_emissions.loc[sector_emissions["City Name"]==selected_city, sector_columns] = [energy, transport, waste, industry, buildings, agriculture, water, other]
+                    st.success(f"{selected_city} GHG data saved successfully!")
+
+        # -----------------------------
+        # GHG Inventory
+        # -----------------------------
+        elif sub_page == "GHG Inventory":
+            st.subheader("Sector-wise GHG Inventory")
+            selected_city = st.selectbox("Select City", city_data["City Name"])
+            city_sector = sector_emissions[sector_emissions["City Name"]==selected_city]
+            st.write("Sector-wise Emissions (tCO2e)")
+            st.dataframe(city_sector.set_index("City Name").T)
+            total_emissions = city_sector[sector_columns].sum(axis=1).values[0]
+            est_pop = city_data.loc[city_data["City Name"]==selected_city, "Estimated Population (2025)"].values[0]
+            per_capita = total_emissions / max(est_pop,1)
+            st.metric("Total Emissions (tCO2e)", round(total_emissions,2))
+            st.metric("Per Capita Emissions (tCO2e/person)", round(per_capita,2))
+            st.subheader("Visuals")
+            fig = px.pie(values=city_sector[sector_columns].values[0], names=sector_columns, title=f"{selected_city} Sector-wise Emissions")
+            st.plotly_chart(fig)
+
+        # -----------------------------
+        # Actions
+        # -----------------------------
+        elif sub_page == "Actions":
+            st.subheader("Recommended Actions")
+            selected_city = st.selectbox("Select City", city_data["City Name"])
+            for sector, terms in recommended_actions.items():
+                st.markdown(f"**{sector}**")
+                for term_name, action_list in terms.items():
+                    st.markdown(f"- {term_name}-term: {', '.join(action_list)}")
