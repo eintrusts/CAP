@@ -107,6 +107,48 @@ def format_population(num):
     return "{:,}".format(int(num))
 
 # ---------------------------
+# Custom CSS for Energy-Saving Theme
+# ---------------------------
+st.markdown("""
+<style>
+/* Sidebar */
+.css-1d391kg button, .stButton>button {
+    background-color: #228B22 !important; 
+    color: white !important; 
+    width: 100% !important;
+    margin-bottom: 5px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    border-radius: 5px !important;
+}
+.css-1d391kg button:hover, .stButton>button:hover {
+    background-color: #196619 !important;
+    color: white !important;
+}
+
+/* Metrics */
+[data-testid="stMetricValue"] {
+    color: #4169E1 !important;
+}
+
+/* Expander */
+.stExpander>div>div>div>div {
+    background-color: #E6F2FF !important;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: #228B22 !important;
+}
+
+/* Selectbox and Inputs */
+.css-1hwfws3, .css-1r6slb0 {
+    border-color: #228B22 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------
 # Admin Login
 # ---------------------------
 def admin_login():
