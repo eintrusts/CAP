@@ -436,3 +436,120 @@ elif menu=="CAP Preparation":
                 df_cap.to_csv(CAP_DATA_FILE,index=False)
                 st.session_state.last_updated = datetime.now()
                 st.success(f"CAP data for {city} saved successfully!")
+
+elif menu=="CAP Preparation":
+    st.header("CAP Preparation — City GHG Inventory Input")
+    
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        with st.form("cap_form", clear_on_submit=False):
+            city = st.selectbox("Select City", list(cities_districts.keys()))
+            
+            # ... [all inputs from previous CAP Preparation code] ...
+            
+            submit_cap = st.form_submit_button("Save CAP Data")
+            
+            if submit_cap:
+                # Prepare new row
+                new_row = { ... }  # same as previous code
+                
+                df_cap = st.session_state.cap_data
+                if not df_cap.empty and city in df_cap["City Name"].values:
+                    for k,v in new_row.items():
+                        df_cap.loc[df_cap["City Name"]==city, k] = v
+                else:
+                    df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
+                
+                st.session_state.cap_data = df_cap
+                df_cap.to_csv(CAP_DATA_FILE,index=False)
+                st.session_state.last_updated = datetime.now()
+                st.success(f"CAP data for {city} saved successfully!")
+                
+                # Redirect to GHG Inventory page
+                st.session_state.menu = "GHG Inventory"
+                st.experimental_rerun()
+
+# ---------------------------
+# GHG Inventory Page
+# ---------------------------
+elif menu=="GHG Inventory":
+    st.header("City GHG Inventory — Calculated Emissions")
+    
+    df_meta = st.session_state.data.copy()
+    df_cap = st.session_state.cap_data.copy()
+    
+    city = st.selectbox("Select City to view inventory", list(cities_districts.keys()))
+    
+    meta_row = df_meta[df_meta["City Name"]==city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
+    st.subheader(f"{city} — Overview")
+    population = 0
+    if meta_row is not None:
+        population = safe_get(meta_row,'Population',0)
+        st.write(f"**District:** {safe_get(meta_row,'District')}")
+        st.write(f"**Population (2011):** {format_population(population)}")
+        st.write(f"**CAP Status:** {safe_get(meta_row,'CAP Status')}")
+    
+    if not df_cap.empty and city in df_cap["City Name"].values:
+        cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
+        
+        # Calculate sector emissions (example, user can expand formulas)
+        # Energy: convert kWh to tCO2e, Diesel/LPG etc to tCO2e
+        CO2_ELEC_FACTOR = 0.82/1000  # tCO2e per kWh, example India grid factor
+        CO2_DIESEL = 2.68 / 1000     # tCO2e per liter
+        CO2_LPG = 1.51 / 1000        # tCO2e per kg
+        CO2_CNG = 2.75 / 1000        # tCO2e per kg
+        CO2_COAL = 2.33               # tCO2e per kg, example
+        
+        total_energy = (
+            cap_row.get("Elec_City_Buildings",0) * CO2_ELEC_FACTOR +
+            cap_row.get("Elec_Residential",0) * CO2_ELEC_FACTOR +
+            cap_row.get("Elec_Commercial",0) * CO2_ELEC_FACTOR +
+            cap_row.get("LPG_Buildings",0) * CO2_LPG +
+            cap_row.get("Diesel_Buildings",0) * CO2_DIESEL +
+            cap_row.get("Streetlight_Elec",0) * CO2_ELEC_FACTOR
+        )
+        
+        total_transport = (
+            cap_row.get("Bus_Fuel_Diesel",0) * CO2_DIESEL +
+            cap_row.get("Bus_Fuel_CNG",0) * CO2_CNG +
+            cap_row.get("Bus_Energy_Electric",0) * CO2_ELEC_FACTOR +
+            cap_row.get("Municipal_Diesel",0) * CO2_DIESEL +
+            cap_row.get("Municipal_Petrol",0) * CO2_DIESEL +
+            cap_row.get("Municipal_Electric",0) * CO2_ELEC_FACTOR
+        )
+        
+        total_waste = (
+            cap_row.get("Total_Solid_Waste",0) * 0.1  # approximate tCO2e/ton landfill
+        )
+        
+        total_industry = (
+            cap_row.get("Industrial_Fuel_Diesel",0) * CO2_DIESEL +
+            cap_row.get("Industrial_Fuel_Coal",0) * CO2_COAL +
+            cap_row.get("Industrial_Fuel_Gas",0) * CO2_LPG +
+            cap_row.get("Industrial_Electricity",0) * CO2_ELEC_FACTOR
+        )
+        
+        total_commercial = cap_row.get("Commercial_Electricity",0) * CO2_ELEC_FACTOR
+        
+        total_ghg = total_energy + total_transport + total_waste + total_industry + total_commercial
+        
+        st.metric("Total GHG Emissions (tCO2e)", f"{total_ghg:,.2f}")
+        if population:
+            per_capita = total_ghg / int(population)
+            st.metric("Per Capita GHG Emissions (tCO2e/person)", f"{per_capita:,.2f}")
+        
+        # Sector-wise bar chart
+        sectors = {
+            "Energy & Buildings": total_energy,
+            "Transport": total_transport,
+            "Waste": total_waste,
+            "Industry": total_industry,
+            "Commercial": total_commercial
+        }
+        chart_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions": list(sectors.values())})
+        fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
+                         title="Sector-wise GHG Emissions (tCO2e)",
+                         color="Sector", color_discrete_sequence=px.colors.qualitative.Bold)
+        fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig_bar, use_container_width=True)
