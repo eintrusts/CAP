@@ -13,13 +13,17 @@ try:
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet
     PDF_AVAILABLE = True
-except Exception:
+except:
     PDF_AVAILABLE = False
 
 # ---------------------------
 # Page Config
 # ---------------------------
-st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", layout="wide")
+st.set_page_config(
+    page_title="Maharashtra CAP Dashboard",
+    page_icon="🌍",
+    layout="wide"
+)
 
 # ---------------------------
 # Admin Password
@@ -36,50 +40,21 @@ CAP_DATA_FILE = "cap_raw_data.csv"
 # Cities & Districts
 # ---------------------------
 cities_districts = {
-    "Mumbai": "Mumbai",
-    "Kalyan-Dombivli": "Thane",
-    "Mira-Bhayandar": "Thane",
-    "Navi Mumbai": "Thane",
-    "Bhiwandi": "Thane",
-    "Ulhasnagar": "Thane",
-    "Ambernath Council": "Thane",
-    "Vasai-Virar": "Thane",
-    "Thane": "Thane",
-    "Badlapur Council": "Thane",
-    "Pune": "Pune",
-    "Pimpri-Chinchwad": "Pune",
-    "Panvel": "Raigad",
-    "Raigad Council": "Raigad",
-    "Malegaon": "Nashik",
-    "Nashik": "Nashik",
-    "Nandurbar Council": "Nandurbar",
-    "Bhusawal Council": "Jalgaon",
-    "Jalgaon": "Jalgaon",
-    "Dhule": "Dhule",
-    "Ahmednagar": "Ahmednagar",
-    "Aurangabad": "Aurangabad",
-    "Jalna": "Jalna",
-    "Beed Council": "Beed",
-    "Satara Council": "Satara",
-    "Sangli-Miraj-Kupwad": "Sangli",
-    "Kolhapur": "Kolhapur",
-    "Ichalkaranji": "Kolhapur",
-    "Solapur": "Solapur",
-    "Barshi Council": "Solapur",
-    "Nanded-Waghala": "Nanded",
-    "Yawatmal Council": "Yawatmal",
-    "Osmanabad Council": "Osmanabad",
-    "Latur": "Latur",
-    "Udgir Council": "Latur",
-    "Akola": "Akola",
-    "Parbhani Council": "Parbhani",
-    "Amravati": "Amravati",
-    "Achalpur Council": "Amravati",
-    "Wardha Council": "Wardha",
-    "Hinganghat Council": "Wardha",
-    "Nagpur": "Nagpur",
-    "Chandrapur": "Chandrapur",
-    "Gondia Council": "Gondia"
+    "Mumbai": "Mumbai", "Kalyan-Dombivli": "Thane", "Mira-Bhayandar": "Thane", 
+    "Navi Mumbai": "Thane", "Bhiwandi": "Thane", "Ulhasnagar": "Thane", 
+    "Ambernath Council": "Thane", "Vasai-Virar": "Thane", "Thane": "Thane", 
+    "Badlapur Council": "Thane", "Pune": "Pune", "Pimpri-Chinchwad": "Pune", 
+    "Panvel": "Raigad", "Raigad Council": "Raigad", "Malegaon": "Nashik", 
+    "Nashik": "Nashik", "Nandurbar Council": "Nandurbar", "Bhusawal Council": "Jalgaon", 
+    "Jalgaon": "Jalgaon", "Dhule": "Dhule", "Ahmednagar": "Ahmednagar", 
+    "Aurangabad": "Aurangabad", "Jalna": "Jalna", "Beed Council": "Beed", 
+    "Satara Council": "Satara", "Sangli-Miraj-Kupwad": "Sangli", "Kolhapur": "Kolhapur", 
+    "Ichalkaranji": "Kolhapur", "Solapur": "Solapur", "Barshi Council": "Solapur", 
+    "Nanded-Waghala": "Nanded", "Yawatmal Council": "Yawatmal", "Osmanabad Council": "Osmanabad", 
+    "Latur": "Latur", "Udgir Council": "Latur", "Akola": "Akola", 
+    "Parbhani Council": "Parbhani", "Amravati": "Amravati", "Achalpur Council": "Amravati", 
+    "Wardha Council": "Wardha", "Hinganghat Council": "Wardha", "Nagpur": "Nagpur", 
+    "Chandrapur": "Chandrapur", "Gondia Council": "Gondia"
 }
 
 # ---------------------------
@@ -104,8 +79,9 @@ def load_csv(file_path, default_cols):
     else:
         return pd.DataFrame(columns=default_cols)
 
-meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", "GHG Emissions",
-             "Environment Department Exist", "Department Name", "Head Name", "Department Email"]
+meta_cols = ["City Name", "District", "Population", "ULB Category", "CAP Status", 
+             "GHG Emissions", "Environment Department Exist", "Department Name", 
+             "Head Name", "Department Email"]
 cap_cols = []
 
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
@@ -135,7 +111,7 @@ def safe_get(row, col, default="—"):
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {background-color: #0f0f10; color: #E6E6E6;}
-[data-testid="stSidebar"] {background-color: #101213; color: #E6E6E6;}
+[data-testid="stSidebar"] {background-color: #141518; color: #E6E6E6;}
 .stButton>button {background-color:#3E6BE6; color:#FFFFFF; border-radius:8px; height:40px;}
 .stButton>button:hover {background-color:#2e50b0;}
 [data-testid="stMetricValue"] {color:#3E6BE6; font-weight:700;}
