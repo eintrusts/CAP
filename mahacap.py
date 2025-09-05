@@ -408,11 +408,12 @@ elif menu=="Actions":
         else:
             st.header(f"{city} — Suggested Actions to Achieve Net Zero by 2050")
 
-            # Example structure of suggestions (10 per sector)
+            # Example structure of suggestions (replace these with actual content if needed)
             sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
             terms = ["Short-term (by 2030)","Mid-term (by 2040)","Long-term (by 2050)"]
             budget_percentages = {"Short-term (by 2030)":15,"Mid-term (by 2040)":25,"Long-term (by 2050)":30}
 
+            # Render suggestions on page
             for term in terms:
                 st.subheader(f"{term} — Budget Allocation: {budget_percentages[term]}%")
                 for sec in sectors:
@@ -420,40 +421,43 @@ elif menu=="Actions":
                     for i in range(1,11):
                         st.markdown(f"- Suggestion {i} for {sec}")
 
-            # Download CAP PDF (Inventory + Actions)
-            if PDF_AVAILABLE and st.button("Download CAP Summary (PDF)"):
-                buffer = io.BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4)
-                elements = []
-                styles = getSampleStyleSheet()
-                elements.append(Paragraph(f"{city} — Climate Action Plan Summary", styles["Title"]))
-                elements.append(Spacer(1,12))
-
-                # Add GHG Inventory Table
-                df_cap = st.session_state.cap_data.copy()
-                if not df_cap.empty and city in df_cap["City Name"].values:
-                    cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
-                    sector_cols = [c for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
-                    sectors_data = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols}
-                    data = [["Sector","Emissions (tCO2e)"]]+[[s,format_float(v)] for s,v in sectors_data.items()]
-                    t = Table(data, hAlign="LEFT")
-                    t.setStyle(TableStyle([
-                        ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                        ('GRID',(0,0),(-1,-1),0.5,colors.white)
-                    ]))
-                    elements.append(t)
+            # PDF Download button (CAP Summary)
+            if PDF_AVAILABLE:
+                if st.button("Download CAP Summary (PDF)"):
+                    buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=A4)
+                    elements = []
+                    styles = getSampleStyleSheet()
+                    elements.append(Paragraph(f"{city} — Climate Action Plan Summary", styles["Title"]))
                     elements.append(Spacer(1,12))
 
-                # Add Actions
-                for term in terms:
-                    elements.append(Paragraph(f"{term} — Budget Allocation: {budget_percentages[term]}%", styles["Heading2"]))
-                    for sec in sectors:
-                        elements.append(Paragraph(f"{sec} Sector Suggestions:", styles["Heading3"]))
-                        for i in range(1,11):
-                            elements.append(Paragraph(f"- Suggestion {i} for {sec}", styles["Normal"]))
-                        elements.append(Spacer(1,6))
+                    # Add GHG Inventory Table
+                    df_cap = st.session_state.cap_data.copy()
+                    if not df_cap.empty and city in df_cap["City Name"].values:
+                        cap_row = df_cap[df_cap["City Name"]==city].iloc[0]
+                        sector_cols = [c for c in cap_row.index if c.endswith("Emissions (tCO2e)")]
+                        sectors_data = {c.replace(" Emissions (tCO2e)",""): max(float(cap_row[c]),0) for c in sector_cols}
+                        data = [["Sector","Emissions (tCO2e)"]]+[[s,format_float(v)] for s,v in sectors_data.items()]
+                        t = Table(data, hAlign="LEFT")
+                        t.setStyle(TableStyle([
+                            ('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
+                            ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+                            ('GRID',(0,0),(-1,-1),0.5,colors.white)
+                        ]))
+                        elements.append(t)
+                        elements.append(Spacer(1,12))
 
-                doc.build(elements)
-                buffer.seek(0)
-                st.download_button("Download CAP PDF", buffer, file_name=f"{city}_CAP_Summary.pdf", mime="application/pdf")
+                    # Add Actions in PDF
+                    for term in terms:
+                        elements.append(Paragraph(f"{term} — Budget Allocation: {budget_percentages[term]}%", styles["Heading2"]))
+                        for sec in sectors:
+                            elements.append(Paragraph(f"{sec} Sector Suggestions:", styles["Heading3"]))
+                            for i in range(1,11):
+                                elements.append(Paragraph(f"- Suggestion {i} for {sec}", styles["Normal"]))
+                            elements.append(Spacer(1,6))
+
+                    doc.build(elements)
+                    buffer.seek(0)
+                    st.download_button("Download CAP PDF", buffer, file_name=f"{city}_CAP_Summary.pdf", mime="application/pdf")
+            else:
+                st.warning("PDF generation not available. Install reportlab library.")
