@@ -7,7 +7,7 @@ from datetime import datetime
 import random
 import os
 
-# Optional SharePoint upload
+# Optional SharePoint integration
 try:
     from dotenv import load_dotenv
     from office365.sharepoint.client_context import ClientContext
@@ -23,7 +23,7 @@ try:
         SHAREPOINT_ENABLED = True
     else:
         SHAREPOINT_ENABLED = False
-except Exception as e:
+except:
     SHAREPOINT_ENABLED = False
 
 def upload_to_sharepoint(file_buffer, file_name):
@@ -38,8 +38,8 @@ def upload_to_sharepoint(file_buffer, file_name):
 st.set_page_config(page_title="Maharashtra CAP Dashboard", layout="wide")
 st.markdown("""
 <style>
-body {background-color: #0A0A0A; color: #E5E5E5;}
-.stButton>button {background-color:#00BFA6; color:white;}
+body {background-color: #0A0A0A; color: #E5E5E5; font-family: 'Arial';}
+.stButton>button {background-color:#00BFA6; color:white; border:none;}
 .stDataFrame div{color:white;}
 .stSelectbox>div>div>div>span {color:white;}
 .stTextInput>div>input, .stNumberInput>div>input, .stTextArea>div>textarea {background-color:#1F1F1F; color:white; border:none;}
@@ -81,10 +81,19 @@ city_data = pd.DataFrame([{
     "Total Emissions":0,"Per Capita Emissions":0
 } for city in cities_districts.keys()], columns=city_data_columns)
 
-sector_columns = ["Energy","Transport","Waste","Industry","Buildings","Agriculture","Water","Other"]
+sector_columns = ["Electricity","Fossil Fuel","Renewable Energy",
+                  "Transport Vehicles","Public Transport","EVs","Non-motorized",
+                  "Waste Generated","Waste Composition Organic","Waste Composition Recyclable","Waste Composition Inert",
+                  "Landfill","Composting","Recycling","Incineration","Landfill Gas Recovery",
+                  "Industrial Energy","Industrial Process Emissions","Industrial Wastewater Emissions",
+                  "Buildings Energy","Cooling/Heating Energy","Energy Efficiency Measures",
+                  "Fertilizer N","Fertilizer P","Fertilizer K","Livestock Numbers","Rice Cultivation Area","Crop Residue Management",
+                  "Water Energy Use","Wastewater Emissions","Recycled Water Use",
+                  "Other Emissions"]
 sector_emissions = pd.DataFrame([{ "City Name": city, **{s:0 for s in sector_columns} } for city in cities_districts.keys()])
 
 EMISSION_FACTORS = {s: random.uniform(0.1,1.2) for s in sector_columns}
+
 recommended_actions = {s:{"Short":[f"Action {i}" for i in range(1,11)],
                            "Mid":[f"Action {i}" for i in range(11,21)],
                            "Long":[f"Action {i}" for i in range(21,31)]} for s in EMISSION_FACTORS.keys()}
@@ -92,6 +101,7 @@ recommended_actions = {s:{"Short":[f"Action {i}" for i in range(1,11)],
 # -------------------------------
 # Sidebar
 # -------------------------------
+st.sidebar.image("https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png", use_column_width=True)
 st.sidebar.title("Maharashtra CAP Dashboard")
 page = st.sidebar.radio("Navigate", ["Home", "City Information", "Admin"])
 st.sidebar.markdown("---")
@@ -100,9 +110,6 @@ st.sidebar.markdown("© 2025 EinTrust Foundation")
 # -------------------------------
 # Helper functions
 # -------------------------------
-def calculate_city_emissions(city_inputs):
-    return {sector: city_inputs.get(sector,0)*EMISSION_FACTORS[sector] for sector in EMISSION_FACTORS.keys()}
-
 def generate_cap_pdf(city_name, name, email):
     buffer = BytesIO()
     pdf = FPDF()
@@ -141,7 +148,7 @@ def generate_cap_pdf(city_name, name, email):
     pdf.output(buffer)
     buffer.seek(0)
     return buffer
-
+    
 # -------------------------------
 # Pages
 # -------------------------------
