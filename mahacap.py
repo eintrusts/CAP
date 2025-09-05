@@ -1,138 +1,3 @@
-# ---------------------------
-# GHG Inventory Page
-# ---------------------------
-elif menu=="GHG Inventory":
-    st.header("GHG Inventory")
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        df_cap = st.session_state.cap_data
-        if df_cap.empty:
-            st.warning("No CAP data available. Please fill CAP data first.")
-        else:
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            row = df_cap[df_cap["City Name"]==city].iloc[0] if city in df_cap["City Name"].values else None
-            if row is not None:
-                st.metric("Total GHG Emissions (tCO2e)", format_population(row["GHG Emissions"]))
-                sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
-                chart_df = pd.DataFrame({"Sector": sectors,
-                                         "Emissions": [row.get(f"{s} Emissions",0) for s in sectors]})
-                fig_pie = px.pie(chart_df, names="Sector", values="Emissions",
-                                 title="Sector-wise Emissions (tCO2e)")
-                fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-                st.plotly_chart(fig_pie, use_container_width=True)
-                fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
-                                 title="Sector-wise Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
-                fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-                st.plotly_chart(fig_bar, use_container_width=True)
-                st.write("### Emissions Table")
-                st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v:f"{v:,.2f}")))
-                
-                # Download GHG Inventory PDF
-                if PDF_AVAILABLE:
-                    with st.form("pdf_ghg_form"):
-                        submit_pdf = st.form_submit_button("Download GHG Inventory (PDF)")
-                        if submit_pdf:
-                            buffer = io.BytesIO()
-                            doc = SimpleDocTemplate(buffer, pagesize=A4)
-                            elements = []
-                            styles = getSampleStyleSheet()
-                            elements.append(Paragraph(f"{city} — GHG Inventory", styles["Title"]))
-                            elements.append(Spacer(1,12))
-                            data = [["Sector","Emissions (tCO2e)"]] + [[s,f"{v:,.2f}"] for s,v in zip(chart_df["Sector"], chart_df["Emissions"])]
-                            t = Table(data, hAlign="LEFT")
-                            t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                                                   ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                                                   ('GRID',(0,0),(-1,-1),0.5,colors.white)]))
-                            elements.append(t)
-                            doc.build(elements)
-                            buffer.seek(0)
-                            st.download_button("Download GHG Inventory PDF", buffer,
-                                               file_name=f"{city}_GHG_Inventory.pdf", mime="application/pdf")
-                else:
-                    st.warning("PDF generation not available. Install reportlab library.")
-                
-                if st.button("Actions →"):
-                    st.session_state.selected_city = city
-                    st.session_state.menu = "Actions"
-                    st.experimental_rerun()
-            else:
-                st.warning("No data available for selected city.")
-
-# ---------------------------
-# Actions Page
-# ---------------------------
-elif menu=="Actions":
-    st.header("Suggested Actions for Net Zero")
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        city = st.session_state.get("selected_city", list(cities_districts.keys())[0])
-        st.subheader(f"{city} — Climate Action Plan Recommendations")
-
-        # Sector-wise suggestions (example placeholders, 10 per sector)
-        sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
-        short_term = {s:[f"Short-term action {i+1}" for i in range(10)] for s in sectors}
-        mid_term = {s:[f"Mid-term action {i+1}" for i in range(10)] for s in sectors}
-        long_term = {s:[f"Long-term action {i+1}" for i in range(10)] for s in sectors}
-
-        budget_percentage = {s: f"{5+se*2}%" for se,s in enumerate(sectors)}
-
-        st.markdown("### Short-term Actions (by 2030)")
-        for s in sectors:
-            st.markdown(f"**{s}** — Budget: {budget_percentage[s]}")
-            for a in short_term[s]:
-                st.write(f"- {a}")
-        st.markdown("### Mid-term Actions (by 2040)")
-        for s in sectors:
-            st.markdown(f"**{s}** — Budget: {budget_percentage[s]}")
-            for a in mid_term[s]:
-                st.write(f"- {a}")
-        st.markdown("### Long-term Actions (by 2050)")
-        for s in sectors:
-            st.markdown(f"**{s}** — Budget: {budget_percentage[s]}")
-            for a in long_term[s]:
-                st.write(f"- {a}")
-
-        # Download CAP PDF (GHG + Actions)
-        if PDF_AVAILABLE:
-            with st.form("pdf_cap_form"):
-                submit_pdf = st.form_submit_button("Download CAP (PDF)")
-                if submit_pdf:
-                    df_cap = st.session_state.cap_data
-                    row = df_cap[df_cap["City Name"]==city].iloc[0] if city in df_cap["City Name"].values else None
-                    buffer = io.BytesIO()
-                    doc = SimpleDocTemplate(buffer, pagesize=A4)
-                    elements = []
-                    styles = getSampleStyleSheet()
-                    elements.append(Paragraph(f"{city} — Climate Action Plan Summary", styles["Title"]))
-                    elements.append(Spacer(1,12))
-                    if row is not None:
-                        data = [["Sector","Emissions (tCO2e)"]] + [[s,f"{row.get(f'{s} Emissions',0):,.2f}"] for s in sectors]
-                        t = Table(data, hAlign="LEFT")
-                        t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
-                                               ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                                               ('GRID',(0,0),(-1,-1),0.5,colors.white)]))
-                        elements.append(Paragraph("### GHG Inventory", styles["Heading2"]))
-                        elements.append(t)
-                        elements.append(Spacer(1,12))
-                    elements.append(Paragraph("### Suggested Actions", styles["Heading2"]))
-                    for term, actions_dict in [("Short-term (2030)", short_term),
-                                               ("Mid-term (2040)", mid_term),
-                                               ("Long-term (2050)", long_term)]:
-                        elements.append(Paragraph(term, styles["Heading3"]))
-                        for s in sectors:
-                            elements.append(Paragraph(f"{s} — Budget: {budget_percentage[s]}", styles["Heading4"]))
-                            for a in actions_dict[s]:
-                                elements.append(Paragraph(f"- {a}", styles["Normal"]))
-                            elements.append(Spacer(1,6))
-                    doc.build(elements)
-                    buffer.seek(0)
-                    st.download_button("Download CAP PDF", buffer,
-                                       file_name=f"{city}_CAP_Summary.pdf", mime="application/pdf")
-        else:
-            st.warning("PDF generation not available. Install reportlab library.")
-
 # mahacap.py
 import streamlit as st
 import pandas as pd
@@ -426,3 +291,139 @@ elif menu=="CAP Preparation":
                 # Redirect to GHG Inventory
                 st.session_state.menu = "GHG Inventory"
                 st.experimental_rerun()
+
+
+# ---------------------------
+# GHG Inventory Page
+# ---------------------------
+elif menu=="GHG Inventory":
+    st.header("GHG Inventory")
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        df_cap = st.session_state.cap_data
+        if df_cap.empty:
+            st.warning("No CAP data available. Please fill CAP data first.")
+        else:
+            city = st.selectbox("Select City", list(cities_districts.keys()))
+            row = df_cap[df_cap["City Name"]==city].iloc[0] if city in df_cap["City Name"].values else None
+            if row is not None:
+                st.metric("Total GHG Emissions (tCO2e)", format_population(row["GHG Emissions"]))
+                sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
+                chart_df = pd.DataFrame({"Sector": sectors,
+                                         "Emissions": [row.get(f"{s} Emissions",0) for s in sectors]})
+                fig_pie = px.pie(chart_df, names="Sector", values="Emissions",
+                                 title="Sector-wise Emissions (tCO2e)")
+                fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+                st.plotly_chart(fig_pie, use_container_width=True)
+                fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
+                                 title="Sector-wise Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
+                fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+                st.plotly_chart(fig_bar, use_container_width=True)
+                st.write("### Emissions Table")
+                st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v:f"{v:,.2f}")))
+                
+                # Download GHG Inventory PDF
+                if PDF_AVAILABLE:
+                    with st.form("pdf_ghg_form"):
+                        submit_pdf = st.form_submit_button("Download GHG Inventory (PDF)")
+                        if submit_pdf:
+                            buffer = io.BytesIO()
+                            doc = SimpleDocTemplate(buffer, pagesize=A4)
+                            elements = []
+                            styles = getSampleStyleSheet()
+                            elements.append(Paragraph(f"{city} — GHG Inventory", styles["Title"]))
+                            elements.append(Spacer(1,12))
+                            data = [["Sector","Emissions (tCO2e)"]] + [[s,f"{v:,.2f}"] for s,v in zip(chart_df["Sector"], chart_df["Emissions"])]
+                            t = Table(data, hAlign="LEFT")
+                            t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
+                                                   ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+                                                   ('GRID',(0,0),(-1,-1),0.5,colors.white)]))
+                            elements.append(t)
+                            doc.build(elements)
+                            buffer.seek(0)
+                            st.download_button("Download GHG Inventory PDF", buffer,
+                                               file_name=f"{city}_GHG_Inventory.pdf", mime="application/pdf")
+                else:
+                    st.warning("PDF generation not available. Install reportlab library.")
+                
+                if st.button("Actions →"):
+                    st.session_state.selected_city = city
+                    st.session_state.menu = "Actions"
+                    st.experimental_rerun()
+            else:
+                st.warning("No data available for selected city.")
+
+# ---------------------------
+# Actions Page
+# ---------------------------
+elif menu=="Actions":
+    st.header("Suggested Actions for Net Zero")
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        city = st.session_state.get("selected_city", list(cities_districts.keys())[0])
+        st.subheader(f"{city} — Climate Action Plan Recommendations")
+
+        # Sector-wise suggestions (example placeholders, 10 per sector)
+        sectors = ["Energy","Transport","Buildings","Industry","Water","Waste","Urban Green / Other"]
+        short_term = {s:[f"Short-term action {i+1}" for i in range(10)] for s in sectors}
+        mid_term = {s:[f"Mid-term action {i+1}" for i in range(10)] for s in sectors}
+        long_term = {s:[f"Long-term action {i+1}" for i in range(10)] for s in sectors}
+
+        budget_percentage = {s: f"{5+se*2}%" for se,s in enumerate(sectors)}
+
+        st.markdown("### Short-term Actions (by 2030)")
+        for s in sectors:
+            st.markdown(f"**{s}** — Budget: {budget_percentage[s]}")
+            for a in short_term[s]:
+                st.write(f"- {a}")
+        st.markdown("### Mid-term Actions (by 2040)")
+        for s in sectors:
+            st.markdown(f"**{s}** — Budget: {budget_percentage[s]}")
+            for a in mid_term[s]:
+                st.write(f"- {a}")
+        st.markdown("### Long-term Actions (by 2050)")
+        for s in sectors:
+            st.markdown(f"**{s}** — Budget: {budget_percentage[s]}")
+            for a in long_term[s]:
+                st.write(f"- {a}")
+
+        # Download CAP PDF (GHG + Actions)
+        if PDF_AVAILABLE:
+            with st.form("pdf_cap_form"):
+                submit_pdf = st.form_submit_button("Download CAP (PDF)")
+                if submit_pdf:
+                    df_cap = st.session_state.cap_data
+                    row = df_cap[df_cap["City Name"]==city].iloc[0] if city in df_cap["City Name"].values else None
+                    buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=A4)
+                    elements = []
+                    styles = getSampleStyleSheet()
+                    elements.append(Paragraph(f"{city} — Climate Action Plan Summary", styles["Title"]))
+                    elements.append(Spacer(1,12))
+                    if row is not None:
+                        data = [["Sector","Emissions (tCO2e)"]] + [[s,f"{row.get(f'{s} Emissions',0):,.2f}"] for s in sectors]
+                        t = Table(data, hAlign="LEFT")
+                        t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),
+                                               ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+                                               ('GRID',(0,0),(-1,-1),0.5,colors.white)]))
+                        elements.append(Paragraph("### GHG Inventory", styles["Heading2"]))
+                        elements.append(t)
+                        elements.append(Spacer(1,12))
+                    elements.append(Paragraph("### Suggested Actions", styles["Heading2"]))
+                    for term, actions_dict in [("Short-term (2030)", short_term),
+                                               ("Mid-term (2040)", mid_term),
+                                               ("Long-term (2050)", long_term)]:
+                        elements.append(Paragraph(term, styles["Heading3"]))
+                        for s in sectors:
+                            elements.append(Paragraph(f"{s} — Budget: {budget_percentage[s]}", styles["Heading4"]))
+                            for a in actions_dict[s]:
+                                elements.append(Paragraph(f"- {a}", styles["Normal"]))
+                            elements.append(Spacer(1,6))
+                    doc.build(elements)
+                    buffer.seek(0)
+                    st.download_button("Download CAP PDF", buffer,
+                                       file_name=f"{city}_CAP_Summary.pdf", mime="application/pdf")
+        else:
+            st.warning("PDF generation not available. Install reportlab library.")
