@@ -355,94 +355,102 @@ if menu == "Home":
     st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page (Dashboard Style)
+# City Information Page
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
+
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
 
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
 
-        # -------- BASIC INFO --------
-        st.subheader("Basic Information")
+        # =====================
+        # BASIC INFORMATION
+        # =====================
+        st.markdown("### Basic Information")
+        population = row.get("Population", 0)
+        area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
+        ulb_category = row.get("ULB Category", "—")
+        district = row.get("District", "—")
+        est_year = row.get("Est. Year", "—")
+        cap_status = row.get("CAP Status", "—")
+
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("District", row["District"])
-        col2.metric("ULB Category", row["ULB Category"])
-        col3.metric("Population", format_indian_number(row["Population"]))
-        col4.metric("Area (sq.km)", row["Area (sq.km)"])
+        col1.metric("District", district)
+        col2.metric("ULB Category", ulb_category)
+        col3.metric("Population", format_indian_number(population))
+        col4.metric("Area (sq.km)", area)
 
         col5, col6, col7 = st.columns(3)
-        density = round(row["Population"]/row["Area (sq.km)"], 2) if row["Area (sq.km)"] else "—"
+        density = round(population/area, 2) if area else "—"
         col5.metric("Density (/sq.km)", density)
-        col6.metric("Est. Year", row["Est. Year"])
-        col7.metric("CAP Status", row["CAP Status"])
+        col6.metric("Est. Year", est_year)
+        col7.metric("CAP Status", cap_status)
 
-        st.divider()
+        st.markdown("---")
 
-        # -------- ENVIRONMENTAL INFO --------
-        with st.expander("Environmental Information", expanded=True):
-            c1, c2, c3 = st.columns(3)
-            c1.metric("GHG Emissions (tCO2e)", format_indian_number(row["GHG Emissions"]))
-            per_capita = round(row["GHG Emissions"]/row["Population"], 2) if row["Population"] else "—"
-            c2.metric("Per Capita Emissions", per_capita)
-            c3.metric("Renewable Energy (MWh/yr)", format_indian_number(row["Renewable Energy (MWh)"]))
+        # =====================
+        # ENVIRONMENTAL INFORMATION
+        # =====================
+        st.markdown("### Environmental Information")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("GHG Emissions (tCO2e)", format_indian_number(row.get("GHG Emissions", 0)))
+        per_capita = round(row.get("GHG Emissions", 0)/population, 2) if population else "—"
+        col2.metric("Per Capita Emissions (tCO2e)", per_capita)
+        col3.metric("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0)))
 
-            c4, c5, c6 = st.columns(3)
-            c4.metric("Urban Green Area (ha)", format_indian_number(row["Urban Green Area (ha)"]))
-            c5.metric("Solid Waste (tons/yr)", format_indian_number(row["Municipal Solid Waste (tons)"]))
-            c6.metric("Wastewater Treated (m³/yr)", format_indian_number(row["Wastewater Treated (m3)"]))
+        col4, col5, col6 = st.columns(3)
+        col4.metric("Urban Green Area (ha)", format_indian_number(row.get("Urban Green Area (ha)", 0)))
+        col5.metric("Solid Waste (tons)", format_indian_number(row.get("Municipal Solid Waste (tons)", 0)))
+        col6.metric("Wastewater Treated (m³)", format_indian_number(row.get("Wastewater Treated (m3)", 0)))
 
-            # Waste Management Pie Chart
-            import plotly.express as px
-            waste_data = {
-                "Type": ["Landfilled", "Composted"],
-                "Percent": [row["Waste Landfilled (%)"], row["Waste Composted (%)"]]
-            }
-            fig_waste = px.pie(waste_data, names="Type", values="Percent", title="Waste Management Distribution")
-            st.plotly_chart(fig_waste, use_container_width=True)
+        col7, col8 = st.columns(2)
+        col7.metric("Waste Landfilled (%)", f"{row.get('Waste Landfilled (%)', 0)}%")
+        col8.metric("Waste Composted (%)", f"{row.get('Waste Composted (%)', 0)}%")
 
-        st.divider()
+        st.markdown("---")
 
-        # -------- SOCIAL INFO --------
-        with st.expander("Social Information", expanded=True):
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Males", format_indian_number(row["Males"]))
-            c2.metric("Females", format_indian_number(row["Females"]))
-            c3.metric("Children (0–6)", f"{format_indian_number(row['Children Male'])} ♂ | {format_indian_number(row['Children Female'])} ♀")
+        # =====================
+        # SOCIAL INFORMATION
+        # =====================
+        st.markdown("### Social Information")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Males", format_indian_number(row.get("Males", 0)))
+        col2.metric("Females", format_indian_number(row.get("Females", 0)))
+        col3.metric("Children (0–6 Male)", format_indian_number(row.get("Children Male", 0)))
 
-            c4, c5, c6 = st.columns(3)
-            c4.metric("Literacy (%)", f"{row['Literacy (%)']}%")
-            c5.metric("Male Literacy (%)", f"{row['Male Literacy (%)']}%")
-            c6.metric("Female Literacy (%)", f"{row['Female Literacy (%)']}%")
+        col4, col5 = st.columns(2)
+        col4.metric("Children (0–6 Female)", format_indian_number(row.get("Children Female", 0)))
+        col5.metric("Slum Population (%)", f"{row.get('Slum (%)', 0)}%")
 
-            c7, c8 = st.columns(2)
-            c7.metric("Migrant Population (%)", f"{row['Migrant (%)']}%")
-            c8.metric("Slum Population (%)", f"{row['Slum (%)']}%")
+        col6, col7, col8 = st.columns(3)
+        col6.metric("Overall Literacy (%)", f"{row.get('Literacy (%)', 0)}%")
+        col7.metric("Male Literacy (%)", f"{row.get('Male Literacy (%)', 0)}%")
+        col8.metric("Female Literacy (%)", f"{row.get('Female Literacy (%)', 0)}%")
 
-            # Gender Ratio Chart
-            gender_data = {
-                "Gender": ["Male", "Female"],
-                "Population": [row["Males"], row["Females"]]
-            }
-            fig_gender = px.bar(gender_data, x="Gender", y="Population", title="Gender Distribution", text="Population")
-            st.plotly_chart(fig_gender, use_container_width=True)
+        col9, col10 = st.columns(2)
+        col9.metric("Migrant Population (%)", f"{row.get('Migrant (%)', 0)}%")
+        col10.metric("BPL Households (%)", f"{row.get('BPL Households (%)', 0)}%")
 
-        st.divider()
+        st.markdown("---")
 
-        # -------- CONTACT INFO --------
-        with st.expander("Contact Information", expanded=True):
-            c1, c2 = st.columns(2)
-            c1.write(f"**Department Exist:** {row['Department Exist']}")
-            c2.write(f"**Department Name:** {row['Department Name']}")
-
-            c1, c2 = st.columns(2)
-            c1.write(f"**Email:** {row['Email']}")
-            c2.write(f"**Contact Number:** {row['Contact Number']}")
-
-            st.write(f"**Website:** {row['Website']}")
-
+        # =====================
+        # CONTACT INFORMATION
+        # =====================
+        st.markdown("### Contact Information")
+        contact_table = pd.DataFrame({
+            "Field": ["Department Exist", "Department Name", "Email", "Contact Number", "Website"],
+            "Details": [
+                row.get("Department Exist", "—"),
+                row.get("Department Name", "—"),
+                row.get("Email", "—"),
+                row.get("Contact Number", "—"),
+                row.get("Website", "—")
+            ]
+        })
+        st.table(contact_table)
 
 # ---------------------------
 # Admin Panel
