@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import io
 from datetime import datetime
 
 # PDF support
@@ -37,7 +38,7 @@ DATA_FILE = "cities_data.csv"
 CAP_DATA_FILE = "cap_raw_data.csv"
 
 # ---------------------------
-# Cities & Districts (Updated)
+# Cities & Districts
 # ---------------------------
 cities_districts = {
     "Mumbai": "Mumbai",
@@ -117,13 +118,10 @@ cap_cols = []
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
-# Apply city name mapping safely
+# Ensure city names in session data match updated cities_districts keys
 st.session_state.data["City Name"] = st.session_state.data["City Name"].apply(
-    lambda x: cities_districts[x] if pd.notna(x) and x in cities_districts else x
+    lambda x: cities_districts.get(x, x)
 )
-
-# Remove Raigad Council (if exists)
-st.session_state.data = st.session_state.data[~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)]
 
 # ---------------------------
 # Helper Functions
@@ -143,6 +141,7 @@ def safe_get(row, col, default="—"):
     except:
         return default
 
+# Indian Number Format
 def format_indian_number(num):
     try:
         num = int(num)
@@ -207,7 +206,7 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
-# HOME PAGE
+# Home Page
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
@@ -215,6 +214,7 @@ if menu == "Home":
 
     df = st.session_state.data.copy()
 
+    # --- CAP Status Summary ---
     if not df.empty and "CAP Status" in df.columns:
         not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
         in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
@@ -238,7 +238,7 @@ if menu == "Home":
         c3.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Completed</h3><p style='{value_style}'>{completed}</p></div>", unsafe_allow_html=True)
         c4.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Total</h3><p style='{value_style}'>{total_status}</p></div>", unsafe_allow_html=True)
 
-    # Reported GHG
+    # --- City-level Reported GHG Emissions ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         fig_reported = px.bar(
@@ -253,15 +253,19 @@ if menu == "Home":
             plot_bgcolor="#0f0f10",
             paper_bgcolor="#0f0f10",
             font_color="#E6E6E6",
-            title_font_size=18
+            title_font_size=18,
+            xaxis_title="City",
+            yaxis_title="GHG Emissions (tCO2e)"
         )
         st.plotly_chart(fig_reported, use_container_width=True)
 
-    # Estimated GHG
+    # --- Estimated GHG Emissions (Population x Factor) ---
     if not df.empty and "Population" in df.columns:
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
-        EMISSION_FACTOR = 2.5
+
+        EMISSION_FACTOR = 2.5  # tCO2e per person/year
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
+
         fig_estimated = px.bar(
             df.sort_values("Estimated GHG Emissions", ascending=False),
             x="City Name",
@@ -274,124 +278,72 @@ if menu == "Home":
             plot_bgcolor="#0f0f10",
             paper_bgcolor="#0f0f10",
             font_color="#E6E6E6",
-            title_font_size=18
+            title_font_size=18,
+            xaxis_title="City",
+            yaxis_title="Estimated GHG Emissions (tCO2e)"
         )
         st.plotly_chart(fig_estimated, use_container_width=True)
 
 # ---------------------------
-# CITY INFORMATION PAGE
+# City Information Page
 # ---------------------------
 elif menu == "City Information":
-    st.header("City-wise CAP & Department Info")
-    df = st.session_state.data.copy()
+    st.header("City Information")
+    df_meta = st.session_state.data.copy()
+    df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
 
-    if not df.empty:
-        st.dataframe(df, use_container_width=True)
+    cities_for_select = list(cities_districts.keys())
+    city = st.selectbox("Select City", cities_for_select)
 
-        if PDF_AVAILABLE and st.button("Download PDF Report"):
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=A4)
-            elements = []
-            styles = getSampleStyleSheet()
-            elements.append(Paragraph("Maharashtra City-wise CAP Report", styles['Title']))
-            elements.append(Spacer(1, 12))
-
-            data_for_pdf = [df.columns.tolist()] + df.values.tolist()
-            t = Table(data_for_pdf)
-            t.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#3E6BE6")),
-                ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.grey)
-            ]))
-            elements.append(t)
-            doc.build(elements)
-            buffer.seek(0)
-            st.download_button(
-                label="Download PDF",
-                data=buffer,
-                file_name="Maharashtra_CAP_Report.pdf",
-                mime="application/pdf"
-            )
+    meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if not df_meta[df_meta["City Name"] == city].empty else None
+    if meta_row is not None:
+        st.markdown(f"**District:** {safe_get(meta_row, 'District')}")
+        st.markdown(f"**Population:** {format_indian_number(safe_get(meta_row, 'Population'))}")
+        st.markdown(f"**ULB Category:** {safe_get(meta_row, 'ULB Category')}")
+        st.markdown(f"**CAP Status:** {safe_get(meta_row, 'CAP Status')}")
+        st.markdown(f"**GHG Emissions (tCO2e):** {format_indian_number(safe_get(meta_row, 'GHG Emissions'))}")
+        st.markdown(f"**Environment Dept Exist:** {safe_get(meta_row, 'Environment Department Exist')}")
+        st.markdown(f"**Department Name:** {safe_get(meta_row, 'Department Name')}")
+        st.markdown(f"**Head Name:** {safe_get(meta_row, 'Head Name')}")
+        st.markdown(f"**Department Email:** {safe_get(meta_row, 'Department Email')}")
 
 # ---------------------------
-# ADMIN PAGE
+# Admin Page
 # ---------------------------
 elif menu == "Admin":
+    st.header("Admin Panel")
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.subheader("Admin Panel")
-        st.markdown("Upload updated city CAP data here:")
-        uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
-        if uploaded_file:
+        st.markdown("✅ Admin authenticated")
+        st.markdown("**Upload / Update City Data**")
+        uploaded_file = st.file_uploader("Upload CSV with City Data", type="csv")
+        if uploaded_file is not None:
             try:
                 df_new = pd.read_csv(uploaded_file)
+                # Ensure city names match updated dictionary
+                df_new["City Name"] = df_new["City Name"].apply(lambda x: cities_districts.get(x, x))
                 st.session_state.data = df_new
-                df_new.to_csv(DATA_FILE, index=False)
-                st.success("Data uploaded and saved successfully!")
+                st.success("City data updated successfully!")
             except Exception as e:
-                st.error(f"Error uploading file: {e}")
+                st.error(f"Failed to upload: {e}")
 
 # ---------------------------
-# CAP PREPARATION PAGE
+# CAP Preparation Page
 # ---------------------------
-elif menu == "CAP Preparation":
+elif menu == "CAP Preparation" and st.session_state.authenticated:
     st.header("CAP Preparation")
-    st.info("Edit city-wise CAP data below and save changes.")
+    st.markdown("Prepare and update Climate Action Plans for selected cities")
 
-    df = st.session_state.data.copy()
+    if not st.session_state.data.empty:
+        city = st.selectbox("Select City", list(cities_districts.keys()))
+        city_row_index = st.session_state.data.index[st.session_state.data["City Name"] == city].tolist()
+        if city_row_index:
+            idx = city_row_index[0]
+            st.text_input("CAP Status", value=st.session_state.data.at[idx, "CAP Status"], key=f"cap_status_{city}")
+            st.text_area("GHG Emissions Notes", value=st.session_state.data.at[idx, "GHG Emissions"], key=f"ghg_{city}")
+            if st.button("Update CAP Data", key=f"update_{city}"):
+                st.session_state.data.at[idx, "CAP Status"] = st.session_state[f"cap_status_{city}"]
+                st.session_state.data.at[idx, "GHG Emissions"] = st.session_state[f"ghg_{city}"]
+                st.success(f"CAP data updated for {city}")
 
-    if df.empty:
-        st.warning("No data available. Upload data via Admin panel first.")
-    else:
-        # Select city to edit
-        city_list = df["City Name"].unique().tolist()
-        selected_city = st.selectbox("Select City to Edit", city_list)
-
-        if selected_city:
-            city_idx = df.index[df["City Name"] == selected_city][0]
-            city_data = df.loc[city_idx]
-
-            st.markdown(f"### Editing: {selected_city} ({city_data['District']})")
-
-            cap_status = st.selectbox(
-                "CAP Status",
-                ["Not Started", "In Progress", "Completed"],
-                index=["Not Started", "In Progress", "Completed"].index(
-                    city_data.get("CAP Status", "Not Started")
-                )
-            )
-
-            population = st.text_input(
-                "Population",
-                value=str(int(city_data.get("Population", 0))) if pd.notna(city_data.get("Population", 0)) else ""
-            )
-
-            ghg_emissions = st.text_input(
-                "GHG Emissions (tCO2e)",
-                value=str(city_data.get("GHG Emissions", 0))
-            )
-
-            dept_exists = st.selectbox(
-                "Environment Department Exists?",
-                ["Yes", "No"],
-                index=0 if city_data.get("Environment Department Exist", "Yes") == "Yes" else 1
-            )
-
-            dept_name = st.text_input("Department Name", value=city_data.get("Department Name", ""))
-            head_name = st.text_input("Head Name", value=city_data.get("Head Name", ""))
-            dept_email = st.text_input("Department Email", value=city_data.get("Department Email", ""))
-
-            if st.button("Save Changes"):
-                # Update dataframe
-                st.session_state.data.at[city_idx, "CAP Status"] = cap_status
-                st.session_state.data.at[city_idx, "Population"] = int(population) if population.isdigit() else 0
-                st.session_state.data.at[city_idx, "GHG Emissions"] = float(ghg_emissions) if ghg_emissions.replace(".", "", 1).isdigit() else 0
-                st.session_state.data.at[city_idx, "Environment Department Exist"] = dept_exists
-                st.session_state.data.at[city_idx, "Department Name"] = dept_name
-                st.session_state.data.at[city_idx, "Head Name"] = head_name
-                st.session_state.data.at[city_idx, "Department Email"] = dept_email
-
-                # Save to CSV
-                st.session_state.data.to_csv(DATA_FILE, index=False)
-                st.success(f"Data for {selected_city} updated successfully!")
