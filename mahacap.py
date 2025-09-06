@@ -358,45 +358,51 @@ if menu == "Home":
 # City Information Page
 # ---------------------------
 elif menu == "City Information":
-    st.header("City Information")
+    st.header("City Dashboard")
+    
     df_meta = st.session_state.data.copy()
-
     cities_for_select = list(cities_districts.keys())
+    
     city = st.selectbox("Select City", cities_for_select)
-
     city_row = df_meta[df_meta["City Name"] == city].iloc[0] if city in df_meta["City Name"].values else None
-
+    
     if city_row is not None:
-        # --- Basic Information ---
+        # --- Cards Layout ---
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Population", format_indian_number(city_row.get("Population",0)))
+        c2.metric("Reported GHG (tCO2e)", format_indian_number(city_row.get("GHG Emissions",0)))
+        c3.metric("Environmental Vulnerability (EVS)", city_row.get("EVS","—"))
+        c4.metric("Social Vulnerability (SVS)", city_row.get("SVS","—"))
+        
+        st.markdown("---")
+        
+        # --- Basic Info Section ---
         st.subheader("Basic Information")
-        st.write(f"**Population:** {format_population(city_row.get('Population', '—'))}")
-        st.write(f"**Households:** {city_row.get('Households', '—')}")
-        st.write(f"**Urbanization Rate (%):** {city_row.get('Urbanization Rate (%)', '—')}")
-        st.write(f"**Literacy Rate (%):** {city_row.get('Literacy Rate (%)', '—')}")
-        st.write(f"**Poverty Rate (%):** {city_row.get('Poverty Rate (%)', '—')}")
-
-        # --- Environmental Information ---
+        st.write(f"**District:** {city_row.get('District','—')}")
+        st.write(f"**ULB Category:** {city_row.get('ULB Category','—')}")
+        st.write(f"**CAP Status:** {city_row.get('CAP Status','—')}")
+        
+        # --- Environmental Info Section ---
         st.subheader("Environmental Information")
-        st.write(f"**CAP Status:** {city_row.get('CAP Status', '—')}")
-        st.write(f"**GHG Emissions (tCO2e):** {format_indian_number(city_row.get('GHG Emissions', 0))}")
-        st.write(f"**Municipal Solid Waste (tons/year):** {format_indian_number(city_row.get('Municipal Solid Waste (tons)', 0))}")
-        st.write(f"**Wastewater Treated (m3/year):** {format_indian_number(city_row.get('Wastewater Treated (m3)', 0))}")
-
-        # --- Social Information ---
+        st.write(f"**Emission Factor per Capita (tCO2e/person):** {city_row.get('EF per Capita','—')}")
+        st.write(f"**Estimated GHG Emissions (tCO2e):** {format_indian_number(round(city_row.get('Population',0)*city_row.get('EF per Capita',0)))}")
+        st.write(f"**Other EVS Data:** Literacy Rate {city_row.get('Literacy Rate','—')}%, Urbanization Rate {city_row.get('Urbanization Rate','—')}%, Poverty Rate {city_row.get('Poverty Rate','—')}%")
+        
+        # --- Social Info Section ---
         st.subheader("Social Information")
-        st.write(f"**Population:** {format_population(city_row.get('Population', '—'))}")
-        st.write(f"**Households:** {city_row.get('Households', '—')}")
-        st.write(f"**Urbanization Rate (%):** {city_row.get('Urbanization Rate (%)', '—')}")
-        st.write(f"**Literacy Rate (%):** {city_row.get('Literacy Rate (%)', '—')}")
-        st.write(f"**Poverty Rate (%):** {city_row.get('Poverty Rate (%)', '—')}")
-
-        # --- Contact Information ---
-        st.subheader("Contact Information")
-        st.write(f"**Environment Department Exist:** {city_row.get('Environment Department Exist', '—')}")
-        st.write(f"**Department Name:** {city_row.get('Department Name', '—')}")
-        st.write(f"**Department Head Name:** {city_row.get('Head Name', '—')}")
-        st.write(f"**Department Email:** {city_row.get('Department Email', '—')}")
-        st.write(f"**City Website:** {city_row.get('City Website', '—')}")
+        st.write(f"**Literacy Rate:** {city_row.get('Literacy Rate','—')}%")
+        st.write(f"**Urbanization Rate:** {city_row.get('Urbanization Rate','—')}%")
+        st.write(f"**Poverty Rate:** {city_row.get('Poverty Rate','—')}%")
+        
+        # --- Contact Info Section ---
+        st.subheader("City Contact Information")
+        st.write(f"**Department Name:** {city_row.get('Department Name','—')}")
+        st.write(f"**Head Name:** {city_row.get('Head Name','—')}")
+        st.write(f"**Email:** {city_row.get('Department Email','—')}")
+        st.write(f"**Website:** {city_row.get('Department Website','—')}")
+        
+    else:
+        st.info("City data not available. Please update via Admin Dashboard.")
 
 
 # ---------------------------
