@@ -277,33 +277,6 @@ if menu == "Home":
     df = st.session_state.data.copy()
 
     # =====================
-    # CAP Status Summary Cards
-    # =====================
-    if not df.empty and "CAP Status" in df.columns:
-        c1, c2, c3, c4 = st.columns(4)
-        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
-        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
-        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
-
-        cards = [
-            ("Total Cities", len(df), "#4B8BF4"),
-            ("Not Started", not_started, "#FF6B6B"),
-            ("In Progress", in_progress, "#FFA500"),
-            ("Completed", completed, "#28A745")
-        ]
-        for col, (title, val, color) in zip([c1, c2, c3, c4], cards):
-            col.markdown(
-                f"""
-                <div style="background-color:{color};padding:15px;border-radius:10px;text-align:center;color:white;">
-                    <h4>{title}</h4>
-                    <h2>{format_indian_number(val)}</h2>
-                </div>
-                """, unsafe_allow_html=True
-            )
-
-    st.markdown("---")
-
-    # =====================
     # Maharashtra Summary Metrics
     # =====================
     if "Maharashtra" in df["City Name"].values:
@@ -403,6 +376,34 @@ if menu == "Home":
         st.metric("Website", maha_row.get("Website", "—"))
 
         st.markdown("---")
+    
+    # =====================
+    # CAP Status Summary Cards
+    # =====================
+    if not df.empty and "CAP Status" in df.columns:
+        c1, c2, c3, c4 = st.columns(4)
+        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
+        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
+        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
+
+        cards = [
+            ("Total Cities", len(df), "#4B8BF4"),
+            ("Not Started", not_started, "#FF6B6B"),
+            ("In Progress", in_progress, "#FFA500"),
+            ("Completed", completed, "#28A745")
+        ]
+        for col, (title, val, color) in zip([c1, c2, c3, c4], cards):
+            col.markdown(
+                f"""
+                <div style="background-color:{color};padding:15px;border-radius:10px;text-align:center;color:white;">
+                    <h4>{title}</h4>
+                    <h2>{format_indian_number(val)}</h2>
+                </div>
+                """, unsafe_allow_html=True
+            )
+
+    st.markdown("---")
+
 
         # =====================
         # Charts for GHG
