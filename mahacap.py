@@ -527,7 +527,7 @@ elif menu == "City Information":
     st.header("City Information Dashboard")
 
     df_meta = st.session_state.data.copy()
-    city = st.selectbox("Select City", list(cities_districts.keys()))
+    city = st.selectbox("Select City", ["Maharashtra"] + list(cities_districts.keys()))
 
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
@@ -537,14 +537,13 @@ elif menu == "City Information":
         # =====================
         st.subheader("Basic Information")
         population = row.get("Population", 0)
-        area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
-        density = round(population/area, 2) if area else 0
+        area = row.get("Area (sq.km)", 0)
         ulb_category = row.get("ULB Category", "—")
         district = row.get("District", "—")
         est_year = row.get("Est. Year", "—")
         cap_status = row.get("CAP Status", "—")
+        cap_link = row.get("CAP Link", "—")
 
-        # KPI Card Grid for Basic Info
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("District", district)
         col2.metric("ULB Category", ulb_category)
@@ -552,9 +551,13 @@ elif menu == "City Information":
         col4.metric("Area (sq.km)", area)
 
         col5, col6, col7 = st.columns(3)
+        density = round(population/area, 2) if area else "—"
         col5.metric("Density (/sq.km)", density)
-        col6.metric("Establishment Year", est_year)
+        col6.metric("Est. Year", est_year)
         col7.metric("CAP Status", cap_status)
+
+        if cap_link and cap_link != "—":
+            st.markdown(f"[View CAP Document]({cap_link})", unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -563,7 +566,7 @@ elif menu == "City Information":
         # =====================
         st.subheader("Environmental Information")
         ghg_total = row.get("GHG Emissions", 0)
-        per_capita = round(ghg_total/population, 2) if population else 0
+        ghg_per_capita = round(ghg_total/population, 2) if population else "—"
         renewable_energy = row.get("Renewable Energy (MWh)", 0)
         green_area = row.get("Urban Green Area (ha)", 0)
         solid_waste = row.get("Municipal Solid Waste (tons)", 0)
@@ -571,10 +574,9 @@ elif menu == "City Information":
         waste_landfilled = row.get("Waste Landfilled (%)", 0)
         waste_composted = row.get("Waste Composted (%)", 0)
 
-        # KPI Cards with 3 per row
         col1, col2, col3 = st.columns(3)
         col1.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
-        col2.metric("Per Capita Emissions", per_capita)
+        col2.metric("Per Capita Emissions", ghg_per_capita)
         col3.metric("Renewable Energy (MWh)", format_indian_number(renewable_energy))
 
         col4, col5, col6 = st.columns(3)
@@ -602,14 +604,13 @@ elif menu == "City Information":
 
         literacy_m = row.get("Male Literacy (%)", 0)
         literacy_f = row.get("Female Literacy (%)", 0)
-        literacy_avg = round((literacy_m + literacy_f)/2, 2)
-        literacy = row.get("Literacy (%)", literacy_avg)
+        overall_lit = row.get("Literacy (%)", 0)
+        literacy_avg = round((literacy_m + literacy_f) / 2, 2) if literacy_m and literacy_f else overall_lit
 
         migrant = row.get("Migrant (%)", 0)
         slum = row.get("Slum (%)", 0)
         bpl = row.get("BPL Households (%)", 0)
 
-        # KPI Cards for Social
         col1, col2, col3 = st.columns(3)
         col1.metric("Male Population", format_indian_number(males))
         col2.metric("Female Population", format_indian_number(females))
@@ -651,7 +652,7 @@ elif menu == "City Information":
         col4.metric("Contact Number", contact_number)
 
         st.metric("Website", website)
-        
+
 # ---------------------------
 # Admin Panel Page
 # ---------------------------
