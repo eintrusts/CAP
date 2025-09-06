@@ -118,35 +118,12 @@ cap_cols = []
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
-# After loading your main dataset
-df = st.session_state.data.copy()
-
-# Remove Raigad Council (case-insensitive match just in case)
-df = df[~df["City Name"].str.contains("Raigad Council", case=False, na=False)]
-
-# Save back into session state for use everywhere
-st.session_state.data = df
+# Remove Raigad Council (case-insensitive)
+st.session_state.data = st.session_state.data[~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)]
 
 # ---------------------------
 # Helper Functions
 # ---------------------------
-def format_population(num):
-    try:
-        if pd.isna(num) or num == "":
-            return "—"
-        return "{:,}".format(int(num))
-    except:
-        return str(num)
-
-def safe_get(row, col, default="—"):
-    try:
-        val = row.get(col, default)
-        return default if pd.isna(val) else val
-    except:
-        return default
-
-# Indian Number Format
-
 def format_indian_number(num):
     try:
         num = int(num)
@@ -160,6 +137,21 @@ def format_indian_number(num):
         return ','.join(lst)[::-1]
     except:
         return str(num)
+
+def format_population(num):
+    try:
+        if pd.isna(num) or num == "":
+            return "—"
+        return format_indian_number(num)
+    except:
+        return str(num)
+
+def safe_get(row, col, default="—"):
+    try:
+        val = row.get(col, default)
+        return default if pd.isna(val) else val
+    except:
+        return default
 
 # ---------------------------
 # Dark / Professional CSS
@@ -211,6 +203,7 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
+# ---------------------------
 # Home Page
 # ---------------------------
 if menu == "Home":
@@ -238,12 +231,12 @@ if menu == "Home":
         title_style = "color:#E6E6E6; margin:0;"
         value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
 
-        c1.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Not Started</h3><p style='{value_style}'>{not_started}</p></div>", unsafe_allow_html=True)
-        c2.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>In Progress</h3><p style='{value_style}'>{in_progress}</p></div>", unsafe_allow_html=True)
-        c3.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Completed</h3><p style='{value_style}'>{completed}</p></div>", unsafe_allow_html=True)
-        c4.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Total</h3><p style='{value_style}'>{total_status}</p></div>", unsafe_allow_html=True)
+        c1.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Not Started</h3><p style='{value_style}'>{format_indian_number(not_started)}</p></div>", unsafe_allow_html=True)
+        c2.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>In Progress</h3><p style='{value_style}'>{format_indian_number(in_progress)}</p></div>", unsafe_allow_html=True)
+        c3.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Completed</h3><p style='{value_style}'>{format_indian_number(completed)}</p></div>", unsafe_allow_html=True)
+        c4.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Total</h3><p style='{value_style}'>{format_indian_number(total_status)}</p></div>", unsafe_allow_html=True)
 
-    # --- City-level Reported GHG Emissions ---
+    # --- Reported GHG ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         fig_reported = px.bar(
@@ -251,24 +244,16 @@ if menu == "Home":
             x="City Name",
             y="GHG Emissions",
             title="City-level Reported GHG Emissions (tCO2e)",
-            text="GHG Emissions",
+            text=df["GHG Emissions"].apply(format_indian_number),
             color_discrete_sequence=["#3E6BE6"]
         )
-        fig_reported.update_layout(
-            plot_bgcolor="#0f0f10",
-            paper_bgcolor="#0f0f10",
-            font_color="#E6E6E6",
-            title_font_size=18,
-            xaxis_title="City",
-            yaxis_title="GHG Emissions (tCO2e)"
-        )
+        fig_reported.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_reported, use_container_width=True)
 
-    # --- Estimated GHG Emissions (Population x Factor) ---
+    # --- Estimated GHG ---
     if not df.empty and "Population" in df.columns:
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
-
-        EMISSION_FACTOR = 2.5  # tCO2e per person/year
+        EMISSION_FACTOR = 2.5
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
 
         fig_estimated = px.bar(
@@ -276,38 +261,14 @@ if menu == "Home":
             x="City Name",
             y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
-            text="Estimated GHG Emissions",
+            text=df["Estimated GHG Emissions"].apply(lambda x: format_indian_number(round(x))),
             color_discrete_sequence=["#E67E22"]
         )
-        fig_estimated.update_layout(
-            plot_bgcolor="#0f0f10",
-            paper_bgcolor="#0f0f10",
-            font_color="#E6E6E6",
-            title_font_size=18,
-            xaxis_title="City",
-            yaxis_title="Estimated GHG Emissions (tCO2e)"
-        )
+        fig_estimated.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_estimated, use_container_width=True)
 
-fig_reported = px.bar(
-    df.sort_values("GHG Emissions", ascending=False),
-    x="City Name",
-    y="GHG Emissions",
-    title="City-level Reported GHG Emissions (tCO2e)",
-    text=df["GHG Emissions"].apply(format_indian_number),
-    color_discrete_sequence=["#3E6BE6"]
-)
-
-fig_estimated = px.bar(
-    df.sort_values("Estimated GHG Emissions", ascending=False),
-    x="City Name",
-    y="Estimated GHG Emissions",
-    title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
-    text=df["Estimated GHG Emissions"].apply(format_indian_number),
-    color_discrete_sequence=["#E67E22"]
-)
 # ---------------------------
-# City Dashboard
+# City Information
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
@@ -342,13 +303,13 @@ elif menu == "City Information":
             fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
             st.plotly_chart(fig_pie, use_container_width=True)
 
-            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
+            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text=chart_df["Emissions"].apply(lambda x: format_indian_number(round(x))),
                              title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
             fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
             st.plotly_chart(fig_bar, use_container_width=True)
 
             st.write("### Emissions by Sector")
-            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: f"{v:,.2f}")))
+            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: format_indian_number(round(v)))))
 
         last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
         st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
@@ -368,7 +329,7 @@ elif menu == "City Information":
                     styles = getSampleStyleSheet()
                     elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
                     elements.append(Spacer(1, 12))
-                    data = [["Sector", "Emissions (tCO2e)"]] + [[s, f"{v:,.2f}"] for s, v in sectors.items()]
+                    data = [["Sector", "Emissions (tCO2e)"]] + [[s, format_indian_number(round(v))] for s, v in sectors.items()]
                     t = Table(data, hAlign="LEFT")
                     t.setStyle(TableStyle([
                         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
@@ -394,8 +355,6 @@ elif menu == "Admin":
         admin_login()
     else:
         st.subheader("Add/Update City Data")
-
-        # --- Input Form ---
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
             population = st.number_input("Population (as per census 2011)", min_value=0, value=0, step=1000)
@@ -429,10 +388,11 @@ elif menu == "Admin":
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
 
-st.table(df_meta.assign(
-    Population=lambda d: d["Population"].map(format_indian_number),
-    GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
-))
+        st.write("### All Cities Data")
+        st.table(st.session_state.data.assign(
+            Population=lambda d: d["Population"].map(format_indian_number),
+            GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
+        ))
 
 # ---------------------------
 # CAP Preparation Page
