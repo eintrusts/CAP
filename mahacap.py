@@ -108,8 +108,9 @@ def load_csv(file_path, default_cols):
         return pd.DataFrame(columns=default_cols)
 
 meta_cols = [
-    "City Name", "District", "Population", "ULB Category", "CAP Status", "GHG Emissions",
-    "Environment Department Exist", "Department Name", "Head Name", "Department Email"
+    "City Name", "District", "Population", "ULB Category", "CAP Status",
+    "GHG Emissions", "Environment Department Exist", "Department Name",
+    "Head Name", "Department Email"
 ]
 cap_cols = []
 
@@ -117,7 +118,9 @@ st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
 # Remove Raigad Council (case-insensitive)
-st.session_state.data = st.session_state.data[~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)]
+st.session_state.data = st.session_state.data[
+    ~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)
+]
 
 # ---------------------------
 # Helper Functions
@@ -206,7 +209,6 @@ menu = st.session_state.menu
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
-
     df = st.session_state.data.copy()
 
     # --- CAP Status Summary ---
@@ -218,7 +220,13 @@ if menu == "Home":
 
         st.markdown("### CAP Status Overview")
         c1, c2, c3, c4 = st.columns(4)
-        block_style = """ background-color:#141518; padding:20px; border-radius:12px; text-align:center; """
+
+        block_style = """
+            background-color:#141518;
+            padding:20px;
+            border-radius:12px;
+            text-align:center;
+        """
         title_style = "color:#E6E6E6; margin:0;"
         value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
 
@@ -232,8 +240,7 @@ if menu == "Home":
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         fig_reported = px.bar(
             df.sort_values("GHG Emissions", ascending=False),
-            x="City Name",
-            y="GHG Emissions",
+            x="City Name", y="GHG Emissions",
             title="City-level Reported GHG Emissions (tCO2e)",
             text=df["GHG Emissions"].apply(format_indian_number),
             color_discrete_sequence=["#3E6BE6"]
@@ -248,83 +255,134 @@ if menu == "Home":
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
         fig_estimated = px.bar(
             df.sort_values("Estimated GHG Emissions", ascending=False),
-            x="City Name",
-            y="Estimated GHG Emissions",
+            x="City Name", y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
             text=df["Estimated GHG Emissions"].apply(lambda x: format_indian_number(round(x))),
             color_discrete_sequence=["#E67E22"]
         )
         fig_estimated.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_estimated, use_container_width=True)
+
 # ---------------------------
-# City Information Page
+# City Information
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
-    df = st.session_state.data.copy()
+    df_meta = st.session_state.data.copy()
+    df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
 
-    if df.empty:
-        st.warning("No data available. Please upload data in Admin section.")
+    cities_for_select = list(cities_districts.keys())
+    city = st.selectbox("Select City", cities_for_select)
+
+    meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
+
+    st.subheader(f"{city} — Overview")
+    if meta_row is not None:
+        st.write(f"**District:** {safe_get(meta_row, 'District')}")
+        st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row, 'Population'))}")
+        st.write(f"**ULB Category:** {safe_get(meta_row, 'ULB Category')}")
+        st.write(f"**CAP Status:** {safe_get(meta_row, 'CAP Status')}")
     else:
-        city_choice = st.selectbox("Select City", df["City Name"].unique())
-        row = df[df["City Name"] == city_choice].iloc[0]
+        st.write(f"**District:** {cities_districts.get(city, '—')}")
 
-        c1, c2 = st.columns(2)
-        with c1:
-            st.metric("District", safe_get(row, "District"))
-            st.metric("Population", format_population(safe_get(row, "Population")))
-            st.metric("ULB Category", safe_get(row, "ULB Category"))
-        with c2:
-            st.metric("CAP Status", safe_get(row, "CAP Status"))
-            st.metric("Reported GHG Emissions (tCO2e)", format_indian_number(safe_get(row, "GHG Emissions")))
+    if not df_cap.empty and city in df_cap["City Name"].values:
+        cap_row = df_cap[df_cap["City Name"] == city].iloc[0]
+        sector_cols = [c for c in cap_row.index if c.endswith(" Emissions (tCO2e)")]
+        sectors = {c.replace(" Emissions (tCO2e)", ""): max(float(cap_row[c]), 0) for c in sector_cols}
 
-        st.subheader("Environment Department Information")
-        st.write("**Department Exist:**", safe_get(row, "Environment Department Exist"))
-        st.write("**Department Name:**", safe_get(row, "Department Name"))
-        st.write("**Head Name:**", safe_get(row, "Head Name"))
-        st.write("**Department Email:**", safe_get(row, "Department Email"))
+        if sectors:
+            chart_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions": list(sectors.values())})
+
+            fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
+            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text=chart_df["Emissions"].apply(lambda x: format_indian_number(round(x))),
+                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
+            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+            st.write("### Emissions by Sector")
+            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: format_indian_number(round(v)))))
+
+        last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
+        st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
+
+        # PDF Download
+        if PDF_AVAILABLE:
+            st.subheader("Download GHG Inventory Report")
+            with st.form("pdf_form"):
+                user_name = st.text_input("Your Full Name")
+                user_email = st.text_input("Your Work Email")
+                user_contact = st.text_input("Contact Number")
+                submit_pdf = st.form_submit_button("Generate PDF")
+                if submit_pdf:
+                    buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=A4)
+                    elements = []
+                    styles = getSampleStyleSheet()
+                    elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
+                    elements.append(Spacer(1, 12))
+                    data = [["Sector", "Emissions (tCO2e)"]] + [[s, format_indian_number(round(v))] for s, v in sectors.items()]
+                    t = Table(data, hAlign="LEFT")
+                    t.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.white)
+                    ]))
+                    elements.append(t)
+                    doc.build(elements)
+                    buffer.seek(0)
+                    st.download_button("Download PDF", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
+        else:
+            st.warning("PDF generation not available. Install reportlab library.")
 
 # ---------------------------
-# Admin Page
+# Admin Panel
 # ---------------------------
 elif menu == "Admin":
-    st.header("Admin Access")
-
+    st.header("Admin Board")
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.success("You are logged in as Admin")
-        st.subheader("Upload Data")
+        st.subheader("Add/Update City Data")
+        with st.form("admin_form", clear_on_submit=False):
+            city = st.selectbox("Select City", list(cities_districts.keys()))
+            population = st.number_input("Population (as per census 2011)", min_value=0, value=0, step=1000)
+            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
+            dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
+            dept_name = st.text_input("Department Name")
+            head_name = st.text_input("Department Head Name")
+            dept_email = st.text_input("Department Email")
+            submit_admin = st.form_submit_button("Add/Update City Data")
 
-        uploaded_file = st.file_uploader("Upload Cities CSV", type="csv")
-        if uploaded_file is not None:
-            try:
-                st.session_state.data = pd.read_csv(uploaded_file)
-                st.session_state.data.to_csv(DATA_FILE, index=False)
-                st.session_state.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                st.success("Data uploaded successfully.")
-            except Exception as e:
-                st.error(f"Error: {e}")
+            if submit_admin:
+                new_row = {
+                    "City Name": city,
+                    "District": cities_districts.get(city, "—"),
+                    "Population": population,
+                    "CAP Status": cap_status,
+                    "GHG Emissions": ghg_val,
+                    "Environment Department Exist": dept_exist,
+                    "Department Name": dept_name,
+                    "Head Name": head_name,
+                    "Department Email": dept_email
+                }
+                df_meta = st.session_state.data.copy()
+                if city in df_meta["City Name"].values:
+                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
+                else:
+                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
+                st.session_state.data = df_meta
+                df_meta.to_csv(DATA_FILE, index=False)
+                st.success(f"{city} data updated successfully!")
 
-        uploaded_cap = st.file_uploader("Upload CAP Raw Data CSV", type="csv")
-        if uploaded_cap is not None:
-            try:
-                st.session_state.cap_data = pd.read_csv(uploaded_cap)
-                st.session_state.cap_data.to_csv(CAP_DATA_FILE, index=False)
-                st.session_state.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                st.success("CAP data uploaded successfully.")
-            except Exception as e:
-                st.error(f"Error: {e}")
-
-        if st.session_state.last_updated:
-            st.info(f"Last Updated: {st.session_state.last_updated}")
-
-        if not st.session_state.data.empty:
-            st.subheader("Preview Data")
-            st.table(st.session_state.data.assign(
-                Population=lambda d: d["Population"].map(format_indian_number),
-                GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
-            ))
+        st.write("### All Cities Data")
+        st.table(st.session_state.data.assign(
+            Population=lambda d: d["Population"].map(format_indian_number),
+            GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
+        ))
 
 # ---------------------------
 # CAP Preparation Page
