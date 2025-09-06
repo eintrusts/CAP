@@ -523,7 +523,7 @@ elif menu == "CAP Preparation":
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
-if menu == "GHG Inventory" or st.session_state.menu == "GHG Inventory":
+if menu == "GHG Inventory":  # Make sure it's exactly this
     st.header("GHG Inventory")
 
     if not st.session_state.authenticated:
@@ -536,106 +536,37 @@ if menu == "GHG Inventory" or st.session_state.menu == "GHG Inventory":
             city = st.selectbox("Select City to View GHG Inventory", list(df_cap["City Name"].unique()))
             city_row = df_cap[df_cap["City Name"] == city].iloc[0]
 
-            # --- Define Emission Factors (EF) ---
-            EF_electricity = 0.82  # tCO2e/MWh
-            EF_diesel_vehicle = 2.68 / 1000
-            EF_petrol_vehicle = 2.31 / 1000
-            EF_cng_vehicle = 2.74 / 1000
-            EF_lpg_vehicle = 1.51 / 1000
-            EF_electric_vehicle = 0
-            EF_industrial_fuel = {"Diesel":2.68,"Petrol":2.31,"CNG":2.74,"LPG":1.51}
-            EF_waste_landfill = 0.1
-            EF_waste_compost = 0.01
-            EF_wastewater = 0.00025
-            EF_water_energy = 0.82
-
             # --- Calculate Sector Emissions ---
-            emissions = {}
-            emissions["Residential Energy"] = city_row.get("Residential Energy (MWh)",0) * EF_electricity
-            emissions["Commercial Energy"] = city_row.get("Commercial Energy (MWh)",0) * EF_electricity
-            emissions["Industrial Energy"] = city_row.get("Industrial Energy (MWh)",0) * EF_electricity
-            emissions["Streetlights & Public Buildings"] = city_row.get("Streetlights Energy (MWh)",0) * EF_electricity + city_row.get("Public Buildings Energy (MWh)",0)*EF_electricity
-            emissions["Transport Diesel"] = city_row.get("Diesel Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_diesel_vehicle
-            emissions["Transport Petrol"] = city_row.get("Petrol Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_petrol_vehicle
-            emissions["Transport CNG"] = city_row.get("CNG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_cng_vehicle
-            emissions["Transport LPG"] = city_row.get("LPG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_lpg_vehicle
-            emissions["Transport Electric"] = city_row.get("Electric Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_electric_vehicle
-            emissions["Industrial Diesel"] = city_row.get("Industrial Diesel (tons)",0) * EF_industrial_fuel["Diesel"]
-            emissions["Industrial Petrol"] = city_row.get("Industrial Petrol (tons)",0) * EF_industrial_fuel["Petrol"]
-            emissions["Industrial CNG"] = city_row.get("Industrial CNG (tons)",0) * EF_industrial_fuel["CNG"]
-            emissions["Industrial LPG"] = city_row.get("Industrial LPG (tons)",0) * EF_industrial_fuel["LPG"]
-            waste_total = city_row.get("Municipal Solid Waste (tons)",0)
-            emissions["Waste Landfilled"] = waste_total * (city_row.get("Waste Landfilled (%)",0)/100) * EF_waste_landfill
-            emissions["Waste Composted"] = waste_total * (city_row.get("Waste Composted (%)",0)/100) * EF_waste_compost
-            emissions["Wastewater"] = city_row.get("Wastewater Treated (m3)",0) * EF_wastewater
-            emissions["Water Energy"] = city_row.get("Energy for Water (MWh)",0) * EF_water_energy
-            emissions["Urban Green / Offsets"] = -1 * city_row.get("Renewable Energy (MWh)",0) * EF_electricity
+            # ... your existing emissions calculations ...
 
+            # Display charts
             st.subheader(f"{city} — Sector-wise GHG Emissions (tCO2e)")
-
-            emissions_df = pd.DataFrame({
-                "Sector": list(emissions.keys()),
-                "Emissions (tCO2e)": list(emissions.values())
-            })
-
-            total_emissions = sum(emissions.values())
-            st.metric("Total City GHG Emissions (tCO2e)", format(total_emissions, ",.0f"))
-
-            fig_bar = px.bar(
-                emissions_df.sort_values("Emissions (tCO2e)", ascending=False),
-                x="Sector",
-                y="Emissions (tCO2e)",
-                text=emissions_df["Emissions (tCO2e)"].apply(lambda x: format(int(x), ",")),
-                color_discrete_sequence=["#3E6BE6"]
-            )
-            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            fig_pie = px.pie(
-                emissions_df,
-                names="Sector",
-                values="Emissions (tCO2e)",
-                title="Sector-wise GHG Contribution",
-            )
-            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-            st.write("### Detailed Emissions Table")
-            st.table(emissions_df.assign(**{
-                "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
-            }))
+            # ... your existing charts and table ...
 
             # ---------------------------
-            # Suggested Actions Section (only here)
+            # Suggested Actions Section (STRICTLY HERE)
             # ---------------------------
             if st.button("Show Suggested Actions to Achieve Net Zero by 2050"):
                 st.subheader("Suggested Actions per Sector (Short, Mid, Long-term Goals)")
 
-                # Example dictionary structure
+                # Example goals dictionary
                 goals = {
                     "Residential Energy": {
                         "Short-term (2030)": [
                             "1. Implement energy-efficient lighting (Priority 1)",
-                            "2. Promote rooftop solar adoption (Priority 2)",
-                            "3. Conduct energy audits in households (Priority 3)"
+                            "2. Promote rooftop solar adoption (Priority 2)"
                         ],
                         "Mid-term (2040)": [
-                            "1. Incentivize heat pump systems (Priority 1)",
-                            "2. Upgrade appliances to higher efficiency (Priority 2)"
+                            "1. Incentivize heat pump systems (Priority 1)"
                         ],
                         "Long-term (2050)": [
                             "1. Achieve 100% renewable electricity in households (Priority 1)"
                         ]
-                    },
-                    "Transport Diesel": {
-                        "Short-term (2030)": ["1. Promote CNG retrofitting (Priority 1)"],
-                        "Mid-term (2040)": ["1. Switch to hybrid vehicles (Priority 1)"],
-                        "Long-term (2050)": ["1. Switch to full EV fleet (Priority 1)"]
                     }
-                    # Add other sectors similarly...
+                    # Add other sectors here...
                 }
 
-                # Prepare table
+                # Build table
                 table_data = []
                 for sector, s_goals in goals.items():
                     max_len = max(len(s_goals.get("Short-term (2030)", [])),
