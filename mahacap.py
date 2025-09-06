@@ -118,10 +118,14 @@ cap_cols = []
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
-# Ensure city names in session data match updated cities_districts keys
-st.session_state.data["City Name"] = st.session_state.data["City Name"].apply(
-    lambda x: cities_districts.get(x, x)
-)
+# After loading your main dataset
+df = st.session_state.data.copy()
+
+# Remove Raigad Council (case-insensitive match just in case)
+df = df[~df["City Name"].str.contains("Raigad Council", case=False, na=False)]
+
+# Save back into session state for use everywhere
+st.session_state.data = df
 
 # ---------------------------
 # Helper Functions
@@ -140,21 +144,6 @@ def safe_get(row, col, default="—"):
         return default if pd.isna(val) else val
     except:
         return default
-
-# Indian Number Format
-def format_indian_number(num):
-    try:
-        num = int(num)
-        s = str(num)[::-1]
-        lst = []
-        lst.append(s[:3])
-        s = s[3:]
-        while s:
-            lst.append(s[:2])
-            s = s[2:]
-        return ','.join(lst)[::-1]
-    except:
-        return str(num)
 
 # ---------------------------
 # Dark / Professional CSS
@@ -213,137 +202,199 @@ if menu == "Home":
     st.markdown("Climate Action Plan Dashboard")
 
     df = st.session_state.data.copy()
+    total_selected = len(cities_districts)
+    reporting = df.shape[0]
+    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0] if "CAP Status" in df.columns else 0
 
-    # --- CAP Status Summary ---
-    if not df.empty and "CAP Status" in df.columns:
-        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
-        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
-        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
-        total_status = not_started + in_progress + completed
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Cities Selected", f"{total_selected}")
+    col2.metric("Cities Reporting", f"{reporting}")
+    col3.metric("CAPs Completed", f"{completed}")
 
-        st.markdown("### 📊 CAP Status Overview")
-        c1, c2, c3, c4 = st.columns(4)
-
-        block_style = """
-            background-color:#141518; 
-            padding:20px; 
-            border-radius:12px; 
-            text-align:center; 
-        """
-        title_style = "color:#E6E6E6; margin:0;"
-        value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
-
-        c1.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Not Started</h3><p style='{value_style}'>{not_started}</p></div>", unsafe_allow_html=True)
-        c2.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>In Progress</h3><p style='{value_style}'>{in_progress}</p></div>", unsafe_allow_html=True)
-        c3.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Completed</h3><p style='{value_style}'>{completed}</p></div>", unsafe_allow_html=True)
-        c4.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Total</h3><p style='{value_style}'>{total_status}</p></div>", unsafe_allow_html=True)
-
-    # --- City-level Reported GHG Emissions ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
-        fig_reported = px.bar(
+        fig2 = px.bar(
             df.sort_values("GHG Emissions", ascending=False),
             x="City Name",
             y="GHG Emissions",
-            title="City-level Reported GHG Emissions (tCO2e)",
-            text=df["GHG Emissions"].apply(format_indian_number),
+            title="City-level GHG (tCO2e)",
+            text="GHG Emissions",
             color_discrete_sequence=["#3E6BE6"]
         )
-        fig_reported.update_layout(
-            plot_bgcolor="#0f0f10",
-            paper_bgcolor="#0f0f10",
-            font_color="#E6E6E6",
-            title_font_size=18,
-            xaxis_title="City",
-            yaxis_title="GHG Emissions (tCO2e)"
-        )
-        st.plotly_chart(fig_reported, use_container_width=True)
+        fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig2, use_container_width=True)
 
-    # --- Estimated GHG Emissions (Population x Factor) ---
+# ---------------- Estimated GHG Emissions Chart ----------------
     if not df.empty and "Population" in df.columns:
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
 
-        EMISSION_FACTOR = 2.5  # tCO2e per person/year
+        # Use an assumed emission factor (tCO2e per person/year)
+        EMISSION_FACTOR = 2.5
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
 
-        fig_estimated = px.bar(
+        fig3 = px.bar(
             df.sort_values("Estimated GHG Emissions", ascending=False),
             x="City Name",
             y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
-            text=df["Estimated GHG Emissions"].apply(format_indian_number),
+            text="Estimated GHG Emissions",
             color_discrete_sequence=["#E67E22"]
         )
-        fig_estimated.update_layout(
-            plot_bgcolor="#0f0f10",
-            paper_bgcolor="#0f0f10",
-            font_color="#E6E6E6",
-            title_font_size=18,
-            xaxis_title="City",
-            yaxis_title="Estimated GHG Emissions (tCO2e)"
-        )
-        st.plotly_chart(fig_estimated, use_container_width=True)
+        fig3.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig3, use_container_width=True)
 
 # ---------------------------
-# City Information Page
+# City Dashboard
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
+
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
 
     cities_for_select = list(cities_districts.keys())
     city = st.selectbox("Select City", cities_for_select)
 
-    meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if not df_meta[df_meta["City Name"] == city].empty else None
+    meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
+
+    st.subheader(f"{city} — Overview")
+
     if meta_row is not None:
-        st.markdown(f"**District:** {safe_get(meta_row, 'District')}")
-        st.markdown(f"**Population:** {format_indian_number(safe_get(meta_row, 'Population'))}")
-        st.markdown(f"**ULB Category:** {safe_get(meta_row, 'ULB Category')}")
-        st.markdown(f"**CAP Status:** {safe_get(meta_row, 'CAP Status')}")
-        st.markdown(f"**GHG Emissions (tCO2e):** {format_indian_number(safe_get(meta_row, 'GHG Emissions'))}")
-        st.markdown(f"**Environment Dept Exist:** {safe_get(meta_row, 'Environment Department Exist')}")
-        st.markdown(f"**Department Name:** {safe_get(meta_row, 'Department Name')}")
-        st.markdown(f"**Head Name:** {safe_get(meta_row, 'Head Name')}")
-        st.markdown(f"**Department Email:** {safe_get(meta_row, 'Department Email')}")
+        st.write(f"**District:** {safe_get(meta_row, 'District')}")
+        st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row, 'Population'))}")
+        st.write(f"**ULB Category:** {safe_get(meta_row, 'ULB Category')}")
+        st.write(f"**CAP Status:** {safe_get(meta_row, 'CAP Status')}")
+    else:
+        st.write(f"**District:** {cities_districts.get(city, '—')}")
+
+    if not df_cap.empty and city in df_cap["City Name"].values:
+        cap_row = df_cap[df_cap["City Name"] == city].iloc[0]
+        sector_cols = [c for c in cap_row.index if c.endswith(" Emissions (tCO2e)")]
+        sectors = {c.replace(" Emissions (tCO2e)", ""): max(float(cap_row[c]), 0) for c in sector_cols}
+
+        if sectors:
+            chart_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions": list(sectors.values())})
+
+            fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
+            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text="Emissions",
+                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
+            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+            st.write("### Emissions by Sector")
+            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: f"{v:,.2f}")))
+
+        last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
+        st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
+
+        # PDF Download
+        if PDF_AVAILABLE:
+            st.subheader("Download GHG Inventory Report")
+            with st.form("pdf_form"):
+                user_name = st.text_input("Your Full Name")
+                user_email = st.text_input("Your Work Email")
+                user_contact = st.text_input("Contact Number")
+                submit_pdf = st.form_submit_button("Generate PDF")
+                if submit_pdf:
+                    buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=A4)
+                    elements = []
+                    styles = getSampleStyleSheet()
+                    elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
+                    elements.append(Spacer(1, 12))
+                    data = [["Sector", "Emissions (tCO2e)"]] + [[s, f"{v:,.2f}"] for s, v in sectors.items()]
+                    t = Table(data, hAlign="LEFT")
+                    t.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.white)
+                    ]))
+                    elements.append(t)
+                    doc.build(elements)
+                    buffer.seek(0)
+                    st.download_button("Download PDF", buffer,
+                                       file_name=f"{city}_GHG_Report.pdf",
+                                       mime="application/pdf")
+        else:
+            st.warning("PDF generation not available. Install reportlab library.")
 
 # ---------------------------
-# Admin Page
+# Admin Panel
 # ---------------------------
 elif menu == "Admin":
-    st.header("Admin Panel")
+    st.header("Admin Board")
+
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.markdown("✅ Admin authenticated")
-        st.markdown("**Upload / Update City Data**")
-        uploaded_file = st.file_uploader("Upload CSV with City Data", type="csv")
-        if uploaded_file is not None:
-            try:
-                df_new = pd.read_csv(uploaded_file)
-                # Ensure city names match updated dictionary
-                df_new["City Name"] = df_new["City Name"].apply(lambda x: cities_districts.get(x, x))
-                st.session_state.data = df_new
-                st.success("City data updated successfully!")
-            except Exception as e:
-                st.error(f"Failed to upload: {e}")
+        st.subheader("Add/Update City Data")
+        with st.form("admin_form", clear_on_submit=False):
+            city = st.selectbox("Select City", list(cities_districts.keys()))
+            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
+            dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
+            dept_name = st.text_input("Department Name")
+            head_name = st.text_input("Department Head Name")
+            dept_email = st.text_input("Department Email")
+            submit_admin = st.form_submit_button("Add/Update City Data")
+
+            if submit_admin:
+                new_row = {
+                    "City Name": city,
+                    "District": cities_districts.get(city, "—"),
+                    "CAP Status": cap_status,
+                    "GHG Emissions": ghg_val,
+                    "Environment Department Exist": dept_exist,
+                    "Department Name": dept_name,
+                    "Head Name": head_name,
+                    "Department Email": dept_email
+                }
+                df_meta = st.session_state.data
+                if city in df_meta["City Name"].values:
+                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
+                else:
+                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
+                st.session_state.data = df_meta
+                df_meta.to_csv(DATA_FILE, index=False)
+                st.success(f"{city} data updated successfully!")
 
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
-elif menu == "CAP Preparation" and st.session_state.authenticated:
-    st.header("CAP Preparation")
-    st.markdown("Prepare and update Climate Action Plans for selected cities")
+elif menu == "CAP Preparation":
+    st.header("CAP : Data Collection")
 
-    if not st.session_state.data.empty:
-        city = st.selectbox("Select City", list(cities_districts.keys()))
-        city_row_index = st.session_state.data.index[st.session_state.data["City Name"] == city].tolist()
-        if city_row_index:
-            idx = city_row_index[0]
-            st.text_input("CAP Status", value=st.session_state.data.at[idx, "CAP Status"], key=f"cap_status_{city}")
-            st.text_area("GHG Emissions Notes", value=st.session_state.data.at[idx, "GHG Emissions"], key=f"ghg_{city}")
-            if st.button("Update CAP Data", key=f"update_{city}"):
-                st.session_state.data.at[idx, "CAP Status"] = st.session_state[f"cap_status_{city}"]
-                st.session_state.data.at[idx, "GHG Emissions"] = st.session_state[f"ghg_{city}"]
-                st.success(f"CAP data updated for {city}")
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        with st.form("cap_form", clear_on_submit=False):
+            city = st.selectbox("Select City", list(cities_districts.keys()))
+            st.markdown("### Enter Emissions (tCO2e) for each sector")
 
+            sectors = ["Energy", "Transport", "Buildings", "Industry", "Water", "Waste", "Urban Green / Other"]
+            cap_values = {}
+            for sec in sectors:
+                cap_values[sec] = st.number_input(f"{sec} Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
+
+            file_upload = st.file_uploader("Attach verification file (optional)", type=["pdf", "xlsx", "csv"])
+
+            submit_cap = st.form_submit_button("Save CAP Data")
+            if submit_cap:
+                new_row = {"City Name": city}
+                for sec, val in cap_values.items():
+                    new_row[f"{sec} Emissions (tCO2e)"] = val
+
+                df_cap = st.session_state.cap_data
+                if not df_cap.empty and city in df_cap["City Name"].values:
+                    for k, v in new_row.items():
+                        df_cap.loc[df_cap["City Name"] == city, k] = v
+                else:
+                    df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
+
+                st.session_state.cap_data = df_cap
+                df_cap.to_csv(CAP_DATA_FILE, index=False)
+                st.session_state.last_updated = datetime.now()
+                st.success(f"CAP data for {city} saved successfully!")
