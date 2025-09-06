@@ -200,8 +200,8 @@ for btn, name in [("Home", "Home"), ("City Information", "City Information"), ("
         st.session_state.menu = name
         st.session_state.show_inventory = False
 
-if st.session_state.authenticated and st.sidebar.button("CAP / GHG Inventory"):
-    st.session_state.menu = "CAP Inventory"
+if st.session_state.authenticated and st.sidebar.button("CAP Generation"):
+    st.session_state.menu = "CAP Generation"
     st.session_state.show_inventory = True
 
 st.sidebar.markdown("---")
@@ -291,11 +291,11 @@ elif menu == "Admin":
 # ---------------------------
 # CAP + GHG Inventory Combined Page
 # ---------------------------
-elif menu == "CAP Inventory":
+elif menu == "CAP Generation":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.header("CAP Data Collection & GHG Inventory")
+        st.header("CAP : Data Collection")
 
         # --- City Selection ---
         cities_for_select = list(cities_districts.keys())
