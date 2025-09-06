@@ -250,24 +250,97 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar
+# Sidebar (Professional SaaS Dark Theme + Active Menu Highlight)
+# ---------------------------
+st.markdown("""
+<style>
+/* Sidebar background */
+[data-testid="stSidebar"] {
+    background-color: #1E272E;
+    color: #ECEFF1;
+    padding-top: 15px;
+}
+
+/* Sidebar buttons */
+[data-testid="stSidebar"] .stButton button {
+    background-color: #37474F;
+    color: #ECEFF1;
+    width: 100%;
+    padding: 10px 0;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Button hover effect */
+[data-testid="stSidebar"] .stButton button:hover {
+    background-color: #42A5F5;
+    color: #FFFFFF;
+    cursor: pointer;
+}
+
+/* Active button styling */
+[data-testid="stSidebar"] .stButton button.active {
+    background-color: #42A5F5;
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
+/* Sidebar logo */
+[data-testid="stSidebar"] img {
+    margin-bottom: 15px;
+    border-radius: 6px;
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+    color: #B0BEC5;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 20px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------
+# Sidebar Logo
 # ---------------------------
 st.sidebar.image(
     "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
 
-for btn, name in [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]:
-    if st.sidebar.button(btn):
+# ---------------------------
+# Sidebar Menu Buttons with Active State
+# ---------------------------
+menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
+if st.session_state.authenticated:
+    menu_items.append(("CAP Generation", "CAP Generation"))
+
+for btn_label, name in menu_items:
+    button_html = f"""
+    <div>
+        <button class="{'active' if st.session_state.menu == name else ''}">{btn_label}</button>
+    </div>
+    """
+    # Use markdown with HTML for active button effect
+    if st.sidebar.markdown(button_html, unsafe_allow_html=True):
         st.session_state.menu = name
 
-if st.session_state.authenticated and st.sidebar.button("CAP Generation"):
-    st.session_state.menu = "CAP Generation"
-
+# ---------------------------
+# Sidebar Footer / Copyright
+# ---------------------------
 st.sidebar.markdown("---")
-st.sidebar.markdown("EinTrust | © 2025")
+st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsafe_allow_html=True)
 
+# ---------------------------
+# Current Menu
+# ---------------------------
 menu = st.session_state.menu
+
 
 # ---------------------------
 # Home Page: Maharashtra Dashboard (Professional SaaS Look)
