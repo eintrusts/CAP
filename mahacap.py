@@ -972,162 +972,223 @@ elif menu == "Admin":
                 
 
 # ---------------------------
-# CAP Generation Page: SaaS-style with Progress & Validation
-# ---------------------------
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-
-CAP_DATA_FILE = "cap_data.csv"
-
-# Load existing CAP data
-try:
-    df_cap = pd.read_csv(CAP_DATA_FILE)
-except:
-    df_cap = pd.DataFrame()
-st.session_state.cap_data = df_cap
-
-def get_saved_value(city, field, default=0):
-    """Return saved value for city-field if exists, else default"""
-    if not st.session_state.cap_data.empty:
-        city_data = st.session_state.cap_data[st.session_state.cap_data["City"] == city]
-        if not city_data.empty and field in city_data.columns:
-            return city_data[field].values[-1]
-    return default
-
-def save_section(city, section_name, section_dict):
-    """Save section data to CAP CSV"""
-    df = st.session_state.cap_data.copy()
-    section_dict.update({
-        "City": city,
-        "Section": section_name,
-        "Saved_Date": datetime.now()
-    })
-    df = pd.concat([df, pd.DataFrame([section_dict])], ignore_index=True)
-    st.session_state.cap_data = df
-    df.to_csv(CAP_DATA_FILE, index=False)
-
-# ---------------------------
 # CAP Generation Page
 # ---------------------------
-elif menu == "CAP Generation":
-    st.header("CAP Generation: Comprehensive City-Level Raw Data Collection")
+if menu == "CAP Generation":
+    st.header("CAP Generation : Data Collection")
 
-    if not st.session_state.authenticated:
-        admin_login()
+    if not st.session_state.get("authenticated", False):
+        admin_login()  # your existing admin login function
     else:
-        st.markdown(
-            "Collect **detailed city-level raw data** to generate the GHG Inventory. "
-            "Data can be saved section-wise and edited later. "
-            "Completion status is shown for each section."
-        )
+        st.markdown("""
+        Collect detailed city-level activity data for generating a comprehensive GHG inventory.
+        Please fill in all available data. You can attach supporting files if needed.
+        """)
 
-        # --- City Selection & General Info ---
-        st.subheader("City Information")
-        city = st.selectbox(
-            "Select City",
-            [c for c in cities_districts.keys() if c not in completed_cities]
-        )
-        state = st.text_input("State", value=get_saved_value(city, "State", ""))
-        population = st.number_input("Total Population", min_value=0, step=1000, value=get_saved_value(city, "Population"))
-        area_km2 = st.number_input("Area (km²)", min_value=0.0, step=0.1, value=get_saved_value(city, "Area_km2"))
-        admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"], 
-                                  index=["Municipal Corporation","Municipal Council","Other"].index(get_saved_value(city, "Admin_Type","Municipal Corporation")))
-        inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, 
-                                         value=get_saved_value(city, "Inventory_Year", datetime.now().year))
+        with st.form("cap_raw_form", clear_on_submit=False):
+            # -------------------
+            # 1. General City Info
+            # -------------------
+            st.subheader("1. General City Info")
+            city = st.selectbox("City Name", list(cities_districts.keys()))
+            state = st.text_input("State")
+            population = st.number_input("Population", min_value=0, value=0, step=1000)
+            area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
+            admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"])
+            inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=datetime.now().year)
 
-        # --- Tabs for Sectors ---
-        tabs = st.tabs([
-            "Energy", "Transport", "Waste", "Industrial",
-            "Agri & Land Use", "Scope 3 / Other", "City Infrastructure", "Co-Benefits"
-        ])
+            # -------------------
+            # 2. Energy Sector
+            # -------------------
+            st.subheader("2. Energy Sector")
+            st.markdown("**Electricity & Heat Consumption**")
+            electricity_residential_kwh = st.number_input("Residential Electricity (kWh/year)", min_value=0, step=100)
+            electricity_commercial_kwh = st.number_input("Commercial Electricity (kWh/year)", min_value=0, step=100)
+            electricity_industrial_kwh = st.number_input("Industrial Electricity (kWh/year)", min_value=0, step=100)
+            electricity_municipal_kwh = st.number_input("Municipal Buildings Electricity (kWh/year)", min_value=0, step=100)
+            purchased_heat_gj = st.number_input("Purchased Heat/Steam (GJ/year)", min_value=0, step=10)
+            on_site_diesel_kwh = st.number_input("On-site Diesel Generator (kWh/year)", min_value=0, step=10)
+            on_site_gas_kwh = st.number_input("On-site Gas Turbine (kWh/year)", min_value=0, step=10)
+            renewable_solar_kwh = st.number_input("Renewable Solar (kWh/year)", min_value=0, step=10)
+            renewable_biomass_kwh = st.number_input("Renewable Biomass (kWh/year)", min_value=0, step=10)
+            renewable_wind_kwh = st.number_input("Renewable Wind (kWh/year)", min_value=0, step=10)
 
-        section_completion = {}  # Track completion %
+            st.markdown("**Stationary Fuel Combustion**")
+            diesel_consumption_l = st.number_input("Diesel Fuel (L/year)", min_value=0, step=10)
+            petrol_consumption_l = st.number_input("Petrol Fuel (L/year)", min_value=0, step=10)
+            lpg_consumption_kg = st.number_input("LPG Fuel (kg/year)", min_value=0, step=10)
+            ng_consumption_m3 = st.number_input("Natural Gas (m³/year)", min_value=0, step=10)
+            coal_consumption_tons = st.number_input("Coal (tons/year)", min_value=0, step=1)
 
-        # ---------------- ENERGY TAB ----------------
-        with tabs[0]:
-            st.subheader("Energy Sector")
-            energy_data = {}
-            with st.expander("Electricity Consumption"):
-                energy_data["elec_municipal"] = st.number_input("Municipal Buildings Electricity (kWh/year)",
-                                                               value=get_saved_value(city, "elec_municipal"))
-                energy_data["elec_residential"] = st.number_input("Residential Electricity (kWh/year)",
-                                                                 value=get_saved_value(city, "elec_residential"))
-                energy_data["elec_commercial"] = st.number_input("Commercial Electricity (kWh/year)",
-                                                                value=get_saved_value(city, "elec_commercial"))
-                energy_data["elec_industrial"] = st.number_input("Industrial Electricity (kWh/year)",
-                                                                value=get_saved_value(city, "elec_industrial"))
-            with st.expander("Renewables & On-site Generation"):
-                energy_data["renewable_solar"] = st.number_input("Solar Rooftops (kWh/year)",
-                                                                 value=get_saved_value(city, "renewable_solar"))
-                energy_data["renewable_biomass"] = st.number_input("Biomass (kWh/year)",
-                                                                   value=get_saved_value(city, "renewable_biomass"))
-                energy_data["renewable_wind"] = st.number_input("Wind Energy (kWh/year)",
-                                                                value=get_saved_value(city, "renewable_wind"))
-                energy_data["on_site_diesel"] = st.number_input("Diesel Generators (litres/year)",
-                                                                value=get_saved_value(city, "on_site_diesel"))
-            with st.expander("Stationary Fuel Combustion"):
-                energy_data["fuel_diesel_municipal"] = st.number_input("Diesel: Municipal",
-                                                                      value=get_saved_value(city, "fuel_diesel_municipal"))
-                energy_data["fuel_petrol_municipal"] = st.number_input("Petrol: Municipal",
-                                                                       value=get_saved_value(city, "fuel_petrol_municipal"))
-            # Compute completion %
-            filled_fields = sum([1 for v in energy_data.values() if v not in [0,""]])
-            total_fields = len(energy_data)
-            section_completion["Energy"] = int((filled_fields/total_fields)*100)
-            st.progress(section_completion["Energy"])
-            st.caption(f"Energy Section Completion: {section_completion['Energy']}%")
-            if st.button("Save Energy Section", key="save_energy"):
-                save_section(city, "Energy", energy_data)
-                st.success("Energy section saved successfully!")
+            # -------------------
+            # 3. Transport Sector
+            # -------------------
+            st.subheader("3. Transport Sector")
+            st.markdown("**Public & Private Transport**")
+            vehicles_cars = st.number_input("Cars", min_value=0, step=1)
+            vehicles_buses = st.number_input("Buses", min_value=0, step=1)
+            vehicles_trucks = st.number_input("Trucks", min_value=0, step=1)
+            vehicles_two_wheelers = st.number_input("2/3 Wheelers", min_value=0, step=1)
+            avg_km_per_vehicle = st.number_input("Average km traveled per vehicle per year", min_value=0, step=10)
 
-        # ---------------- TRANSPORT TAB ----------------
-        with tabs[1]:
-            st.subheader("Transport Sector")
-            transport_data = {}
-            transport_data["vehicles_cars"] = st.number_input("Cars", value=get_saved_value(city,"vehicles_cars"))
-            transport_data["vehicles_buses"] = st.number_input("Buses", value=get_saved_value(city,"vehicles_buses"))
-            transport_data["vehicles_trucks"] = st.number_input("Trucks", value=get_saved_value(city,"vehicles_trucks"))
-            # Compute completion %
-            filled_fields = sum([1 for v in transport_data.values() if v not in [0,""]])
-            total_fields = len(transport_data)
-            section_completion["Transport"] = int((filled_fields/total_fields)*100)
-            st.progress(section_completion["Transport"])
-            st.caption(f"Transport Section Completion: {section_completion['Transport']}%")
-            if st.button("Save Transport Section", key="save_transport"):
-                save_section(city, "Transport", transport_data)
-                st.success("Transport section saved successfully!")
+            st.markdown("**Fuel Consumption by Vehicle Type**")
+            diesel_vehicles_l = st.number_input("Diesel (L/year for all vehicles)", min_value=0, step=10)
+            petrol_vehicles_l = st.number_input("Petrol (L/year for all vehicles)", min_value=0, step=10)
+            cng_vehicles_kg = st.number_input("CNG (kg/year for all vehicles)", min_value=0, step=10)
+            electricity_vehicles_kwh = st.number_input("Electric Vehicles (kWh/year)", min_value=0, step=10)
 
-        # ---------------- WASTE TAB ----------------
-        with tabs[2]:
-            st.subheader("Waste Sector")
-            waste_data = {}
-            waste_data["solid_waste_total"] = st.number_input("Municipal Solid Waste (tons/year)", 
-                                                              value=get_saved_value(city,"solid_waste_total"))
-            waste_data["fraction_landfilled"] = st.number_input("Fraction Landfilled (%)",
-                                                               value=get_saved_value(city,"fraction_landfilled"))
-            # Compute completion %
-            filled_fields = sum([1 for v in waste_data.values() if v not in [0,""]])
-            total_fields = len(waste_data)
-            section_completion["Waste"] = int((filled_fields/total_fields)*100)
-            st.progress(section_completion["Waste"])
-            st.caption(f"Waste Section Completion: {section_completion['Waste']}%")
-            if st.button("Save Waste Section", key="save_waste"):
-                save_section(city, "Waste", waste_data)
-                st.success("Waste section saved successfully!")
+            st.markdown("**Freight & Logistics**")
+            freight_distance_km = st.number_input("Goods Vehicles Distance Traveled (km/year)", min_value=0, step=10)
+            freight_diesel_l = st.number_input("Freight Diesel Consumption (L/year)", min_value=0, step=10)
+            freight_cng_kg = st.number_input("Freight CNG Consumption (kg/year)", min_value=0, step=10)
+            freight_electric_kwh = st.number_input("Freight Electric Consumption (kWh/year)", min_value=0, step=10)
 
-        # --- Repeat same for Industrial, Agri & Land Use, Scope 3, City Infrastructure, Co-Benefits ---
-        # Each with section_completion tracking
+            # -------------------
+            # 4. Waste Sector
+            # -------------------
+            st.subheader("4. Waste Sector")
+            msw_generated_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, step=1)
+            msw_landfill_frac = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, step=0.1)
+            msw_recycled_frac = st.number_input("Fraction Recycled (%)", min_value=0.0, max_value=100.0, step=0.1)
+            msw_composted_frac = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, step=0.1)
+            landfill_methane_capture = st.number_input("Landfill Methane Capture Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
+            sewage_generated_m3 = st.number_input("Sewage Generated (m³/year)", min_value=0, step=100)
+            treatment_primary = st.number_input("Primary Treatment Volume (m³/year)", min_value=0, step=100)
+            treatment_secondary = st.number_input("Secondary Treatment Volume (m³/year)", min_value=0, step=100)
+            treatment_tertiary = st.number_input("Tertiary Treatment Volume (m³/year)", min_value=0, step=100)
+            sludge_generated_tons = st.number_input("Sludge Generated (tons/year)", min_value=0, step=1)
+            energy_wastewater_kwh = st.number_input("Energy used in Treatment (kWh/year)", min_value=0, step=10)
 
-        # --- Final Generate GHG Inventory Button ---
-        all_sections_complete = all(v>=50 for v in section_completion.values())  # Require at least 50% filled
-        if st.form_submit_button("Generate GHG Inventory"):
-            if all_sections_complete:
-                st.session_state.menu = "GHG Inventory"
+            # -------------------
+            # 5. Industrial Sector
+            # -------------------
+            st.subheader("5. Industrial Sector")
+            industrial_coal_tons = st.number_input("Coal (tons/year)", min_value=0, step=1)
+            industrial_gas_m3 = st.number_input("Natural Gas (m³/year)", min_value=0, step=10)
+            industrial_electric_kwh = st.number_input("Electricity (kWh/year)", min_value=0, step=10)
+            industrial_biomass_kwh = st.number_input("Biomass (kWh/year)", min_value=0, step=10)
+
+            # -------------------
+            # 6. Agriculture & Land Use
+            # -------------------
+            st.subheader("6. Agriculture & Land Use")
+            cropland_area_ha = st.number_input("Cropland Area (ha)", min_value=0, step=1)
+            livestock_number = st.number_input("Number of Livestock", min_value=0, step=1)
+            manure_management_type = st.text_input("Manure Management Type")
+            fertilizer_use_tons = st.number_input("Fertilizer Use (tons/year)", min_value=0, step=1)
+            afforestation_ha = st.number_input("Afforestation (ha/year)", min_value=0, step=1)
+            deforestation_ha = st.number_input("Deforestation (ha/year)", min_value=0, step=1)
+
+            # -------------------
+            # 7. City Infrastructure
+            # -------------------
+            st.subheader("7. City Infrastructure")
+            streetlights_number = st.number_input("Number of Streetlights", min_value=0, step=1)
+            streetlights_energy_kwh = st.number_input("Streetlights Energy (kWh/year)", min_value=0, step=10)
+            municipal_vehicles_fleet = st.number_input("Municipal Vehicle Fleet (number)", min_value=0, step=1)
+            municipal_vehicles_fuel_l = st.number_input("Municipal Vehicles Fuel (L/year)", min_value=0, step=10)
+            water_pumping_energy_kwh = st.number_input("Water Pumping Energy (kWh/year)", min_value=0, step=10)
+            cooling_municipal_buildings_kwh = st.number_input("Cooling/Heating Energy in Municipal Buildings (kWh/year)", min_value=0, step=10)
+
+            # -------------------
+            # 8. Optional Co-benefit Indicators
+            # -------------------
+            st.subheader("8. Optional Co-benefit Indicators")
+            air_pollution_reduction = st.text_input("Air Pollution Reduction Measures")
+            renewable_energy_share_pct = st.number_input("Renewable Energy Share (%)", min_value=0.0, max_value=100.0, step=0.1)
+            water_usage_m3 = st.number_input("Total Water Usage (m³/year)", min_value=0, step=1000)
+
+            # -------------------
+            # 9. Supporting Files
+            # -------------------
+            file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
+
+            submit_cap = st.form_submit_button("Generate GHG Inventory")
+
+            if submit_cap:
+                raw_row = {
+                    "City": city, "State": state, "Population": population, "Area_km2": area_km2,
+                    "Admin_Type": admin_type, "Inventory_Year": inventory_year,
+                    "Electricity_Residential": electricity_residential_kwh,
+                    "Electricity_Commercial": electricity_commercial_kwh,
+                    "Electricity_Industrial": electricity_industrial_kwh,
+                    "Electricity_Municipal": electricity_municipal_kwh,
+                    "Purchased_Heat_GJ": purchased_heat_gj,
+                    "Onsite_Diesel": on_site_diesel_kwh,
+                    "Onsite_Gas": on_site_gas_kwh,
+                    "Renewable_Solar": renewable_solar_kwh,
+                    "Renewable_Biomass": renewable_biomass_kwh,
+                    "Renewable_Wind": renewable_wind_kwh,
+                    "Diesel": diesel_consumption_l,
+                    "Petrol": petrol_consumption_l,
+                    "LPG": lpg_consumption_kg,
+                    "Natural_Gas": ng_consumption_m3,
+                    "Coal": coal_consumption_tons,
+                    # Transport
+                    "Cars": vehicles_cars, "Buses": vehicles_buses, "Trucks": vehicles_trucks,
+                    "Two_Three_Wheelers": vehicles_two_wheelers,
+                    "Avg_Km_Vehicle": avg_km_per_vehicle,
+                    "Diesel_Vehicles": diesel_vehicles_l,
+                    "Petrol_Vehicles": petrol_vehicles_l,
+                    "CNG_Vehicles": cng_vehicles_kg,
+                    "Electric_Vehicles": electricity_vehicles_kwh,
+                    "Freight_Distance_km": freight_distance_km,
+                    "Freight_Diesel_L": freight_diesel_l,
+                    "Freight_CNG_kg": freight_cng_kg,
+                    "Freight_Electric_kwh": freight_electric_kwh,
+                    # Waste
+                    "MSW_Tons": msw_generated_tons,
+                    "MSW_Landfill_Percent": msw_landfill_frac,
+                    "MSW_Recycled_Percent": msw_recycled_frac,
+                    "MSW_Composted_Percent": msw_composted_frac,
+                    "Landfill_Methane_Capture_Percent": landfill_methane_capture,
+                    "Sewage_m3": sewage_generated_m3,
+                    "Sludge_Tons": sludge_generated_tons,
+                    "Energy_Wastewater_kwh": energy_wastewater_kwh,
+                    # Industrial
+                    "Industrial_Coal_tons": industrial_coal_tons,
+                    "Industrial_Gas_m3": industrial_gas_m3,
+                    "Industrial_Electric_kwh": industrial_electric_kwh,
+                    "Industrial_Biomass_kwh": industrial_biomass_kwh,
+                    # Agriculture
+                    "Cropland_ha": cropland_area_ha,
+                    "Livestock_Number": livestock_number,
+                    "Manure_Type": manure_management_type,
+                    "Fertilizer_tons": fertilizer_use_tons,
+                    "Afforestation_ha": afforestation_ha,
+                    "Deforestation_ha": deforestation_ha,
+                    # City Infra
+                    "Streetlights_Number": streetlights_number,
+                    "Streetlights_Energy_kwh": streetlights_energy_kwh,
+                    "Municipal_Vehicles_Number": municipal_vehicles_fleet,
+                    "Municipal_Vehicles_Fuel_L": municipal_vehicles_fuel_l,
+                    "Water_Pumping_Energy_kwh": water_pumping_energy_kwh,
+                    "Cooling_Municipal_Buildings_kwh": cooling_municipal_buildings_kwh,
+                    # Co-benefit
+                    "Air_Pollution_Reduction": air_pollution_reduction,
+                    "Renewable_Share_Percent": renewable_energy_share_pct,
+                    "Water_Usage_m3": water_usage_m3,
+                    "Submission_Date": datetime.now()
+                }
+
+                df_cap = st.session_state.get("cap_data", pd.DataFrame())
+                if not df_cap.empty and city in df_cap["City"].values:
+                    for k, v in raw_row.items():
+                        df_cap.loc[df_cap["City"] == city, k] = v
+                else:
+                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_row])], ignore_index=True)
+
+                st.session_state.cap_data = df_cap
+                df_cap.to_csv(CAP_DATA_FILE, index=False)
+                st.session_state.last_updated = datetime.now()
+
+                st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
+                st.session_state.menu = "GHG Inventory"  # Redirect
                 st.experimental_rerun()
-            else:
-                st.warning("Please fill at least 50% of all sections before generating GHG Inventory.")
 
+        if st.button("Reset All Data", key="reset_cap_data"):
+            reset_all_data()
+            
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
