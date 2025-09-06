@@ -346,10 +346,9 @@ elif st.session_state.menu == "CAP Generation":
             urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
             renewable_energy_mwh = st.number_input("Renewable Energy Generated in City (MWh/year)", min_value=0, value=0, step=10)
 
-            submit_cap = st.form_submit_button("Save & View GHG Inventory")
+            submit_cap = st.form_submit_button("Save CAP & Generate GHG Inventory")
 
             if submit_cap:
-                # Save raw data into CAP dataframe
                 raw_row = {
                     "City Name": city,
                     "Population": population,
@@ -401,8 +400,8 @@ elif st.session_state.menu == "GHG Inventory":
     df_city = st.session_state.cap_data.loc[st.session_state.cap_data["City Name"] == city].iloc[0]
 
     # --- Emission Factors ---
-    EF_electricity = 0.82  # tCO2e per MWh
-    EF_diesel_vehicle = 0.00268  # tCO2e per km per vehicle
+    EF_electricity = 0.82
+    EF_diesel_vehicle = 0.00268
     EF_petrol_vehicle = 0.00231
     EF_cng_vehicle = 0.0016
     EF_lpg_vehicle = 0.00151
@@ -424,28 +423,28 @@ elif st.session_state.menu == "GHG Inventory":
     ) * EF_electricity
 
     transport_emissions = (
-        df_city["Diesel Vehicles"] * df_city["Avg km/Vehicle"] * EF_diesel_vehicle +
-        df_city["Petrol Vehicles"] * df_city["Avg km/Vehicle"] * EF_petrol_vehicle +
-        df_city["CNG Vehicles"] * df_city["Avg km/Vehicle"] * EF_cng_vehicle +
-        df_city["LPG Vehicles"] * df_city["Avg km/Vehicle"] * EF_lpg_vehicle +
-        df_city["Electric Vehicles"] * df_city["Avg km/Vehicle"] * EF_electric_vehicle
+        df_city["Diesel Vehicles"]*df_city["Avg km/Vehicle"]*EF_diesel_vehicle +
+        df_city["Petrol Vehicles"]*df_city["Avg km/Vehicle"]*EF_petrol_vehicle +
+        df_city["CNG Vehicles"]*df_city["Avg km/Vehicle"]*EF_cng_vehicle +
+        df_city["LPG Vehicles"]*df_city["Avg km/Vehicle"]*EF_lpg_vehicle +
+        df_city["Electric Vehicles"]*df_city["Avg km/Vehicle"]*EF_electric_vehicle
     )
 
     industry_emissions = (
-        df_city["Industrial Diesel (t)"] * EF_diesel_industry +
-        df_city["Industrial Petrol (t)"] * EF_petrol_industry +
-        df_city["Industrial CNG (t)"] * EF_cng_industry +
-        df_city["Industrial LPG (t)"] * EF_lpg_industry +
-        df_city["Industrial Energy (MWh)"] * EF_electricity
+        df_city["Industrial Diesel (t)"]*EF_diesel_industry +
+        df_city["Industrial Petrol (t)"]*EF_petrol_industry +
+        df_city["Industrial CNG (t)"]*EF_cng_industry +
+        df_city["Industrial LPG (t)"]*EF_lpg_industry +
+        df_city["Industrial Energy (MWh)"]*EF_electricity
     )
 
     waste_emissions = (
-        df_city["Municipal Solid Waste (t)"] * (df_city["Fraction Landfilled (%)"]/100) * EF_msw_landfill +
-        df_city["Municipal Solid Waste (t)"] * (df_city["Fraction Composted (%)"]/100) * EF_msw_compost +
-        df_city["Wastewater Treated (m3)"] * EF_wastewater
+        df_city["Municipal Solid Waste (t)"]*(df_city["Fraction Landfilled (%)"]/100)*EF_msw_landfill +
+        df_city["Municipal Solid Waste (t)"]*(df_city["Fraction Composted (%)"]/100)*EF_msw_compost +
+        df_city["Wastewater Treated (m3)"]*EF_wastewater
     )
 
-    water_emissions = df_city["Energy for Water (MWh)"] * EF_electricity
+    water_emissions = df_city["Energy for Water (MWh)"]*EF_electricity
     total_ghg = elec_emissions + transport_emissions + industry_emissions + waste_emissions + water_emissions
     per_capita = total_ghg / max(df_city["Population"],1)
 
@@ -475,11 +474,59 @@ elif st.session_state.menu == "Actions":
     st.header(f"Recommended Actions - {city}")
 
     sectors = ["Electricity","Transport","Industry","Waste","Water & Other"]
-    actions_example = {sector:{
-        "Short Term":[f"{sector} short action {i+1}" for i in range(10)],
-        "Mid Term":[f"{sector} mid action {i+1}" for i in range(10)],
-        "Long Term":[f"{sector} long action {i+1}" for i in range(10)]
-    } for sector in sectors}
+
+    # Practical Indian city actions (10 each)
+    actions_example = {
+        "Electricity": {
+            "Short Term":[
+                "LED streetlight replacement","Solar rooftop pilot","Energy audits in public buildings",
+                "Awareness campaign for households","Demand-side management pilot","Smart metering","Load shifting pilot",
+                "Replace old transformers","Grid optimization study","Encourage solar water heaters"
+            ],
+            "Mid Term":[
+                "City-wide rooftop solar","Energy efficiency retrofit in schools","Public building solar panels",
+                "EV charging integration","District cooling pilot","High-efficiency streetlights","Renewable PPAs for city buildings",
+                "Microgrid for municipal buildings","Solar-based streetlight network","Energy efficiency in water pumping"
+            ],
+            "Long Term":[
+                "100% renewable city grid target","Net-zero municipal buildings","Smart city energy management",
+                "EV fleet transition","Waste-to-energy integration","Smart street lighting","Advanced microgrids",
+                "Grid-scale solar/wind projects","Smart metering for all","Integrated city energy planning"
+            ]
+        },
+        "Transport": {
+            "Short Term":[
+                "Public transport awareness","Non-motorized transport lanes","Cycle sharing pilot",
+                "Carpool incentives","Low emission zones","Bus fleet efficiency check","Traffic signal optimization",
+                "EV fleet pilot","School bus efficiency audit","Fuel efficiency awareness campaigns"
+            ],
+            "Mid Term":[
+                "EV public transport","Bus rapid transit expansion","Dedicated cycle lanes","EV charging network",
+                "Metro/suburban rail integration","Transport demand management","Smart parking pricing","Public EV taxi pilot",
+                "Traffic congestion monitoring","Car-free zones in CBD"
+            ],
+            "Long Term":[
+                "Zero-emission city transport","Fully integrated multimodal transport","City-wide EV adoption",
+                "Autonomous electric buses","Rail freight shift","High-speed rail integration","Smart traffic AI",
+                "Public bike-sharing expansion","Pedestrian-friendly city","Transport sector net-zero target"
+            ]
+        },
+        "Industry": {
+            "Short Term":["Energy audits","Process optimization","Waste heat recovery","Equipment tune-ups","Awareness workshops","Shift to efficient motors","Fuel substitution pilot","Process monitoring","Energy efficiency certification","Optimize compressed air"],
+            "Mid Term":["Renewable energy procurement","Cogeneration systems","Process electrification","Efficient lighting","Benchmarking","ISO 50001 adoption","Heat recovery integration","Industrial microgrids","Energy storage integration","Cleaner production plans"],
+            "Long Term":["Net-zero industrial cluster","Circular economy adoption","Renewable process heat","Industry 4.0 smart controls","Industrial symbiosis","Advanced waste-to-energy","Full electrification","Low-carbon material adoption","Green certification","City-level industrial decarbonization plan"]
+        },
+        "Waste": {
+            "Short Term":["Segregation awareness","Composting pilot","Landfill methane capture study","Waste audits","Door-to-door segregation","School campaigns","Recycling pilot","Plastic reduction campaign","Community clean-ups","Wastewater monitoring"],
+            "Mid Term":["City composting units","Waste-to-energy pilot","Material recovery facilities","Landfill gas capture","Organic waste collection route optimization","Smart bins","Recycling centers expansion","Wastewater treatment improvement","Recycling incentives","E-waste collection drives"],
+            "Long Term":["Zero waste city target","Full waste-to-energy network","Comprehensive recycling network","Advanced landfill methane capture","Circular economy integration","Composting mandatory","Organic waste processing units","Industrial waste recycling","Smart waste AI","City-wide waste management plan"]
+        },
+        "Water & Other": {
+            "Short Term":["Leak detection pilot","Water-saving awareness","Rainwater harvesting small-scale","Metering pilot","Pump efficiency checks","School awareness programs","Greywater reuse pilot","Water quality monitoring","Irrigation optimization","Reduce energy in water supply"],
+            "Mid Term":["City-wide rainwater harvesting","Wastewater recycling","Smart metering expansion","Pump automation","Water loss reduction","Industrial water reuse","Stormwater management","Reservoir efficiency upgrade","Irrigation scheduling","City water efficiency plan"],
+            "Long Term":["Net-zero water-energy city","Integrated water management","Advanced wastewater recycling","City-scale rainwater integration","Energy-efficient pumping","Water footprint reduction","Water reuse in industries","AI-based water management","Smart reservoirs","Urban green integration for water retention"]
+        }
+    }
 
     for sector in sectors:
         st.subheader(sector)
