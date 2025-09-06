@@ -250,44 +250,45 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Premium SaaS Dark Theme + Hover Animations + Separators)
+# Sidebar (Professional SaaS Style)
 # ---------------------------
 st.markdown("""
 <style>
 /* Sidebar background */
 [data-testid="stSidebar"] {
-    background-color: #1E272E;
+    background-color: #1B1F23;
     color: #ECEFF1;
     padding-top: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Sidebar logo */
 [data-testid="stSidebar"] img {
-    margin-bottom: 20px;
-    border-radius: 6px;
+    margin-bottom: 25px;
+    border-radius: 8px;
 }
 
 /* Sidebar buttons */
 [data-testid="stSidebar"] button {
-    background-color: #37474F;
+    background-color: #2A2E33;
     color: #ECEFF1;
     width: 100%;
-    padding: 12px 0;
-    margin-bottom: 10px;
+    padding: 15px 0;
+    margin-bottom: 12px;
     border-radius: 6px;
-    font-size: 17px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
     border: none;
-    transition: all 0.3s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.25s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    text-align: left;
+    padding-left: 20px;
 }
 
-/* Button hover effect */
+/* Hover effect */
 [data-testid="stSidebar"] button:hover {
-    background-color: #42A5F5;
-    color: #FFFFFF;
-    transform: translateX(5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    background-color: #3A3F46;
+    transform: translateX(3px);
     cursor: pointer;
 }
 
@@ -295,14 +296,14 @@ st.markdown("""
 [data-testid="stSidebar"] button[data-active="true"] {
     background-color: #42A5F5;
     color: #FFFFFF;
-    font-weight: 600;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    font-weight: 700;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
 }
 
 /* Separator lines */
 [data-testid="stSidebar"] hr {
     border: 0.5px solid #546E7A;
-    margin: 15px 0;
+    margin: 20px 0;
 }
 
 /* Sidebar footer */
@@ -310,7 +311,7 @@ st.markdown("""
     color: #B0BEC5;
     font-size: 13px;
     text-align: center;
-    margin-top: 25px;
+    margin-top: 30px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -335,15 +336,14 @@ for label, page_name in menu_items:
     if st.sidebar.button(label, key=label):
         st.session_state.menu = page_name
     # Add data-active attribute for CSS
-    button_html = f"""
+    st.markdown(f"""
     <script>
     const btn = window.parent.document.querySelector('button[key="{label}"]');
     if (btn) {{
         btn.setAttribute('data-active', {'true' if is_active else 'false'});
     }}
     </script>
-    """
-    st.markdown(button_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # ---------------------------
 # Sidebar Footer with Separator
@@ -355,6 +355,7 @@ st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsa
 # Current Menu
 # ---------------------------
 menu = st.session_state.menu
+
 
 # ---------------------------
 # Home Page: Maharashtra Dashboard (Professional SaaS Look)
