@@ -1466,4 +1466,30 @@ elif menu == "Actions / Goals":
         })
         st.table(df)
 
+    # --- Generate CAP Report ---
+        st.markdown("---")
+        st.markdown("### Generate Consolidated CAP Report")
+        if st.button("Generate CAP Report"):
+            import io
+            import pandas as pd
+
+            # Create Excel file in memory
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                # City Info & GHG Inventory
+                cap_df.to_excel(writer, index=False, sheet_name="GHG Inventory")
+                
+                # Actions / Goals
+                for sector in sectors:
+                    df_goals = pd.DataFrame(goals[sector], columns=["Short Term (by 2030)", "Mid Term (by 2040)", "Long Term (by 2050)"])
+                    df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
+                writer.save()
+            
+            st.download_button(
+                label="Download CAP Report (Excel)",
+                data=output.getvalue(),
+                file_name=f"CAP_Report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
 
