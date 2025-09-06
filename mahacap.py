@@ -108,9 +108,8 @@ def load_csv(file_path, default_cols):
         return pd.DataFrame(columns=default_cols)
 
 meta_cols = [
-    "City Name", "District", "Population", "ULB Category", "CAP Status",
-    "GHG Emissions", "Environment Department Exist", "Department Name",
-    "Head Name", "Department Email"
+    "City Name", "District", "Population", "ULB Category", "CAP Status", "GHG Emissions",
+    "Environment Department Exist", "Department Name", "Head Name", "Department Email"
 ]
 cap_cols = []
 
@@ -118,9 +117,7 @@ st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
 # Remove Raigad Council (case-insensitive)
-st.session_state.data = st.session_state.data[
-    ~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)
-]
+st.session_state.data = st.session_state.data[~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)]
 
 # ---------------------------
 # Helper Functions
@@ -209,6 +206,7 @@ menu = st.session_state.menu
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
+
     df = st.session_state.data.copy()
 
     # --- CAP Status Summary ---
@@ -220,13 +218,7 @@ if menu == "Home":
 
         st.markdown("### CAP Status Overview")
         c1, c2, c3, c4 = st.columns(4)
-
-        block_style = """
-            background-color:#141518;
-            padding:20px;
-            border-radius:12px;
-            text-align:center;
-        """
+        block_style = """ background-color:#141518; padding:20px; border-radius:12px; text-align:center; """
         title_style = "color:#E6E6E6; margin:0;"
         value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
 
@@ -240,7 +232,8 @@ if menu == "Home":
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         fig_reported = px.bar(
             df.sort_values("GHG Emissions", ascending=False),
-            x="City Name", y="GHG Emissions",
+            x="City Name",
+            y="GHG Emissions",
             title="City-level Reported GHG Emissions (tCO2e)",
             text=df["GHG Emissions"].apply(format_indian_number),
             color_discrete_sequence=["#3E6BE6"]
@@ -255,144 +248,96 @@ if menu == "Home":
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
         fig_estimated = px.bar(
             df.sort_values("Estimated GHG Emissions", ascending=False),
-            x="City Name", y="Estimated GHG Emissions",
+            x="City Name",
+            y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
             text=df["Estimated GHG Emissions"].apply(lambda x: format_indian_number(round(x))),
             color_discrete_sequence=["#E67E22"]
         )
         fig_estimated.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_estimated, use_container_width=True)
-
 # ---------------------------
-# City Information
+# City Information Page
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
-    df_meta = st.session_state.data.copy()
-    df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
+    df = st.session_state.data.copy()
 
-    cities_for_select = list(cities_districts.keys())
-    city = st.selectbox("Select City", cities_for_select)
-
-    meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
-
-    st.subheader(f"{city} — Overview")
-    if meta_row is not None:
-        st.write(f"**District:** {safe_get(meta_row, 'District')}")
-        st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row, 'Population'))}")
-        st.write(f"**ULB Category:** {safe_get(meta_row, 'ULB Category')}")
-        st.write(f"**CAP Status:** {safe_get(meta_row, 'CAP Status')}")
+    if df.empty:
+        st.warning("No data available. Please upload data in Admin section.")
     else:
-        st.write(f"**District:** {cities_districts.get(city, '—')}")
+        city_choice = st.selectbox("Select City", df["City Name"].unique())
+        row = df[df["City Name"] == city_choice].iloc[0]
 
-    if not df_cap.empty and city in df_cap["City Name"].values:
-        cap_row = df_cap[df_cap["City Name"] == city].iloc[0]
-        sector_cols = [c for c in cap_row.index if c.endswith(" Emissions (tCO2e)")]
-        sectors = {c.replace(" Emissions (tCO2e)", ""): max(float(cap_row[c]), 0) for c in sector_cols}
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("District", safe_get(row, "District"))
+            st.metric("Population", format_population(safe_get(row, "Population")))
+            st.metric("ULB Category", safe_get(row, "ULB Category"))
+        with c2:
+            st.metric("CAP Status", safe_get(row, "CAP Status"))
+            st.metric("Reported GHG Emissions (tCO2e)", format_indian_number(safe_get(row, "GHG Emissions")))
 
-        if sectors:
-            chart_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions": list(sectors.values())})
-
-            fig_pie = px.pie(chart_df, names="Sector", values="Emissions", title="Sector-wise Emissions (tCO2e)")
-            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text=chart_df["Emissions"].apply(lambda x: format_indian_number(round(x))),
-                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
-            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            st.write("### Emissions by Sector")
-            st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: format_indian_number(round(v)))))
-
-        last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
-        st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
-
-        # PDF Download
-        if PDF_AVAILABLE:
-            st.subheader("Download GHG Inventory Report")
-            with st.form("pdf_form"):
-                user_name = st.text_input("Your Full Name")
-                user_email = st.text_input("Your Work Email")
-                user_contact = st.text_input("Contact Number")
-                submit_pdf = st.form_submit_button("Generate PDF")
-                if submit_pdf:
-                    buffer = io.BytesIO()
-                    doc = SimpleDocTemplate(buffer, pagesize=A4)
-                    elements = []
-                    styles = getSampleStyleSheet()
-                    elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
-                    elements.append(Spacer(1, 12))
-                    data = [["Sector", "Emissions (tCO2e)"]] + [[s, format_indian_number(round(v))] for s, v in sectors.items()]
-                    t = Table(data, hAlign="LEFT")
-                    t.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                        ('GRID', (0, 0), (-1, -1), 0.5, colors.white)
-                    ]))
-                    elements.append(t)
-                    doc.build(elements)
-                    buffer.seek(0)
-                    st.download_button("Download PDF", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
-        else:
-            st.warning("PDF generation not available. Install reportlab library.")
+        st.subheader("Environment Department Information")
+        st.write("**Department Exist:**", safe_get(row, "Environment Department Exist"))
+        st.write("**Department Name:**", safe_get(row, "Department Name"))
+        st.write("**Head Name:**", safe_get(row, "Head Name"))
+        st.write("**Department Email:**", safe_get(row, "Department Email"))
 
 # ---------------------------
-# Admin Panel
+# Admin Page
 # ---------------------------
 elif menu == "Admin":
-    st.header("Admin Board")
+    st.header("Admin Access")
+
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.subheader("Add/Update City Data")
-        with st.form("admin_form", clear_on_submit=False):
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            population = st.number_input("Population (as per census 2011)", min_value=0, value=0, step=1000)
-            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
-            dept_name = st.text_input("Department Name")
-            head_name = st.text_input("Department Head Name")
-            dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Add/Update City Data")
+        st.success("You are logged in as Admin")
+        st.subheader("Upload Data")
 
-            if submit_admin:
-                new_row = {
-                    "City Name": city,
-                    "District": cities_districts.get(city, "—"),
-                    "Population": population,
-                    "CAP Status": cap_status,
-                    "GHG Emissions": ghg_val,
-                    "Environment Department Exist": dept_exist,
-                    "Department Name": dept_name,
-                    "Head Name": head_name,
-                    "Department Email": dept_email
-                }
-                df_meta = st.session_state.data.copy()
-                if city in df_meta["City Name"].values:
-                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
-                else:
-                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.data = df_meta
-                df_meta.to_csv(DATA_FILE, index=False)
-                st.success(f"{city} data updated successfully!")
+        uploaded_file = st.file_uploader("Upload Cities CSV", type="csv")
+        if uploaded_file is not None:
+            try:
+                st.session_state.data = pd.read_csv(uploaded_file)
+                st.session_state.data.to_csv(DATA_FILE, index=False)
+                st.session_state.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.success("Data uploaded successfully.")
+            except Exception as e:
+                st.error(f"Error: {e}")
 
-        st.write("### All Cities Data")
-        st.table(st.session_state.data.assign(
-    Population=lambda d: d["Population"].map(format_indian_number),
-    GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
-))
+        uploaded_cap = st.file_uploader("Upload CAP Raw Data CSV", type="csv")
+        if uploaded_cap is not None:
+            try:
+                st.session_state.cap_data = pd.read_csv(uploaded_cap)
+                st.session_state.cap_data.to_csv(CAP_DATA_FILE, index=False)
+                st.session_state.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.success("CAP data uploaded successfully.")
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+        if st.session_state.last_updated:
+            st.info(f"Last Updated: {st.session_state.last_updated}")
+
+        if not st.session_state.data.empty:
+            st.subheader("Preview Data")
+            st.table(st.session_state.data.assign(
+                Population=lambda d: d["Population"].map(format_indian_number),
+                GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
+            ))
+
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
-    st.header("CAP : Data Collection")
+    st.header("CAP : Raw Data Collection for Comprehensive GHG Inventory")
+
     if not st.session_state.authenticated:
         admin_login()
     else:
         st.markdown("""
-        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per GPC/C40/ICLEI guidelines.
+        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
+        GPC/C40/ICLEI guidelines. Only raw data is collected; emissions are calculated automatically.
         """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
@@ -404,109 +349,208 @@ elif menu == "CAP Preparation":
             households = st.number_input("Number of Households", min_value=0, value=0, step=100)
             urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
-            # --- Energy ---
-            st.subheader("Energy Consumption")
-            electricity = st.number_input("Electricity Consumption (MWh)", min_value=0.0, step=0.1)
-            lpg = st.number_input("LPG Consumption (tonnes)", min_value=0.0, step=0.1)
-            petrol = st.number_input("Petrol Consumption (litres)", min_value=0.0, step=0.1)
-            diesel = st.number_input("Diesel Consumption (litres)", min_value=0.0, step=0.1)
-            coal = st.number_input("Coal Consumption (tonnes)", min_value=0.0, step=0.1)
+            # --- Electricity & Energy ---
+            st.subheader("Electricity & Energy Use")
+            residential_electricity_mwh = st.number_input("Residential Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
+            commercial_electricity_mwh = st.number_input("Commercial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
+            industrial_electricity_mwh = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
+            streetlights_energy_mwh = st.number_input("Streetlights & Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
+
+            # --- Fuel Consumption (Transport + Industry) ---
+            st.subheader("Transport Activity")
+            vehicles_diesel = st.number_input("Number of Diesel Vehicles", min_value=0, value=0, step=10)
+            vehicles_petrol = st.number_input("Number of Petrol Vehicles", min_value=0, value=0, step=10)
+            vehicles_cng = st.number_input("Number of CNG Vehicles", min_value=0, value=0, step=10)
+            vehicles_lpg = st.number_input("Number of LPG Vehicles", min_value=0, value=0, step=10)
+            vehicles_electric = st.number_input("Number of Electric Vehicles", min_value=0, value=0, step=10)
+            avg_km_per_vehicle_year = st.number_input("Average km per Vehicle per Year", min_value=0, value=0, step=100)
+
+            st.subheader("Industry & Commercial Fuel Use")
+            industrial_fuel_diesel_tons = st.number_input("Industrial Diesel Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_fuel_petrol_tons = st.number_input("Industrial Petrol Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_fuel_cng_tons = st.number_input("Industrial CNG Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_fuel_lpg_tons = st.number_input("Industrial LPG Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_energy_mwh = st.number_input("Industrial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
+
+            # --- Buildings & Commercial Activity ---
+            st.subheader("Buildings & Commercial")
+            residential_energy_mwh = st.number_input("Residential Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
+            commercial_energy_mwh = st.number_input("Commercial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
+            public_buildings_energy_mwh = st.number_input("Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
 
             # --- Waste ---
             st.subheader("Waste Management")
-            solid_waste = st.number_input("Solid Waste Generated (tonnes/day)", min_value=0.0, step=0.1)
-            waste_treated = st.number_input("Waste Treated (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            wastewater = st.number_input("Wastewater Generated (MLD)", min_value=0.0, step=0.1)
+            municipal_solid_waste_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, value=0, step=10)
+            fraction_landfilled = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+            fraction_composted = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+            wastewater_volume_m3 = st.number_input("Wastewater Treated (m3/year)", min_value=0, value=0, step=1000)
 
-            # --- Transport ---
-            st.subheader("Transport")
-            vehicles = st.number_input("Number of Registered Vehicles", min_value=0, step=1)
-            public_transport = st.number_input("Public Transport Trips (per day)", min_value=0, step=1)
+            # --- Water Supply & Sewage ---
+            st.subheader("Water & Sewage")
+            water_supply_m3 = st.number_input("Total Water Supplied (m3/year)", min_value=0, value=0, step=1000)
+            energy_for_water_mwh = st.number_input("Energy Used for Water Supply & Treatment (MWh/year)", min_value=0, value=0, step=10)
 
-            # --- Industry ---
-            st.subheader("Industrial Activity")
-            industries = st.number_input("Number of Industries", min_value=0, step=1)
-            industrial_energy = st.number_input("Industrial Energy Consumption (MWh)", min_value=0.0, step=0.1)
+            # --- Urban Green / Other ---
+            st.subheader("Urban Green / Other")
+            urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
+            renewable_energy_mwh = st.number_input("Renewable Energy Generated in City (MWh/year)", min_value=0, value=0, step=10)
 
-            # --- Agriculture & Others ---
-            st.subheader("Agriculture & Other Sources")
-            agri_residue = st.number_input("Agricultural Residue Burning (tonnes/year)", min_value=0.0, step=0.1)
-            livestock = st.number_input("Number of Livestock", min_value=0, step=1)
+            # --- Optional Files / Verification ---
+            file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
 
-            submit_cap = st.form_submit_button("Save GHG Inventory Data")
+            submit_cap = st.form_submit_button("Submit Raw Data and Generate GHG Inventory")
 
-        if submit_cap:
-            new_row = {
-                "City Name": city,
-                "Total Population": population,
-                "Households": households,
-                "Urbanization Rate (%)": urbanization_rate,
-                "Electricity Consumption (MWh)": electricity,
-                "LPG Consumption (tonnes)": lpg,
-                "Petrol Consumption (litres)": petrol,
-                "Diesel Consumption (litres)": diesel,
-                "Coal Consumption (tonnes)": coal,
-                "Solid Waste Generated (tonnes/day)": solid_waste,
-                "Waste Treated (%)": waste_treated,
-                "Wastewater Generated (MLD)": wastewater,
-                "Number of Registered Vehicles": vehicles,
-                "Public Transport Trips (per day)": public_transport,
-                "Number of Industries": industries,
-                "Industrial Energy Consumption (MWh)": industrial_energy,
-                "Agricultural Residue Burning (tonnes/year)": agri_residue,
-                "Number of Livestock": livestock
+            if submit_cap:
+                # Save raw data into CAP dataframe
+                raw_row = {
+                    "City Name": city,
+                    "Population": population,
+                    "Households": households,
+                    "Urbanization Rate (%)": urbanization_rate,
+                    "Residential Electricity (MWh)": residential_electricity_mwh,
+                    "Commercial Electricity (MWh)": commercial_electricity_mwh,
+                    "Industrial Electricity (MWh)": industrial_electricity_mwh,
+                    "Streetlights Energy (MWh)": streetlights_energy_mwh,
+                    "Diesel Vehicles": vehicles_diesel,
+                    "Petrol Vehicles": vehicles_petrol,
+                    "CNG Vehicles": vehicles_cng,
+                    "LPG Vehicles": vehicles_lpg,
+                    "Electric Vehicles": vehicles_electric,
+                    "Avg km/Vehicle": avg_km_per_vehicle_year,
+                    "Industrial Diesel (tons)": industrial_fuel_diesel_tons,
+                    "Industrial Petrol (tons)": industrial_fuel_petrol_tons,
+                    "Industrial CNG (tons)": industrial_fuel_cng_tons,
+                    "Industrial LPG (tons)": industrial_fuel_lpg_tons,
+                    "Industrial Energy (MWh)": industrial_energy_mwh,
+                    "Residential Energy (MWh)": residential_energy_mwh,
+                    "Commercial Energy (MWh)": commercial_energy_mwh,
+                    "Public Buildings Energy (MWh)": public_buildings_energy_mwh,
+                    "Municipal Solid Waste (tons)": municipal_solid_waste_tons,
+                    "Waste Landfilled (%)": fraction_landfilled,
+                    "Waste Composted (%)": fraction_composted,
+                    "Wastewater Treated (m3)": wastewater_volume_m3,
+                    "Water Supplied (m3)": water_supply_m3,
+                    "Energy for Water (MWh)": energy_for_water_mwh,
+                    "Urban Green Area (ha)": urban_green_area_ha,
+                    "Renewable Energy (MWh)": renewable_energy_mwh,
+                    "Submission Date": datetime.now()
+                }
+
+                df_cap = st.session_state.cap_data.copy()
+                if not df_cap.empty and city in df_cap["City Name"].values:
+                    for k, v in raw_row.items():
+                        df_cap.loc[df_cap["City Name"] == city, k] = v
+                else:
+                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_row])], ignore_index=True)
+
+                st.session_state.cap_data = df_cap
+                df_cap.to_csv(CAP_DATA_FILE, index=False)
+                st.session_state.last_updated = datetime.now()
+
+                st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
+                st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
+                st.experimental_rerun()
+# ---------------------------
+# GHG Inventory Page
+# ---------------------------
+elif menu == "GHG Inventory":
+    st.header("City GHG Inventory Dashboard")
+
+    if not st.session_state.authenticated:
+        admin_login()
+    else:
+        df_cap = st.session_state.cap_data.copy()
+        if df_cap.empty:
+            st.warning("No CAP data available. Please submit raw data first.")
+        else:
+            city = st.selectbox("Select City to View GHG Inventory", list(df_cap["City Name"].unique()))
+            city_row = df_cap[df_cap["City Name"] == city].iloc[0]
+
+            # --- Define Emission Factors (EF) ---
+            # IPCC / GPC approximate factors
+            EF_electricity = 0.82  # tCO2e/MWh (Indian grid avg.)
+            EF_diesel_vehicle = 2.68 / 1000  # tCO2e/km per vehicle
+            EF_petrol_vehicle = 2.31 / 1000
+            EF_cng_vehicle = 2.74 / 1000
+            EF_lpg_vehicle = 1.51 / 1000
+            EF_electric_vehicle = 0  # zero tailpipe, grid emissions included in electricity
+            EF_industrial_fuel = {
+                "Diesel": 2.68, "Petrol": 2.31, "CNG": 2.74, "LPG": 1.51  # tCO2e/ton
             }
-            df_cap = st.session_state.cap_data.copy()
-            if city in df_cap["City Name"].values:
-                df_cap.loc[df_cap["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
-            else:
-                df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
-            st.session_state.cap_data = df_cap
-            df_cap.to_csv(CAP_DATA_FILE, index=False)
-            st.session_state.last_updated = datetime.now()
-            st.success(f"{city} CAP data updated successfully!")
+            EF_waste_landfill = 1.0 / 10  # tCO2e per ton (approx.)
+            EF_waste_compost = 0.1 / 10
+            EF_wastewater = 0.25 / 1000  # tCO2e per m3
+            EF_water_energy = 0.82  # tCO2e/MWh
 
-        # ---------------------------
-        # Suggested Actions (ONLY HERE)
-        # ---------------------------
-        st.subheader("Suggested Actions Based on Inventory")
-        st.markdown("""
-        ✅ Promote renewable energy adoption  
-        ✅ Improve solid waste management & treatment  
-        ✅ Enhance public transport and non-motorized mobility  
-        ✅ Energy efficiency in industries and households  
-        ✅ Awareness programs for sustainable lifestyle  
-        """)
+            # --- Calculate Sector Emissions ---
+            emissions = {}
 
-        # ---------------------------
-        # Report Generation
-        # ---------------------------
-        if not st.session_state.cap_data.empty and city in st.session_state.cap_data["City Name"].values:
-            st.subheader("Download GHG Inventory Report")
-            if PDF_AVAILABLE:
-                with st.form("cap_pdf_form"):
-                    user_name = st.text_input("Your Full Name")
-                    user_email = st.text_input("Your Work Email")
-                    user_contact = st.text_input("Contact Number")
-                    submit_pdf = st.form_submit_button("Generate PDF Report")
-                    if submit_pdf:
-                        row = st.session_state.cap_data[st.session_state.cap_data["City Name"] == city].iloc[0]
-                        buffer = io.BytesIO()
-                        doc = SimpleDocTemplate(buffer, pagesize=A4)
-                        elements = []
-                        styles = getSampleStyleSheet()
-                        elements.append(Paragraph(f"{city} — CAP GHG Inventory Report", styles["Title"]))
-                        elements.append(Spacer(1, 12))
-                        data = [[k, v] for k, v in row.items()]
-                        t = Table(data, hAlign="LEFT")
-                        t.setStyle(TableStyle([
-                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
-                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                            ('GRID', (0, 0), (-1, -1), 0.5, colors.white)
-                        ]))
-                        elements.append(t)
-                        doc.build(elements)
-                        buffer.seek(0)
-                        st.download_button("Download CAP Report PDF", buffer, file_name=f"{city}_CAP_Report.pdf", mime="application/pdf")
-            else:
-                st.warning("PDF generation not available. Install reportlab library.")
+            # Energy
+            emissions["Residential Energy"] = city_row.get("Residential Energy (MWh)",0) * EF_electricity
+            emissions["Commercial Energy"] = city_row.get("Commercial Energy (MWh)",0) * EF_electricity
+            emissions["Industrial Energy"] = city_row.get("Industrial Energy (MWh)",0) * EF_electricity
+            emissions["Streetlights & Public Buildings"] = city_row.get("Streetlights Energy (MWh)",0) * EF_electricity + city_row.get("Public Buildings Energy (MWh)",0)*EF_electricity
+
+            # Transport
+            emissions["Transport Diesel"] = city_row.get("Diesel Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_diesel_vehicle
+            emissions["Transport Petrol"] = city_row.get("Petrol Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_petrol_vehicle
+            emissions["Transport CNG"] = city_row.get("CNG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_cng_vehicle
+            emissions["Transport LPG"] = city_row.get("LPG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_lpg_vehicle
+            emissions["Transport Electric"] = city_row.get("Electric Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_electric_vehicle
+
+            # Industry fuels
+            emissions["Industrial Diesel"] = city_row.get("Industrial Diesel (tons)",0) * EF_industrial_fuel["Diesel"]
+            emissions["Industrial Petrol"] = city_row.get("Industrial Petrol (tons)",0) * EF_industrial_fuel["Petrol"]
+            emissions["Industrial CNG"] = city_row.get("Industrial CNG (tons)",0) * EF_industrial_fuel["CNG"]
+            emissions["Industrial LPG"] = city_row.get("Industrial LPG (tons)",0) * EF_industrial_fuel["LPG"]
+
+            # Waste
+            waste_total = city_row.get("Municipal Solid Waste (tons)",0)
+            emissions["Waste Landfilled"] = waste_total * (city_row.get("Waste Landfilled (%)",0)/100) * EF_waste_landfill
+            emissions["Waste Composted"] = waste_total * (city_row.get("Waste Composted (%)",0)/100) * EF_waste_compost
+            emissions["Wastewater"] = city_row.get("Wastewater Treated (m3)",0) * EF_wastewater
+
+            # Water
+            emissions["Water Energy"] = city_row.get("Energy for Water (MWh)",0) * EF_water_energy
+
+            # Urban Green / Renewable
+            emissions["Urban Green / Offsets"] = -1 * city_row.get("Renewable Energy (MWh)",0) * EF_electricity  # subtract grid emissions offset
+
+            # --- Display Metrics ---
+            st.subheader(f"{city} — Sector-wise GHG Emissions (tCO2e)")
+
+            emissions_df = pd.DataFrame({
+                "Sector": list(emissions.keys()),
+                "Emissions (tCO2e)": list(emissions.values())
+            })
+
+            # Total Emissions
+            total_emissions = sum(emissions.values())
+            st.metric("Total City GHG Emissions (tCO2e)", format(total_emissions, ",.0f"))
+
+            # Bar Chart
+            fig_bar = px.bar(
+                emissions_df.sort_values("Emissions (tCO2e)", ascending=False),
+                x="Sector",
+                y="Emissions (tCO2e)",
+                text=emissions_df["Emissions (tCO2e)"].apply(lambda x: format(int(x), ",")),
+                color_discrete_sequence=["#3E6BE6"]
+            )
+            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+            # Pie Chart
+            fig_pie = px.pie(
+                emissions_df,
+                names="Sector",
+                values="Emissions (tCO2e)",
+                title="Sector-wise GHG Contribution",
+            )
+            fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+            # Detailed Table
+            st.write("### Detailed Emissions Table")
+            st.table(emissions_df.assign(**{
+                "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
+            }))
