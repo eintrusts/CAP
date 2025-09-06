@@ -250,59 +250,24 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Professional SaaS Style)
+# Sidebar
 # ---------------------------
-st.markdown("""
-<style>
-/* Sidebar background */
-[data-testid="stSidebar"] {
-    background-color: #1E272E;
-    padding-top: 20px;
-    color: #ECEFF1;
-}
-
-/* Sidebar menu items */
-[data-testid="stSidebar"] .css-1d391kg {
-    font-size: 16px;
-    font-weight: 500;
-    color: #ECEFF1;
-    padding: 10px 8px;
-    border-radius: 6px;
-    margin-bottom: 5px;
-    transition: all 0.2s ease-in-out;
-}
-
-/* Hover effect */
-[data-testid="stSidebar"] .css-1d391kg:hover {
-    background-color: #34495E;
-    color: #FFFFFF;
-    cursor: pointer;
-}
-
-/* Active menu highlight */
-[data-testid="stSidebar"] .css-1d391kg[data-selected="true"] {
-    background-color: #42A5F5;
-    color: #FFFFFF;
-    font-weight: 600;
-}
-
-/* Sidebar header */
-[data-testid="stSidebar"] h2 {
-    color: #ECEFF1;
-    text-align: center;
-    font-size: 20px;
-    margin-bottom: 20px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Sidebar content
-st.sidebar.markdown("<h2>EinTrust Dashboard</h2>", unsafe_allow_html=True)
-menu = st.sidebar.radio(
-    "Navigation",
-    ["Home", "City Information", "Admin Panel"],
-    index=0
+st.sidebar.image(
+    "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
+    use_container_width=True
 )
+
+for btn, name in [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]:
+    if st.sidebar.button(btn):
+        st.session_state.menu = name
+
+if st.session_state.authenticated and st.sidebar.button("CAP Generation"):
+    st.session_state.menu = "CAP Generation"
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("EinTrust | © 2025")
+
+menu = st.session_state.menu
 
 # ---------------------------
 # Home Page: Maharashtra Dashboard (Professional SaaS Look)
