@@ -202,63 +202,58 @@ if menu == "Home":
     st.markdown("Climate Action Plan Dashboard")
 
     df = st.session_state.data.copy()
+
+    # --- Basic Metrics ---
     total_selected = len(cities_districts)
     reporting = df.shape[0]
-    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0] if "CAP Status" in df.columns else 0
+    completed_caps = df[df["CAP Status"].str.lower() == "completed"].shape[0] if "CAP Status" in df.columns else 0
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Cities Selected", f"{total_selected}")
     col2.metric("Cities Reporting", f"{reporting}")
-# ---------------------------
-# CAP Status Summary
-# ---------------------------
-st.markdown("### 📊 CAP Status Overview")
+    col3.metric("CAPs Completed", f"{completed_caps}")
 
-if not df.empty and "CAP Status" in df.columns:
-    status_counts = df["CAP Status"].value_counts().to_dict()
+    # --- CAP Status Summary ---
+    if "CAP Status" in df.columns and not df.empty:
+        not_started = (df["CAP Status"].str.lower() == "not started").sum()
+        in_progress = (df["CAP Status"].str.lower() == "in progress").sum()
+        completed = (df["CAP Status"].str.lower() == "completed").sum()
 
-    not_started = status_counts.get("Not Started", 0)
-    in_progress = status_counts.get("In Progress", 0)
-    completed = status_counts.get("Completed", 0)
+        st.markdown("### 📊 CAP Status Overview")
+        s1, s2, s3 = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
+        with s1:
+            st.markdown(
+                f"""
+                <div style='background-color:#141518; padding:20px; border-radius:12px; text-align:center;'>
+                    <h3 style='color:#E6E6E6; margin:0;'>Not Started</h3>
+                    <p style='font-size:28px; font-weight:bold; color:#3E6BE6;'>{not_started}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with s2:
+            st.markdown(
+                f"""
+                <div style='background-color:#141518; padding:20px; border-radius:12px; text-align:center;'>
+                    <h3 style='color:#E6E6E6; margin:0;'>In Progress</h3>
+                    <p style='font-size:28px; font-weight:bold; color:#3E6BE6;'>{in_progress}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with s3:
+            st.markdown(
+                f"""
+                <div style='background-color:#141518; padding:20px; border-radius:12px; text-align:center;'>
+                    <h3 style='color:#E6E6E6; margin:0;'>Completed</h3>
+                    <p style='font-size:28px; font-weight:bold; color:#3E6BE6;'>{completed}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-    with col1:
-        st.markdown(
-            f"""
-            <div style="background-color:#f8d7da; padding:20px; border-radius:12px; text-align:center;">
-                <h2 style="margin:0; color:#721c24;">{not_started}</h2>
-                <p style="margin:0; font-weight:600;">Not Started</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with col2:
-        st.markdown(
-            f"""
-            <div style="background-color:#fff3cd; padding:20px; border-radius:12px; text-align:center;">
-                <h2 style="margin:0; color:#856404;">{in_progress}</h2>
-                <p style="margin:0; font-weight:600;">In Progress</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with col3:
-        st.markdown(
-            f"""
-            <div style="background-color:#d4edda; padding:20px; border-radius:12px; text-align:center;">
-                <h2 style="margin:0; color:#155724;">{completed}</h2>
-                <p style="margin:0; font-weight:600;">Completed</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-else:
-    st.info("No CAP status data available yet. Please update city details in Admin Panel.")
-
-
+    # --- City-level Reported GHG Emissions ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         fig2 = px.bar(
@@ -267,16 +262,16 @@ else:
             y="GHG Emissions",
             title="City-level GHG (tCO2e)",
             text="GHG Emissions",
-            color_discrete_sequence=["#3E6BE6"]
+            color_discrete_sequence=["#3E6BE6"],
         )
         fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig2, use_container_width=True)
 
-# ---------------- Estimated GHG Emissions Chart ----------------
+    # --- Estimated GHG Emissions (Population x Factor) ---
     if not df.empty and "Population" in df.columns:
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
 
-        # Use an assumed emission factor (tCO2e per person/year)
+        # Assume emission factor (tCO2e per person/year)
         EMISSION_FACTOR = 2.5
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
 
@@ -286,7 +281,7 @@ else:
             y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
             text="Estimated GHG Emissions",
-            color_discrete_sequence=["#E67E22"]
+            color_discrete_sequence=["#E67E22"],
         )
         fig3.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig3, use_container_width=True)
