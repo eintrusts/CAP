@@ -1,5 +1,4 @@
 # mahacap.py
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -109,9 +108,9 @@ def load_csv(file_path, default_cols):
         return pd.DataFrame(columns=default_cols)
 
 meta_cols = [
-    "City Name", "District", "Population", "ULB Category",
-    "CAP Status", "GHG Emissions", "Environment Department Exist",
-    "Department Name", "Head Name", "Department Email"
+    "City Name", "District", "Population", "ULB Category", "CAP Status",
+    "GHG Emissions", "Environment Department Exist", "Department Name",
+    "Head Name", "Department Email"
 ]
 cap_cols = []
 
@@ -119,7 +118,9 @@ st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
 # Remove Raigad Council (case-insensitive)
-st.session_state.data = st.session_state.data[~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)]
+st.session_state.data = st.session_state.data[
+    ~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)
+]
 
 # ---------------------------
 # Helper Functions
@@ -203,13 +204,11 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
-# ---------------------------
 # Home Page
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
-
     df = st.session_state.data.copy()
 
     # --- CAP Status Summary ---
@@ -223,10 +222,10 @@ if menu == "Home":
         c1, c2, c3, c4 = st.columns(4)
 
         block_style = """
-            background-color:#141518; 
-            padding:20px; 
-            border-radius:12px; 
-            text-align:center; 
+            background-color:#141518;
+            padding:20px;
+            border-radius:12px;
+            text-align:center;
         """
         title_style = "color:#E6E6E6; margin:0;"
         value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
@@ -241,8 +240,7 @@ if menu == "Home":
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         fig_reported = px.bar(
             df.sort_values("GHG Emissions", ascending=False),
-            x="City Name",
-            y="GHG Emissions",
+            x="City Name", y="GHG Emissions",
             title="City-level Reported GHG Emissions (tCO2e)",
             text=df["GHG Emissions"].apply(format_indian_number),
             color_discrete_sequence=["#3E6BE6"]
@@ -255,11 +253,9 @@ if menu == "Home":
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
         EMISSION_FACTOR = 2.5
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
-
         fig_estimated = px.bar(
             df.sort_values("Estimated GHG Emissions", ascending=False),
-            x="City Name",
-            y="Estimated GHG Emissions",
+            x="City Name", y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
             text=df["Estimated GHG Emissions"].apply(lambda x: format_indian_number(round(x))),
             color_discrete_sequence=["#E67E22"]
@@ -272,7 +268,6 @@ if menu == "Home":
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
-
     df_meta = st.session_state.data.copy()
     df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
 
@@ -282,7 +277,6 @@ elif menu == "City Information":
     meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
 
     st.subheader(f"{city} — Overview")
-
     if meta_row is not None:
         st.write(f"**District:** {safe_get(meta_row, 'District')}")
         st.write(f"**Population (as per census 2011):** {format_population(safe_get(meta_row, 'Population'))}")
@@ -339,9 +333,7 @@ elif menu == "City Information":
                     elements.append(t)
                     doc.build(elements)
                     buffer.seek(0)
-                    st.download_button("Download PDF", buffer,
-                                       file_name=f"{city}_GHG_Report.pdf",
-                                       mime="application/pdf")
+                    st.download_button("Download PDF", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
         else:
             st.warning("PDF generation not available. Install reportlab library.")
 
@@ -350,7 +342,6 @@ elif menu == "City Information":
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Board")
-
     if not st.session_state.authenticated:
         admin_login()
     else:
@@ -383,7 +374,6 @@ elif menu == "Admin":
                     df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
                 else:
                     df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
-
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
@@ -392,20 +382,17 @@ elif menu == "Admin":
         st.table(st.session_state.data.assign(
             Population=lambda d: d["Population"].map(format_indian_number),
             GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
-        ))
 
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
     st.header("CAP : Data Collection")
-
     if not st.session_state.authenticated:
         admin_login()
     else:
         st.markdown("""
-        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
-        GPC/C40/ICLEI guidelines.
+        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per GPC/C40/ICLEI guidelines.
         """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
@@ -417,462 +404,109 @@ elif menu == "CAP Preparation":
             households = st.number_input("Number of Households", min_value=0, value=0, step=100)
             urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
-            # --- Electricity & Energy ---
-            st.subheader("Electricity & Energy Use")
-            residential_electricity_mwh = st.number_input("Residential Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
-            commercial_electricity_mwh = st.number_input("Commercial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
-            industrial_electricity_mwh = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
-            streetlights_energy_mwh = st.number_input("Streetlights & Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
-
-            # --- Fuel Consumption (Transport + Industry) ---
-            st.subheader("Transport Activity")
-            vehicles_diesel = st.number_input("Number of Diesel Vehicles", min_value=0, value=0, step=10)
-            vehicles_petrol = st.number_input("Number of Petrol Vehicles", min_value=0, value=0, step=10)
-            vehicles_cng = st.number_input("Number of CNG Vehicles", min_value=0, value=0, step=10)
-            vehicles_lpg = st.number_input("Number of LPG Vehicles", min_value=0, value=0, step=10)
-            vehicles_electric = st.number_input("Number of Electric Vehicles", min_value=0, value=0, step=10)
-            avg_km_per_vehicle_year = st.number_input("Average km per Vehicle per Year", min_value=0, value=0, step=100)
-
-            st.subheader("Industry & Commercial Fuel Use")
-            industrial_fuel_diesel_tons = st.number_input("Industrial Diesel Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_fuel_petrol_tons = st.number_input("Industrial Petrol Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_fuel_cng_tons = st.number_input("Industrial CNG Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_fuel_lpg_tons = st.number_input("Industrial LPG Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_energy_mwh = st.number_input("Industrial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
-
-            # --- Buildings & Commercial Activity ---
-            st.subheader("Buildings & Commercial")
-            residential_energy_mwh = st.number_input("Residential Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
-            commercial_energy_mwh = st.number_input("Commercial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
-            public_buildings_energy_mwh = st.number_input("Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
+            # --- Energy ---
+            st.subheader("Energy Consumption")
+            electricity = st.number_input("Electricity Consumption (MWh)", min_value=0.0, step=0.1)
+            lpg = st.number_input("LPG Consumption (tonnes)", min_value=0.0, step=0.1)
+            petrol = st.number_input("Petrol Consumption (litres)", min_value=0.0, step=0.1)
+            diesel = st.number_input("Diesel Consumption (litres)", min_value=0.0, step=0.1)
+            coal = st.number_input("Coal Consumption (tonnes)", min_value=0.0, step=0.1)
 
             # --- Waste ---
             st.subheader("Waste Management")
-            municipal_solid_waste_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, value=0, step=10)
-            fraction_landfilled = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            fraction_composted = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            wastewater_volume_m3 = st.number_input("Wastewater Treated (m3/year)", min_value=0, value=0, step=1000)
+            solid_waste = st.number_input("Solid Waste Generated (tonnes/day)", min_value=0.0, step=0.1)
+            waste_treated = st.number_input("Waste Treated (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+            wastewater = st.number_input("Wastewater Generated (MLD)", min_value=0.0, step=0.1)
 
-            # --- Water Supply & Sewage ---
-            st.subheader("Water & Sewage")
-            water_supply_m3 = st.number_input("Total Water Supplied (m3/year)", min_value=0, value=0, step=1000)
-            energy_for_water_mwh = st.number_input("Energy Used for Water Supply & Treatment (MWh/year)", min_value=0, value=0, step=10)
+            # --- Transport ---
+            st.subheader("Transport")
+            vehicles = st.number_input("Number of Registered Vehicles", min_value=0, step=1)
+            public_transport = st.number_input("Public Transport Trips (per day)", min_value=0, step=1)
 
-            # --- Urban Green / Other ---
-            st.subheader("Urban Green / Other")
-            urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
-            renewable_energy_mwh = st.number_input("Renewable Energy Generated in City (MWh/year)", min_value=0, value=0, step=10)
+            # --- Industry ---
+            st.subheader("Industrial Activity")
+            industries = st.number_input("Number of Industries", min_value=0, step=1)
+            industrial_energy = st.number_input("Industrial Energy Consumption (MWh)", min_value=0.0, step=0.1)
 
-            # --- Optional Files / Verification ---
-            file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
+            # --- Agriculture & Others ---
+            st.subheader("Agriculture & Other Sources")
+            agri_residue = st.number_input("Agricultural Residue Burning (tonnes/year)", min_value=0.0, step=0.1)
+            livestock = st.number_input("Number of Livestock", min_value=0, step=1)
 
-            submit_cap = st.form_submit_button("Generate GHG Inventory")
+            submit_cap = st.form_submit_button("Save GHG Inventory Data")
 
-            if submit_cap:
-                # Save raw data into CAP dataframe
-                raw_row = {
-                    "City Name": city,
-                    "Population": population,
-                    "Households": households,
-                    "Urbanization Rate (%)": urbanization_rate,
-                    "Residential Electricity (MWh)": residential_electricity_mwh,
-                    "Commercial Electricity (MWh)": commercial_electricity_mwh,
-                    "Industrial Electricity (MWh)": industrial_electricity_mwh,
-                    "Streetlights Energy (MWh)": streetlights_energy_mwh,
-                    "Diesel Vehicles": vehicles_diesel,
-                    "Petrol Vehicles": vehicles_petrol,
-                    "CNG Vehicles": vehicles_cng,
-                    "LPG Vehicles": vehicles_lpg,
-                    "Electric Vehicles": vehicles_electric,
-                    "Avg km/Vehicle": avg_km_per_vehicle_year,
-                    "Industrial Diesel (tons)": industrial_fuel_diesel_tons,
-                    "Industrial Petrol (tons)": industrial_fuel_petrol_tons,
-                    "Industrial CNG (tons)": industrial_fuel_cng_tons,
-                    "Industrial LPG (tons)": industrial_fuel_lpg_tons,
-                    "Industrial Energy (MWh)": industrial_energy_mwh,
-                    "Residential Energy (MWh)": residential_energy_mwh,
-                    "Commercial Energy (MWh)": commercial_energy_mwh,
-                    "Public Buildings Energy (MWh)": public_buildings_energy_mwh,
-                    "Municipal Solid Waste (tons)": municipal_solid_waste_tons,
-                    "Waste Landfilled (%)": fraction_landfilled,
-                    "Waste Composted (%)": fraction_composted,
-                    "Wastewater Treated (m3)": wastewater_volume_m3,
-                    "Water Supplied (m3)": water_supply_m3,
-                    "Energy for Water (MWh)": energy_for_water_mwh,
-                    "Urban Green Area (ha)": urban_green_area_ha,
-                    "Renewable Energy (MWh)": renewable_energy_mwh,
-                    "Submission Date": datetime.now()
-                }
-
-                df_cap = st.session_state.cap_data.copy()
-                if not df_cap.empty and city in df_cap["City Name"].values:
-                    for k, v in raw_row.items():
-                        df_cap.loc[df_cap["City Name"] == city, k] = v
-                else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_row])], ignore_index=True)
-
-                st.session_state.cap_data = df_cap
-                df_cap.to_csv(CAP_DATA_FILE, index=False)
-                st.session_state.last_updated = datetime.now()
-
-                st.success(f"Raw data for {city} submitted successfully!")
-
-                # Instead of experimental_rerun, just set menu to GHG Inventory
-                st.session_state.menu = "GHG Inventory"
-
-# ---------------------------
-# GHG Inventory Page
-# ---------------------------
-elif menu == "GHG Inventory":
-    st.title("GHG Inventory")
-
-    if "ghg_results" not in st.session_state:
-        st.warning("Please complete the CAP Preparation form first.")
-    else:
-        ghg_results = st.session_state.ghg_results
-
-        st.subheader("Summary of GHG Emissions by Sector")
-        df_results = pd.DataFrame(list(ghg_results.items()), columns=["Sector", "Emissions (tCO2e)"])
-        st.dataframe(df_results, use_container_width=True)
-
-        fig = px.pie(df_results, names="Sector", values="Emissions (tCO2e)", title="GHG Emissions Share by Sector")
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.subheader("Total Emissions")
-        total_emissions = df_results["Emissions (tCO2e)"].sum()
-        st.metric("Total GHG Emissions (tCO2e)", f"{total_emissions:,.0f}")
-
-        # ✅ Suggested Actions button only on GHG Inventory page
-        if st.button("View Suggested Actions to Achieve Net Zero by 2050"):
-            st.session_state.show_actions = True
-
-        # ✅ Show actions only after button click
-        if st.session_state.get("show_actions", False):
-            st.subheader("Suggested Actions by Sector")
-
-            # Use only active sectors (non-zero emissions)
-            active_sectors = df_results[df_results["Emissions (tCO2e)"] > 0]["Sector"].tolist()
-
-            goals = {
-                "Short-term (2030)": [
-                    "Implement large-scale rooftop solar programs",
-                    "Promote electric two-wheelers adoption",
-                    "Expand waste segregation coverage",
-                    "Mandatory energy efficiency audits for public buildings",
-                    "Support MSMEs in energy-efficient tech upgrades",
-                    "Promote low-emission farming practices",
-                    "Upgrade water pumping to energy-efficient systems",
-                    "Phase out diesel gensets in cities",
-                    "Expand CNG/e-mobility in public buses",
-                    "Promote decentralized composting at ward level"
-                ],
-                "Mid-term (2040)": [
-                    "Achieve 60% renewable electricity mix",
-                    "Full electrification of public bus fleets",
-                    "100% scientific disposal of waste",
-                    "All new buildings Net Zero compliant",
-                    "Green hydrogen adoption in industries",
-                    "Shift to climate-smart irrigation systems",
-                    "Achieve 50% water recycling",
-                    "Expand city-wide EV charging infra",
-                    "Mandate retrofits for inefficient buildings",
-                    "Circular economy clusters for industrial hubs"
-                ],
-                "Long-term (2050)": [
-                    "100% renewable electricity mix",
-                    "100% electrified private and commercial vehicles",
-                    "Zero waste to landfill",
-                    "All buildings Net Positive Energy",
-                    "100% decarbonized industry with hydrogen/CCUS",
-                    "100% climate-resilient farming",
-                    "100% treated wastewater reuse",
-                    "Urban transport fully electrified/autonomous",
-                    "Carbon neutral construction materials",
-                    "Fully circular city economy"
-                ]
+        if submit_cap:
+            new_row = {
+                "City Name": city,
+                "Total Population": population,
+                "Households": households,
+                "Urbanization Rate (%)": urbanization_rate,
+                "Electricity Consumption (MWh)": electricity,
+                "LPG Consumption (tonnes)": lpg,
+                "Petrol Consumption (litres)": petrol,
+                "Diesel Consumption (litres)": diesel,
+                "Coal Consumption (tonnes)": coal,
+                "Solid Waste Generated (tonnes/day)": solid_waste,
+                "Waste Treated (%)": waste_treated,
+                "Wastewater Generated (MLD)": wastewater,
+                "Number of Registered Vehicles": vehicles,
+                "Public Transport Trips (per day)": public_transport,
+                "Number of Industries": industries,
+                "Industrial Energy Consumption (MWh)": industrial_energy,
+                "Agricultural Residue Burning (tonnes/year)": agri_residue,
+                "Number of Livestock": livestock
             }
+            df_cap = st.session_state.cap_data.copy()
+            if city in df_cap["City Name"].values:
+                df_cap.loc[df_cap["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
+            else:
+                df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
+            st.session_state.cap_data = df_cap
+            df_cap.to_csv(CAP_DATA_FILE, index=False)
+            st.session_state.last_updated = datetime.now()
+            st.success(f"{city} CAP data updated successfully!")
 
-            for sector in active_sectors:
-                st.markdown(f"### 🔹 {sector}")
-                actions_data = []
-                for i in range(10):
-                    row = {
-                        "Priority": i + 1,
-                        "Short-term (2030)": goals["Short-term (2030)"][i],
-                        "Mid-term (2040)": goals["Mid-term (2040)"][i],
-                        "Long-term (2050)": goals["Long-term (2050)"][i],
-                    }
-                    actions_data.append(row)
+        # ---------------------------
+        # Suggested Actions (ONLY HERE)
+        # ---------------------------
+        st.subheader("Suggested Actions Based on Inventory")
+        st.markdown("""
+        ✅ Promote renewable energy adoption  
+        ✅ Improve solid waste management & treatment  
+        ✅ Enhance public transport and non-motorized mobility  
+        ✅ Energy efficiency in industries and households  
+        ✅ Awareness programs for sustainable lifestyle  
+        """)
 
-                df_actions = pd.DataFrame(actions_data)
-                st.table(df_actions)
-
-            # Create CAP Report button
-            if st.button("Create CAP Report (PDF)"):
-                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-                from reportlab.lib.styles import getSampleStyleSheet
-                from reportlab.lib import colors
-                from io import BytesIO
-
-                buffer = BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4)
-                styles = getSampleStyleSheet()
-                story = []
-
-                story.append(Paragraph("City Climate Action Plan (CAP) Report", styles["Title"]))
-                story.append(Spacer(1, 12))
-                story.append(Paragraph("GHG Inventory Summary", styles["Heading2"]))
-
-                data = [["Sector", "Emissions (tCO2e)"]] + df_results.values.tolist()
-                table = Table(data)
-                table.setStyle(TableStyle([
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                    ("GRID", (0, 0), (-1, -1), 1, colors.black)
-                ]))
-                story.append(table)
-                story.append(Spacer(1, 12))
-
-                story.append(Paragraph("Suggested Actions by Sector", styles["Heading2"]))
-                for sector in active_sectors:
-                    story.append(Paragraph(f"{sector}", styles["Heading3"]))
-                    data = [["Priority", "Short-term (2030)", "Mid-term (2040)", "Long-term (2050)"]]
-                    for i in range(10):
-                        data.append([
-                            str(i + 1),
-                            goals["Short-term (2030)"][i],
-                            goals["Mid-term (2040)"][i],
-                            goals["Long-term (2050)"][i],
-                        ])
-                    table = Table(data, repeatRows=1)
-                    table.setStyle(TableStyle([
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                        ("GRID", (0, 0), (-1, -1), 1, colors.black)
-                    ]))
-                    story.append(table)
-                    story.append(Spacer(1, 12))
-
-                doc.build(story)
-                buffer.seek(0)
-                st.download_button(
-                    " Download CAP Report",
-                    data=buffer,
-                    file_name="CAP_Report.pdf",
-                    mime="application/pdf"
-                )
-                
-# ---------------------------
-# Suggested Actions Button
-# ---------------------------
-if st.button("View Suggested Actions to Achieve Net Zero by 2050"):
-    st.header("Suggested Actions to Achieve Net Zero by 2050")
-    st.markdown("""
-    The following sector-wise actions are recommended based on the GHG inventory of the selected city.  
-    Actions are categorized into **Short-term (by 2030)**, **Mid-term (by 2040)**, and **Long-term (by 2050)** goals.
-    """)
-
-    # ---------------------------
-    # Define Sector-wise Actions
-    # ---------------------------
-    actions_data = {
-        "Residential Energy": {
-            "Short-term (2030)": [
-                "1. Promote rooftop solar adoption", "2. Implement energy-efficient appliances program",
-                "3. Launch LED replacement scheme", "4. Conduct residential energy audits",
-                "5. Implement smart metering", "6. Subsidize home insulation", "7. Promote rooftop rainwater harvesting",
-                "8. Public awareness campaigns on energy saving", "9. Encourage behavioural change programs", "10. Set local EE building codes"
-            ],
-            "Mid-term (2040)": [
-                "1. Net-zero-ready residential buildings", "2. 50% homes on renewable energy",
-                "3. Advanced energy storage adoption", "4. Incentivize electric heating", "5. Retrofit existing buildings",
-                "6. Demand-response energy programs", "7. Local microgrid development", "8. Smart home automation for efficiency",
-                "9. Integrate EV charging infrastructure in homes", "10. Phase out fossil-fuel heating systems"
-            ],
-            "Long-term (2050)": [
-                "1. 100% residential renewable energy", "2. Fully decarbonized buildings", "3. Zero-carbon appliance standards",
-                "4. Smart energy-positive homes", "5. Advanced energy storage integration", "6. Building-integrated PV widespread",
-                "7. Circular economy in building materials", "8. Smart urban energy networks", "9. Complete phase-out of fossil fuels in homes",
-                "10. Fully automated residential energy management"
-            ]
-        },
-        "Commercial Energy": {
-            "Short-term (2030)": [
-                "1. Conduct commercial energy audits", "2. Retrofit lighting to LEDs", "3. Implement smart thermostats",
-                "4. Incentivize rooftop solar on commercial buildings", "5. Promote energy-efficient HVAC systems",
-                "6. Implement green lease agreements", "7. Awareness campaigns for businesses", "8. Encourage energy reporting",
-                "9. Subsidize building envelope improvements", "10. Introduce energy efficiency labeling"
-            ],
-            "Mid-term (2040)": [
-                "1. Net-zero-ready commercial buildings", "2. 50% energy from renewables", "3. Smart energy management systems",
-                "4. Advanced HVAC retrofits", "5. Integration with district energy networks", "6. Energy performance benchmarking",
-                "7. EV charging for commercial fleets", "8. Incentivize building retrofits", "9. Automated energy analytics", "10. Waste heat recovery systems"
-            ],
-            "Long-term (2050)": [
-                "1. Fully decarbonized commercial sector", "2. 100% renewable energy consumption", "3. Energy-positive buildings",
-                "4. Zero-carbon HVAC and lighting", "5. Full integration with smart grid", "6. Circular energy use practices",
-                "7. AI-driven energy optimization", "8. Complete electrification of commercial processes", "9. Sustainable materials adoption", "10. Continuous monitoring & optimization"
-            ]
-        },
-        "Industrial Energy": {
-            "Short-term (2030)": [
-                "1. Conduct industrial energy audits", "2. Upgrade to high-efficiency motors", "3. Implement process optimization",
-                "4. Waste heat recovery", "5. Switch to cleaner fuels", "6. Introduce energy management systems", "7. Employee training on energy efficiency",
-                "8. Monitor & report energy use", "9. Install sub-metering", "10. Promote circular economy practices"
-            ],
-            "Mid-term (2040)": [
-                "1. Electrify industrial processes", "2. Deploy large-scale onsite renewables", "3. Carbon capture pilot projects",
-                "4. Industrial microgrids", "5. Smart automation for energy efficiency", "6. Sustainable material sourcing",
-                "7. Advanced process optimization", "8. Digital twins for energy monitoring", "9. Integrate with district energy networks", "10. Minimize industrial waste generation"
-            ],
-            "Long-term (2050)": [
-                "1. Fully decarbonized industry", "2. 100% renewable energy use", "3. Advanced carbon capture and utilization",
-                "4. Zero-waste manufacturing", "5. Circular production models", "6. AI-driven process optimization",
-                "7. Energy-positive industrial complexes", "8. Electrification of all processes", "9. Industry-wide net-zero compliance", "10. Continuous emissions monitoring"
-            ]
-        },
-        "Transport": {
-            "Short-term (2030)": [
-                "1. Promote public transport", "2. Implement EV incentives", "3. Introduce low-emission zones", "4. Fuel efficiency standards for vehicles",
-                "5. Bicycle infrastructure development", "6. Awareness campaigns on modal shift", "7. Promote carpooling", "8. EV charging infrastructure expansion",
-                "9. Efficient logistics planning", "10. Promote hybrid vehicles"
-            ],
-            "Mid-term (2040)": [
-                "1. 50% EV adoption in urban fleet", "2. Advanced public transport electrification", "3. Hydrogen fuel pilot projects",
-                "4. Smart traffic management systems", "5. Freight electrification", "6. Integration with MaaS (Mobility as a Service)",
-                "7. Promote EV buses", "8. Phase-out of diesel taxis", "9. Implement low-carbon transport corridors", "10. Urban logistics optimization"
-            ],
-            "Long-term (2050)": [
-                "1. Fully electrified transport sector", "2. Zero-emission public transport", "3. Hydrogen for heavy transport", "4. Smart integrated mobility networks",
-                "5. Autonomous EV deployment", "6. Phase-out of fossil fuel vehicles", "7. Net-zero freight systems", "8. Mobility hubs with renewables",
-                "9. Advanced battery and hydrogen infrastructure", "10. Smart demand-responsive transport"
-            ]
-        },
-        "Waste": {
-            "Short-term (2030)": [
-                "1. Segregate waste at source", "2. Promote composting", "3. Reduce landfill dependency", "4. Awareness campaigns on recycling",
-                "5. Introduce waste collection efficiency improvements", "6. Industrial waste audits", "7. Promote waste-to-energy pilots",
-                "8. Encourage circular economy", "9. Implement recycling incentives", "10. Monitor methane emissions"
-            ],
-            "Mid-term (2040)": [
-                "1. 50% reduction in landfill waste", "2. Expand composting programs", "3. Optimize waste-to-energy plants",
-                "4. Industrial waste minimization", "5. Smart waste collection", "6. Advanced recycling technology adoption",
-                "7. Implement circular material loops", "8. Continuous methane monitoring", "9. Promote biogas utilization", "10. Phase-out of non-recyclables"
-            ],
-            "Long-term (2050)": [
-                "1. Zero waste to landfill", "2. Full circular economy integration", "3. Net-zero emissions from waste sector",
-                "4. Advanced material recovery", "5. Complete biogas adoption", "6. Methane capture optimization",
-                "7. Smart waste management systems", "8. Decentralized composting and recycling", "9. Waste sector electrification", "10. Continuous monitoring & optimization"
-            ]
-        },
-        "Water & Sewage": {
-            "Short-term (2030)": [
-                "1. Optimize water pumping energy", "2. Improve wastewater treatment efficiency", "3. Promote water conservation", "4. Leak detection and repair",
-                "5. Awareness campaigns on water saving", "6. Incentivize rainwater harvesting", "7. Install energy-efficient pumps", "8. Use renewable energy in water treatment",
-                "9. Reduce sewer losses", "10. Monitor energy consumption"
-            ],
-            "Mid-term (2040)": [
-                "1. Electrify water treatment plants", "2. Implement smart water networks", "3. Increase reuse of treated wastewater",
-                "4. Solar-powered pumping stations", "5. Advanced monitoring & automation", "6. Optimize chemical usage",
-                "7. Reduce non-revenue water", "8. Integrate water-energy nexus programs", "9. Smart metering for consumers", "10. Promote decentralized water systems"
-            ],
-            "Long-term (2050)": [
-                "1. Net-zero energy water & sewage systems", "2. 100% renewable energy powered plants", "3. Circular water use",
-                "4. Smart water-energy integration", "5. Zero-discharge systems", "6. AI-driven optimization", "7. Decentralized treatment adoption",
-                "8. Full electrification of processes", "9. Energy-positive wastewater treatment", "10. Continuous monitoring & optimization"
-            ]
-        }
-    }
-
-    # ---------------------------
-    # Convert to DataFrame for Display
-    # ---------------------------
-    for sector, goals in actions_data.items():
-        st.subheader(sector)
-        df_actions = pd.DataFrame({
-            "Short-term (2030)": goals["Short-term (2030)"],
-            "Mid-term (2040)": goals["Mid-term (2040)"],
-            "Long-term (2050)": goals["Long-term (2050)"]
-        })
-        st.table(df_actions)
-
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-
-# ---------------------------
-# Create CAP PDF
-# ---------------------------
-if st.button("Create CAP PDF Report"):
-    if not PDF_AVAILABLE:
-        st.warning("PDF generation not available. Install reportlab library.")
-    else:
-        st.success("Generating CAP PDF...")
-
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-        style_title = styles['Title']
-        style_heading = styles['Heading2']
-        style_normal = styles['Normal']
-
-        # --- Title ---
-        elements.append(Paragraph("City Climate Action Plan (CAP) Report", style_title))
-        elements.append(Spacer(1, 12))
-
-        # --- GHG Inventory Table ---
-        elements.append(Paragraph("GHG Inventory", style_heading))
-        ghg_data = [["Sector", "Emissions (tCO2e)"]] + list(emissions_df.itertuples(index=False, name=None))
-        t_ghg = Table(ghg_data, hAlign="LEFT")
-        t_ghg.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black)
-        ]))
-        elements.append(t_ghg)
-        elements.append(Spacer(1, 24))
-
-        # --- Suggested Actions ---
-        elements.append(Paragraph("Suggested Actions to Achieve Net Zero by 2050", style_heading))
-        for sector, goals in actions_data.items():
-            elements.append(Paragraph(f"{sector}", styles['Heading3']))
-            
-            # Prepare data for table: Action #, Short, Mid, Long
-            max_actions = max(len(goals['Short-term (2030)']),
-                              len(goals['Mid-term (2040)']),
-                              len(goals['Long-term (2050)']))
-            
-            table_data = [["#", "Short-term (2030)", "Mid-term (2040)", "Long-term (2050)"]]
-            for i in range(max_actions):
-                table_data.append([
-                    i+1,
-                    goals['Short-term (2030)'][i] if i < len(goals['Short-term (2030)']) else "",
-                    goals['Mid-term (2040)'][i] if i < len(goals['Mid-term (2040)']) else "",
-                    goals['Long-term (2050)'][i] if i < len(goals['Long-term (2050)']) else ""
-                ])
-            
-            t_actions = Table(table_data, hAlign="LEFT")
-            t_actions.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#E67E22")),
-                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-                ('VALIGN', (0,0), (-1,-1), 'TOP')
-            ]))
-            elements.append(t_actions)
-            elements.append(Spacer(1, 12))
-            elements.append(PageBreak())
-
-        # --- Build PDF ---
-        doc.build(elements)
-        buffer.seek(0)
-
-        st.download_button(
-            label="Download CAP Report (PDF)",
-            data=buffer,
-            file_name="CAP_Report.pdf",
-            mime="application/pdf"
-        )
+        # ---------------------------
+        # Report Generation
+        # ---------------------------
+        if not st.session_state.cap_data.empty and city in st.session_state.cap_data["City Name"].values:
+            st.subheader("Download GHG Inventory Report")
+            if PDF_AVAILABLE:
+                with st.form("cap_pdf_form"):
+                    user_name = st.text_input("Your Full Name")
+                    user_email = st.text_input("Your Work Email")
+                    user_contact = st.text_input("Contact Number")
+                    submit_pdf = st.form_submit_button("Generate PDF Report")
+                    if submit_pdf:
+                        row = st.session_state.cap_data[st.session_state.cap_data["City Name"] == city].iloc[0]
+                        buffer = io.BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=A4)
+                        elements = []
+                        styles = getSampleStyleSheet()
+                        elements.append(Paragraph(f"{city} — CAP GHG Inventory Report", styles["Title"]))
+                        elements.append(Spacer(1, 12))
+                        data = [[k, v] for k, v in row.items()]
+                        t = Table(data, hAlign="LEFT")
+                        t.setStyle(TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                            ('GRID', (0, 0), (-1, -1), 0.5, colors.white)
+                        ]))
+                        elements.append(t)
+                        doc.build(elements)
+                        buffer.seek(0)
+                        st.download_button("Download CAP Report PDF", buffer, file_name=f"{city}_CAP_Report.pdf", mime="application/pdf")
+            else:
+                st.warning("PDF generation not available. Install reportlab library.")
