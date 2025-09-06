@@ -521,7 +521,7 @@ if menu == "Home":
         st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page with Tooltips
+# City Information Page (SaaS Dashboard Enhanced)
 # ---------------------------
 elif menu == "City Information":
     st.markdown("<h2 style='color:#ECEFF1; margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
@@ -532,11 +532,11 @@ elif menu == "City Information":
         row = df_meta[df_meta["City Name"] == city].iloc[0]
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
-        # -------- Utility Function for Cards with Tooltip --------
-        def render_card(col, label, value, tooltip="", bg_color="#37474F", font_size=15, bold=False):
+        # -------- Utility Function for Cards --------
+        def render_card(col, label, value, bg_color="#37474F", font_size=15, bold=False):
             weight = "bold" if bold else "normal"
             card_html = f"""
-            <div title='{tooltip}' style='
+            <div style='
                 background:{bg_color};
                 color:#ECEFF1;
                 padding:16px 10px;
@@ -562,21 +562,21 @@ elif menu == "City Information":
         cap_color = "#42A5F5" if cap_status.lower() == "completed" else ("#FFA726" if cap_status.lower() == "in progress" else "#B0BEC5")
 
         basic_metrics = [
-            ("District", row.get("District", "—"), "Administrative district of the city"),
-            ("ULB Category", row.get("ULB Category", "—"), "Category of Urban Local Body"),
-            ("Population", format_indian_number(population), "Total city population"),
-            ("Area (sq.km)", area, "Geographical area in square kilometers"),
-            ("Density (/sq.km)", density, "Population density per sq.km"),
-            ("Est. Year", row.get("Est. Year", "—"), "Year when ULB was established"),
-            ("CAP Status", cap_status, "Current status of Climate Action Plan")
+            ("District", row.get("District", "—")),
+            ("ULB Category", row.get("ULB Category", "—")),
+            ("Population", format_indian_number(population)),
+            ("Area (sq.km)", area),
+            ("Density (/sq.km)", density),
+            ("Est. Year", row.get("Est. Year", "—")),
+            ("CAP Status", cap_status)
         ]
 
         for i in range(0, len(basic_metrics), 3):
             cols = st.columns(3)
-            for col, (label, value, tooltip) in zip(cols, basic_metrics[i:i+3]):
+            for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
                 bg = cap_color if label == "CAP Status" else "#37474F"
                 font_bold = True if label in ["Population", "CAP Status"] else False
-                render_card(col, label, value, tooltip=tooltip, bg_color=bg, font_size=15, bold=font_bold)
+                render_card(col, label, value, bg_color=bg, font_size=15, bold=font_bold)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
@@ -586,21 +586,21 @@ elif menu == "City Information":
         per_capita_ghg = round(ghg_total / population, 2) if population else 0
 
         env_metrics = [
-            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total), "Total greenhouse gas emissions in tons CO2 equivalent"),
-            ("Per Capita Emissions", per_capita_ghg, "GHG emissions per person"),
-            ("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0)), "Annual renewable energy generated"),
-            ("Urban Green Area (ha)", format_indian_number(row.get("Urban Green Area (ha)", 0)), "Total green area in hectares"),
-            ("Solid Waste (tons)", format_indian_number(row.get("Municipal Solid Waste (tons)", 0)), "Annual municipal solid waste generated"),
-            ("Wastewater Treated (m³)", format_indian_number(row.get("Wastewater Treated (m3)", 0)), "Total treated wastewater per year"),
-            ("Waste Landfilled (%)", f"{row.get('Waste Landfilled (%)', 0)}%", "Percentage of waste sent to landfill"),
-            ("Waste Composted (%)", f"{row.get('Waste Composted (%)', 0)}%", "Percentage of waste composted")
+            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total)),
+            ("Per Capita Emissions", per_capita_ghg),
+            ("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0))),
+            ("Urban Green Area (ha)", format_indian_number(row.get("Urban Green Area (ha)", 0))),
+            ("Solid Waste (tons)", format_indian_number(row.get("Municipal Solid Waste (tons)", 0))),
+            ("Wastewater Treated (m³)", format_indian_number(row.get("Wastewater Treated (m3)", 0))),
+            ("Waste Landfilled (%)", f"{row.get('Waste Landfilled (%)', 0)}%"),
+            ("Waste Composted (%)", f"{row.get('Waste Composted (%)', 0)}%")
         ]
 
         for i in range(0, len(env_metrics), 3):
             cols = st.columns(3)
-            for col, (label, value, tooltip) in zip(cols, env_metrics[i:i+3]):
+            for col, (label, value) in zip(cols, env_metrics[i:i+3]):
                 bold = True if label in ["GHG Emissions (tCO2e)", "Per Capita Emissions"] else False
-                render_card(col, label, value, tooltip=tooltip, font_size=14, bold=bold)
+                render_card(col, label, value, font_size=14, bold=bold)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
@@ -617,42 +617,42 @@ elif menu == "City Information":
         literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2,2))
 
         social_metrics = [
-            ("Male Population", males, "Number of male residents"),
-            ("Female Population", females, "Number of female residents"),
-            ("Total Population", total_pop, "Total population of the city"),
-            ("Children (0–6 Male)", children_m, "Male children aged 0–6 years"),
-            ("Children (0–6 Female)", children_f, "Female children aged 0–6 years"),
-            ("Total Children", total_children, "Total children aged 0–6 years"),
-            ("Male Literacy (%)", literacy_m, "Percentage of literate males"),
-            ("Female Literacy (%)", literacy_f, "Percentage of literate females"),
-            ("Overall Literacy (%)", literacy_total, "Average literacy rate"),
-            ("Slum Population (%)", row.get("Slum (%)",0), "Percentage of population living in slums"),
-            ("Migrant Population (%)", row.get("Migrant (%)",0), "Percentage of migrant population"),
-            ("BPL Households (%)", row.get("BPL Households (%)",0), "Percentage of Below Poverty Line households")
+            ("Male Population", males),
+            ("Female Population", females),
+            ("Total Population", total_pop),
+            ("Children (0–6 Male)", children_m),
+            ("Children (0–6 Female)", children_f),
+            ("Total Children", total_children),
+            ("Male Literacy (%)", literacy_m),
+            ("Female Literacy (%)", literacy_f),
+            ("Overall Literacy (%)", literacy_total),
+            ("Slum Population (%)", row.get("Slum (%)",0)),
+            ("Migrant Population (%)", row.get("Migrant (%)",0)),
+            ("BPL Households (%)", row.get("BPL Households (%)",0))
         ]
 
         for i in range(0, len(social_metrics), 3):
             cols = st.columns(3)
-            for col, (label, value, tooltip) in zip(cols, social_metrics[i:i+3]):
+            for col, (label, value) in zip(cols, social_metrics[i:i+3]):
                 bold = True if label in ["Total Population", "Total Children", "Overall Literacy (%)"] else False
-                render_card(col, label, value, tooltip=tooltip, font_size=14, bold=bold)
+                render_card(col, label, value, font_size=14, bold=bold)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- CONTACT INFORMATION ----------
         st.markdown("<h4 style='background: linear-gradient(90deg, #455A64, #607D8B); padding:6px 10px; border-radius:5px; color:#ECEFF1;'>Contact Information</h4>", unsafe_allow_html=True)
         contact_metrics = [
-            ("Department Exist", row.get("Department Exist","—"), "Whether environment department exists in the ULB"),
-            ("Department Name", row.get("Department Name","—"), "Name of environment department"),
-            ("Email", row.get("Email","—"), "Official email for contact"),
-            ("Contact Number", row.get("Contact Number","—"), "Official contact number"),
-            ("Website", row.get("Website","—"), "Official website of ULB")
+            ("Department Exist", row.get("Department Exist","—")),
+            ("Department Name", row.get("Department Name","—")),
+            ("Email", row.get("Email","—")),
+            ("Contact Number", row.get("Contact Number","—")),
+            ("Website", row.get("Website","—"))
         ]
 
         for i in range(0, len(contact_metrics), 2):
             cols = st.columns(2)
-            for col, (label, value, tooltip) in zip(cols, contact_metrics[i:i+2]):
-                render_card(col, label, value, tooltip=tooltip, font_size=14)
+            for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
+                render_card(col, label, value, font_size=14)
 
 # ---------------------------
 # Admin Panel Page
