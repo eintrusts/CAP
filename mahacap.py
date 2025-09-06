@@ -605,6 +605,53 @@ if menu == "GHG Inventory" or st.session_state.menu == "GHG Inventory":
                 "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
             }))
 
+            # ---------------------------
+            # Suggested Actions Section (only here)
+            # ---------------------------
+            if st.button("Show Suggested Actions to Achieve Net Zero by 2050"):
+                st.subheader("Suggested Actions per Sector (Short, Mid, Long-term Goals)")
+
+                # Example dictionary structure
+                goals = {
+                    "Residential Energy": {
+                        "Short-term (2030)": [
+                            "1. Implement energy-efficient lighting (Priority 1)",
+                            "2. Promote rooftop solar adoption (Priority 2)",
+                            "3. Conduct energy audits in households (Priority 3)"
+                        ],
+                        "Mid-term (2040)": [
+                            "1. Incentivize heat pump systems (Priority 1)",
+                            "2. Upgrade appliances to higher efficiency (Priority 2)"
+                        ],
+                        "Long-term (2050)": [
+                            "1. Achieve 100% renewable electricity in households (Priority 1)"
+                        ]
+                    },
+                    "Transport Diesel": {
+                        "Short-term (2030)": ["1. Promote CNG retrofitting (Priority 1)"],
+                        "Mid-term (2040)": ["1. Switch to hybrid vehicles (Priority 1)"],
+                        "Long-term (2050)": ["1. Switch to full EV fleet (Priority 1)"]
+                    }
+                    # Add other sectors similarly...
+                }
+
+                # Prepare table
+                table_data = []
+                for sector, s_goals in goals.items():
+                    max_len = max(len(s_goals.get("Short-term (2030)", [])),
+                                  len(s_goals.get("Mid-term (2040)", [])),
+                                  len(s_goals.get("Long-term (2050)", [])))
+                    for i in range(max_len):
+                        row = {
+                            "Sector": sector if i == 0 else "",
+                            "Short-term (2030)": s_goals.get("Short-term (2030)", [])[i] if i < len(s_goals.get("Short-term (2030)", [])) else "",
+                            "Mid-term (2040)": s_goals.get("Mid-term (2040)", [])[i] if i < len(s_goals.get("Mid-term (2040)", [])) else "",
+                            "Long-term (2050)": s_goals.get("Long-term (2050)", [])[i] if i < len(s_goals.get("Long-term (2050)", [])) else ""
+                        }
+                        table_data.append(row)
+                
+                st.table(pd.DataFrame(table_data))
+                
 # ---------------------------
 # Suggested Actions Button
 # ---------------------------
