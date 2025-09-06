@@ -44,7 +44,7 @@ cities_districts = {
     "Kalyan-Dombivli": "Thane",
     "Mira-Bhayandar": "Thane",
     "Navi Mumbai": "Thane",
-    "Bhiwandi-Nozampur": "Thane",
+    "Bhiwandi-Nizampur": "Thane",
     "Ulhasnagar": "Thane",
     "Ambernath Council": "Thane",
     "Vasai-Virar": "Palghar",
