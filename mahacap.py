@@ -409,32 +409,6 @@ elif menu == "Admin":
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
 
-        # --- Display Existing Entries in Minimalist Table ---
-        st.subheader("All City Entries")
-        df_meta = st.session_state.data.copy()
-        if not df_meta.empty:
-            df_display = df_meta.copy()
-            df_display.reset_index(drop=True, inplace=True)
-            
-            # Add Edit/Delete columns (buttons)
-            for i, row in df_display.iterrows():
-                cols = st.columns([2, 1, 1])
-                with cols[0]:
-                    st.text(f"{row['City Name']}")
-                with cols[1]:
-                    if st.button(f"Edit {i}", key=f"edit_{i}"):
-                        # Pre-fill form for editing
-                        st.session_state.data.loc[i, 'edit_mode'] = True
-                        st.session_state.edit_index = i
-                        st.experimental_rerun()
-                with cols[2]:
-                    if st.button(f"Delete {i}", key=f"del_{i}"):
-                        df_meta = st.session_state.data.drop(i).reset_index(drop=True)
-                        st.session_state.data = df_meta
-                        df_meta.to_csv(DATA_FILE, index=False)
-                        st.success(f"Entry for {row['City Name']} deleted.")
-                        st.experimental_rerun()
-
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
