@@ -296,16 +296,19 @@ elif menu == "Admin":
 # ---------------------------
 # CAP Generation Page
 # ---------------------------
-elif st.session_state.menu == "CAP Generation":
+if st.session_state.menu == "CAP Generation":
     if not st.session_state.authenticated:
         admin_login()
     else:
         st.header("CAP : Data Collection")
-        city = st.selectbox("Select City", list(cities_districts.keys()))
+
+        # --- City Selection ---
+        cities_for_select = ["Sangli", "Miraj", "Kupwad"]
+        city = st.selectbox("Select City", cities_for_select, index=0)
         st.session_state.selected_city = city
 
+        # --- CAP Raw Data Form ---
         with st.form("cap_raw_form", clear_on_submit=False):
-            # --- All inputs as per your original code ---
             st.subheader("Population & Demographics")
             population = st.number_input("Total Population", min_value=0, value=0, step=1000)
             households = st.number_input("Number of Households", min_value=0, value=0, step=100)
@@ -351,7 +354,7 @@ elif st.session_state.menu == "CAP Generation":
             urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
             renewable_energy_mwh = st.number_input("Renewable Energy Generated in City (MWh/year)", min_value=0, value=0, step=10)
 
-            submit_cap = st.form_submit_button("Save CAP & Generate GHG Inventory")
+            submit_cap = st.form_submit_button("Save & View GHG Inventory")
 
             if submit_cap:
                 raw_row = {
@@ -388,185 +391,168 @@ elif st.session_state.menu == "CAP Generation":
                 }
 
                 df_cap = st.session_state.cap_data.copy()
-                if city in df_cap.get("City Name",[]).values:
+                if city in df_cap["City Name"].values:
                     df_cap.loc[df_cap["City Name"] == city, list(raw_row.keys())[1:]] = list(raw_row.values())[1:]
                 else:
                     df_cap = pd.concat([df_cap, pd.DataFrame([raw_row])], ignore_index=True)
+
                 st.session_state.cap_data = df_cap
+                df_cap.to_csv(CAP_DATA_FILE, index=False)
                 st.success(f"CAP raw data for {city} saved successfully!")
+                st.session_state.show_inventory = True
+
+        # --- Generate GHG Inventory Button ---
+        if st.session_state.show_inventory:
+            if st.button("Generate GHG Inventory"):
                 st.session_state.menu = "GHG Inventory"
+                st.experimental_rerun()
 
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
 elif st.session_state.menu == "GHG Inventory":
     city = st.session_state.selected_city
-    st.header(f"GHG Inventory - {city}")
-    df_city = st.session_state.cap_data.loc[st.session_state.cap_data["City Name"] == city].iloc[0]
+    if city not in st.session_state.cap_data["City Name"].values:
+        st.warning("Please generate CAP first.")
+    else:
+        st.header(f"GHG Inventory - {city}")
 
-    # --- Emission Factors ---
-    EF_electricity = 0.82
-    EF_diesel_vehicle = 0.00268
-    EF_petrol_vehicle = 0.00231
-    EF_cng_vehicle = 0.0016
-    EF_lpg_vehicle = 0.00151
-    EF_electric_vehicle = 0
-    EF_diesel_industry = 2.68
-    EF_petrol_industry = 2.31
-    EF_cng_industry = 1.6
-    EF_lpg_industry = 1.51
-    EF_msw_landfill = 0.25
-    EF_msw_compost = 0.05
-    EF_wastewater = 0.5
+        df_city = st.session_state.cap_data.loc[st.session_state.cap_data["City Name"] == city].iloc[0]
 
-    # --- Calculations ---
-    elec_emissions = (
-        df_city["Residential Electricity (MWh)"] +
-        df_city["Commercial Electricity (MWh)"] +
-        df_city["Industrial Electricity (MWh)"] +
-        df_city["Streetlights Energy (MWh)"]
-    ) * EF_electricity
+        # --- Emission Factors ---
+        EF_electricity = 0.82
+        EF_diesel_vehicle = 0.00268
+        EF_petrol_vehicle = 0.00231
+        EF_cng_vehicle = 0.0016
+        EF_lpg_vehicle = 0.00151
+        EF_electric_vehicle = 0
+        EF_diesel_industry = 2.68
+        EF_petrol_industry = 2.31
+        EF_cng_industry = 1.6
+        EF_lpg_industry = 1.51
+        EF_msw_landfill = 0.25
+        EF_msw_compost = 0.05
+        EF_wastewater = 0.5
 
-    transport_emissions = (
-        df_city["Diesel Vehicles"]*df_city["Avg km/Vehicle"]*EF_diesel_vehicle +
-        df_city["Petrol Vehicles"]*df_city["Avg km/Vehicle"]*EF_petrol_vehicle +
-        df_city["CNG Vehicles"]*df_city["Avg km/Vehicle"]*EF_cng_vehicle +
-        df_city["LPG Vehicles"]*df_city["Avg km/Vehicle"]*EF_lpg_vehicle +
-        df_city["Electric Vehicles"]*df_city["Avg km/Vehicle"]*EF_electric_vehicle
-    )
+        elec_emissions = (
+            df_city["Residential Electricity (MWh)"] +
+            df_city["Commercial Electricity (MWh)"] +
+            df_city["Industrial Electricity (MWh)"] +
+            df_city["Streetlights Energy (MWh)"]
+        ) * EF_electricity
 
-    industry_emissions = (
-        df_city["Industrial Diesel (t)"]*EF_diesel_industry +
-        df_city["Industrial Petrol (t)"]*EF_petrol_industry +
-        df_city["Industrial CNG (t)"]*EF_cng_industry +
-        df_city["Industrial LPG (t)"]*EF_lpg_industry +
-        df_city["Industrial Energy (MWh)"]*EF_electricity
-    )
+        transport_emissions = (
+            df_city["Diesel Vehicles"] * df_city["Avg km/Vehicle"] * EF_diesel_vehicle +
+            df_city["Petrol Vehicles"] * df_city["Avg km/Vehicle"] * EF_petrol_vehicle +
+            df_city["CNG Vehicles"] * df_city["Avg km/Vehicle"] * EF_cng_vehicle +
+            df_city["LPG Vehicles"] * df_city["Avg km/Vehicle"] * EF_lpg_vehicle +
+            df_city["Electric Vehicles"] * df_city["Avg km/Vehicle"] * EF_electric_vehicle
+        )
 
-    waste_emissions = (
-        df_city["Municipal Solid Waste (t)"]*(df_city["Fraction Landfilled (%)"]/100)*EF_msw_landfill +
-        df_city["Municipal Solid Waste (t)"]*(df_city["Fraction Composted (%)"]/100)*EF_msw_compost +
-        df_city["Wastewater Treated (m3)"]*EF_wastewater
-    )
+        industry_emissions = (
+            df_city["Industrial Diesel (t)"] * EF_diesel_industry +
+            df_city["Industrial Petrol (t)"] * EF_petrol_industry +
+            df_city["Industrial CNG (t)"] * EF_cng_industry +
+            df_city["Industrial LPG (t)"] * EF_lpg_industry +
+            df_city["Industrial Energy (MWh)"] * EF_electricity
+        )
 
-    water_emissions = df_city["Energy for Water (MWh)"]*EF_electricity
-    total_ghg = elec_emissions + transport_emissions + industry_emissions + waste_emissions + water_emissions
-    per_capita = total_ghg / max(df_city["Population"],1)
+        waste_emissions = (
+            df_city["Municipal Solid Waste (t)"] * (df_city["Fraction Landfilled (%)"]/100) * EF_msw_landfill +
+            df_city["Municipal Solid Waste (t)"] * (df_city["Fraction Composted (%)"]/100) * EF_msw_compost +
+            df_city["Wastewater Treated (m3)"] * EF_wastewater
+        )
 
-    st.metric("Total Annual GHG Emissions (tCO2e)", format_indian_number(round(total_ghg)))
-    st.metric("Per Capita GHG Emissions (tCO2e)", round(per_capita,2))
+        water_emissions = df_city["Energy for Water (MWh)"] * EF_electricity
 
-    ghg_breakdown = pd.DataFrame({
-        "Sector":["Electricity","Transport","Industry","Waste","Water & Other"],
-        "Emissions (tCO2e)":[elec_emissions,transport_emissions,industry_emissions,waste_emissions,water_emissions]
-    })
+        total_ghg = elec_emissions + transport_emissions + industry_emissions + waste_emissions + water_emissions
+        per_capita = total_ghg / max(df_city["Population"], 1)
 
-    fig_bar = px.bar(ghg_breakdown,x="Sector",y="Emissions (tCO2e)",text="Emissions (tCO2e)",color_discrete_sequence=["#3E6BE6"])
-    fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-    st.plotly_chart(fig_bar,use_container_width=True)
+        st.metric("Total Annual GHG Emissions (tCO2e)", format_indian_number(round(total_ghg)))
+        st.metric("Per Capita GHG Emissions (tCO2e)", round(per_capita, 2))
 
-    fig_pie = px.pie(ghg_breakdown,names="Sector",values="Emissions (tCO2e)",title="Sectoral Contribution")
-    st.plotly_chart(fig_pie,use_container_width=True)
+        ghg_breakdown = pd.DataFrame({
+            "Sector": ["Electricity", "Transport", "Industry", "Waste", "Water & Other"],
+            "Emissions (tCO2e)": [elec_emissions, transport_emissions, industry_emissions, waste_emissions, water_emissions]
+        })
 
-    if st.button("View Actions"):
-        st.session_state.menu = "Actions"
+        fig_bar = px.bar(
+            ghg_breakdown, x="Sector", y="Emissions (tCO2e)",
+            text="Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"]
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        fig_pie = px.pie(
+            ghg_breakdown, names="Sector", values="Emissions (tCO2e)",
+            color_discrete_sequence=px.colors.sequential.RdBu
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+        if st.button("Actions"):
+            st.session_state.menu = "Actions"
+            st.experimental_rerun()
 
 # ---------------------------
 # Actions Page
 # ---------------------------
 elif st.session_state.menu == "Actions":
-    city = st.session_state.selected_city
-    st.header(f"Recommended Actions - {city}")
+    st.header(f"Suggested Actions - {st.session_state.selected_city}")
 
-    sectors = ["Electricity","Transport","Industry","Waste","Water & Other"]
+    sectors = ["Electricity", "Transport", "Industry", "Waste", "Water & Other"]
 
-    # Practical Indian city actions (10 each)
-    actions_example = {
-        "Electricity": {
-            "Short Term":[
-                "LED streetlight replacement","Solar rooftop pilot","Energy audits in public buildings",
-                "Awareness campaign for households","Demand-side management pilot","Smart metering","Load shifting pilot",
-                "Replace old transformers","Grid optimization study","Encourage solar water heaters"
-            ],
-            "Mid Term":[
-                "City-wide rooftop solar","Energy efficiency retrofit in schools","Public building solar panels",
-                "EV charging integration","District cooling pilot","High-efficiency streetlights","Renewable PPAs for city buildings",
-                "Microgrid for municipal buildings","Solar-based streetlight network","Energy efficiency in water pumping"
-            ],
-            "Long Term":[
-                "100% renewable city grid target","Net-zero municipal buildings","Smart city energy management",
-                "EV fleet transition","Waste-to-energy integration","Smart street lighting","Advanced microgrids",
-                "Grid-scale solar/wind projects","Smart metering for all","Integrated city energy planning"
-            ]
-        },
-        "Transport": {
-            "Short Term":[
-                "Public transport awareness","Non-motorized transport lanes","Cycle sharing pilot",
-                "Carpool incentives","Low emission zones","Bus fleet efficiency check","Traffic signal optimization",
-                "EV fleet pilot","School bus efficiency audit","Fuel efficiency awareness campaigns"
-            ],
-            "Mid Term":[
-                "EV public transport","Bus rapid transit expansion","Dedicated cycle lanes","EV charging network",
-                "Metro/suburban rail integration","Transport demand management","Smart parking pricing","Public EV taxi pilot",
-                "Traffic congestion monitoring","Car-free zones in CBD"
-            ],
-            "Long Term":[
-                "Zero-emission city transport","Fully integrated multimodal transport","City-wide EV adoption",
-                "Autonomous electric buses","Rail freight shift","High-speed rail integration","Smart traffic AI",
-                "Public bike-sharing expansion","Pedestrian-friendly city","Transport sector net-zero target"
-            ]
-        },
-        "Industry": {
-            "Short Term":["Energy audits","Process optimization","Waste heat recovery","Equipment tune-ups","Awareness workshops","Shift to efficient motors","Fuel substitution pilot","Process monitoring","Energy efficiency certification","Optimize compressed air"],
-            "Mid Term":["Renewable energy procurement","Cogeneration systems","Process electrification","Efficient lighting","Benchmarking","ISO 50001 adoption","Heat recovery integration","Industrial microgrids","Energy storage integration","Cleaner production plans"],
-            "Long Term":["Net-zero industrial cluster","Circular economy adoption","Renewable process heat","Industry 4.0 smart controls","Industrial symbiosis","Advanced waste-to-energy","Full electrification","Low-carbon material adoption","Green certification","City-level industrial decarbonization plan"]
-        },
-        "Waste": {
-            "Short Term":["Segregation awareness","Composting pilot","Landfill methane capture study","Waste audits","Door-to-door segregation","School campaigns","Recycling pilot","Plastic reduction campaign","Community clean-ups","Wastewater monitoring"],
-            "Mid Term":["City composting units","Waste-to-energy pilot","Material recovery facilities","Landfill gas capture","Organic waste collection route optimization","Smart bins","Recycling centers expansion","Wastewater treatment improvement","Recycling incentives","E-waste collection drives"],
-            "Long Term":["Zero waste city target","Full waste-to-energy network","Comprehensive recycling network","Advanced landfill methane capture","Circular economy integration","Composting mandatory","Organic waste processing units","Industrial waste recycling","Smart waste AI","City-wide waste management plan"]
-        },
-        "Water & Other": {
-            "Short Term":["Leak detection pilot","Water-saving awareness","Rainwater harvesting small-scale","Metering pilot","Pump efficiency checks","School awareness programs","Greywater reuse pilot","Water quality monitoring","Irrigation optimization","Reduce energy in water supply"],
-            "Mid Term":["City-wide rainwater harvesting","Wastewater recycling","Smart metering expansion","Pump automation","Water loss reduction","Industrial water reuse","Stormwater management","Reservoir efficiency upgrade","Irrigation scheduling","City water efficiency plan"],
-            "Long Term":["Net-zero water-energy city","Integrated water management","Advanced wastewater recycling","City-scale rainwater integration","Energy-efficient pumping","Water footprint reduction","Water reuse in industries","AI-based water management","Smart reservoirs","Urban green integration for water retention"]
-        }
+    actions_data = {
+        "Short Term": [
+            "LED streetlight replacement", "Solar rooftop pilot", "Energy audit", "Public EV charging", 
+            "Waste segregation awareness", "Water leak detection", "Urban tree planting", "Efficient public pumps",
+            "Industrial energy check", "Smart traffic signals"
+        ],
+        "Mid Term": [
+            "City-wide rooftop solar", "Electric bus deployment", "Industrial cogeneration", "Organic waste composting",
+            "Wastewater recycling plants", "Solar water heating in buildings", "Green corridors", "EV incentives",
+            "Public transport expansion", "Smart grid implementation"
+        ],
+        "Long Term": [
+            "Net-zero city plan", "Mass transit network expansion", "Renewable energy parks", "Circular waste economy",
+            "Decentralized water management", "Urban forest expansion", "100% EV adoption", "Zero energy buildings",
+            "Advanced industrial emission control", "Carbon credit monetization"
+        ]
     }
 
     for sector in sectors:
         st.subheader(sector)
-        st.table(pd.DataFrame(actions_example[sector]))
+        df_actions = pd.DataFrame(actions_data)
+        st.table(df_actions)
 
-    # Generate CAP PDF
-    if PDF_AVAILABLE:
-        if st.button("Generate CAP"):
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer,pagesize=A4)
-            styles = getSampleStyleSheet()
-            elements = [Paragraph(f"{city} - GHG Inventory & Actions", styles["Title"]), Spacer(1,12)]
+    if st.button("Generate CAP"):
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
 
-            # GHG Table
-            df_ghg = pd.DataFrame({"Sector":sectors,"Emissions (tCO2e)":[
-                round(df_city["Residential Electricity (MWh)"]*0.82,2),
-                round(df_city["Diesel Vehicles"]*df_city["Avg km/Vehicle"]*0.00268 + 
-                      df_city["Petrol Vehicles"]*df_city["Avg km/Vehicle"]*0.00231,2),
-                round(df_city["Industrial Diesel (t)"]*2.68 + df_city["Industrial Petrol (t)"]*2.31,2),
-                round(df_city["Municipal Solid Waste (t)"]*0.25,2),
-                round(df_city["Energy for Water (MWh)"]*0.82,2)
-            ]})
-            t1 = Table([["Sector","Emissions (tCO2e)"]]+df_ghg.values.tolist())
-            t1.setStyle(TableStyle([('GRID',(0,0),(-1,-1),0.5,colors.black),('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),('TEXTCOLOR',(0,0),(-1,0),colors.white)]))
-            elements.append(t1); elements.append(Spacer(1,12))
+        # Logo
+        logo_url = "https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true"
+        logo_image = ImageReader(requests.get(logo_url, stream=True).raw)
+        c.drawImage(logo_image, 30, height-80, width=100, height=50)
 
-            # Actions Table
-            for sector in sectors:
-                elements.append(Paragraph(sector,styles["Heading2"]))
-                t2 = Table([["Short","Mid","Long"]]+list(zip(actions_example[sector]["Short Term"],actions_example[sector]["Mid Term"],actions_example[sector]["Long Term"])))
-                t2.setStyle(TableStyle([('GRID',(0,0),(-1,-1),0.5,colors.black),('BACKGROUND',(0,0),(-1,0),colors.HexColor("#3E6BE6")),('TEXTCOLOR',(0,0),(-1,0),colors.white)]))
-                elements.append(t2); elements.append(Spacer(1,12))
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(150, height-50, f"Climate Action Plan - {st.session_state.selected_city}")
 
-            doc.build(elements)
-            buffer.seek(0)
-            st.download_button("Download CAP Report PDF", buffer, file_name=f"{city}_CAP_Report.pdf", mime="application/pdf")
-    else:
-        st.warning("Install ReportLab to generate PDF")
+        # GHG Inventory
+        c.setFont("Helvetica", 12)
+        c.drawString(30, height-120, f"Total GHG Emissions (tCO2e): {round(total_ghg,2)}")
+        c.drawString(30, height-140, f"Per Capita GHG Emissions (tCO2e): {round(per_capita,2)}")
+
+        # Actions
+        y = height-180
+        for sector in sectors:
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(30, y, sector)
+            y -= 20
+            c.setFont("Helvetica", 10)
+            for term in ["Short Term","Mid Term","Long Term"]:
+                c.drawString(40, y, f"{term}: {', '.join(actions_data[term])}")
+                y -= 15
+            y -= 10
+
+        c.save()
+        buffer.seek(0)
+        st.download_button("Download CAP PDF", data=buffer, file_name=f"CAP_{st.session_state.selected_city}.pdf", mime="application/pdf")
