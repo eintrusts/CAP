@@ -205,84 +205,73 @@ if menu == "Home":
 
     # --- CAP Status Summary ---
     if not df.empty and "CAP Status" in df.columns:
-    not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
-    in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
-    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
-    total_status = not_started + in_progress + completed
-
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Not Started", f"{not_started}")
-    col2.metric("In Progress", f"{in_progress}")
-    col3.metric("Completed", f"{completed}")
-    col4.metric("Total", f"{total_status}")
+        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
+        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
+        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
+        total_status = not_started + in_progress + completed
 
         st.markdown("### 📊 CAP Status Overview")
-        s1, s2, s3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
 
-        with s1:
-            st.markdown(
-                f"""
-                <div style='background-color:#141518; padding:20px; border-radius:12px; text-align:center;'>
-                    <h3 style='color:#E6E6E6; margin:0;'>Not Started</h3>
-                    <p style='font-size:28px; font-weight:bold; color:#3E6BE6;'>{not_started}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with s2:
-            st.markdown(
-                f"""
-                <div style='background-color:#141518; padding:20px; border-radius:12px; text-align:center;'>
-                    <h3 style='color:#E6E6E6; margin:0;'>In Progress</h3>
-                    <p style='font-size:28px; font-weight:bold; color:#3E6BE6;'>{in_progress}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with s3:
-            st.markdown(
-                f"""
-                <div style='background-color:#141518; padding:20px; border-radius:12px; text-align:center;'>
-                    <h3 style='color:#E6E6E6; margin:0;'>Completed</h3>
-                    <p style='font-size:28px; font-weight:bold; color:#3E6BE6;'>{completed}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        block_style = """
+            background-color:#141518; 
+            padding:20px; 
+            border-radius:12px; 
+            text-align:center; 
+        """
+        title_style = "color:#E6E6E6; margin:0;"
+        value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
+
+        c1.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Not Started</h3><p style='{value_style}'>{not_started}</p></div>", unsafe_allow_html=True)
+        c2.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>In Progress</h3><p style='{value_style}'>{in_progress}</p></div>", unsafe_allow_html=True)
+        c3.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Completed</h3><p style='{value_style}'>{completed}</p></div>", unsafe_allow_html=True)
+        c4.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Total</h3><p style='{value_style}'>{total_status}</p></div>", unsafe_allow_html=True)
 
     # --- City-level Reported GHG Emissions ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
-        fig2 = px.bar(
+        fig_reported = px.bar(
             df.sort_values("GHG Emissions", ascending=False),
             x="City Name",
             y="GHG Emissions",
-            title="City-level GHG (tCO2e)",
+            title="City-level Reported GHG Emissions (tCO2e)",
             text="GHG Emissions",
-            color_discrete_sequence=["#3E6BE6"],
+            color_discrete_sequence=["#3E6BE6"]
         )
-        fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-        st.plotly_chart(fig2, use_container_width=True)
+        fig_reported.update_layout(
+            plot_bgcolor="#0f0f10",
+            paper_bgcolor="#0f0f10",
+            font_color="#E6E6E6",
+            title_font_size=18,
+            xaxis_title="City",
+            yaxis_title="GHG Emissions (tCO2e)"
+        )
+        st.plotly_chart(fig_reported, use_container_width=True)
 
     # --- Estimated GHG Emissions (Population x Factor) ---
     if not df.empty and "Population" in df.columns:
         df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
 
-        # Assume emission factor (tCO2e per person/year)
-        EMISSION_FACTOR = 2.5
+        EMISSION_FACTOR = 2.5  # tCO2e per person/year
         df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
 
-        fig3 = px.bar(
+        fig_estimated = px.bar(
             df.sort_values("Estimated GHG Emissions", ascending=False),
             x="City Name",
             y="Estimated GHG Emissions",
             title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
             text="Estimated GHG Emissions",
-            color_discrete_sequence=["#E67E22"],
+            color_discrete_sequence=["#E67E22"]
         )
-        fig3.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-        st.plotly_chart(fig3, use_container_width=True)
-
+        fig_estimated.update_layout(
+            plot_bgcolor="#0f0f10",
+            paper_bgcolor="#0f0f10",
+            font_color="#E6E6E6",
+            title_font_size=18,
+            xaxis_title="City",
+            yaxis_title="Estimated GHG Emissions (tCO2e)"
+        )
+        st.plotly_chart(fig_estimated, use_container_width=True)
 # ---------------------------
 # City Dashboard
 # ---------------------------
