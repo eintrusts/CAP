@@ -379,10 +379,10 @@ elif menu == "Admin":
                 st.success(f"{city} data updated successfully!")
 
         st.write("### All Cities Data")
-        st.table(st.session_state.data.assign)
-            Population=lambda d: d["Population"].map(format_indian_number),
-            GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
-
+        st.table(st.session_state.data.assign(
+    Population=lambda d: d["Population"].map(format_indian_number),
+    GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
+))
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
