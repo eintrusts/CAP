@@ -352,6 +352,53 @@ elif menu == "Admin":
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
 
+if menu == "Admin":
+    if not st.session_state.get("logged_in", False):
+        st.warning("Please log in as Admin to continue.")
+    else:
+        st.header("Admin Panel – Manage City Data")
+        df = st.session_state.data.copy()
+
+        if df.empty:
+            st.info("No data available.")
+        else:
+            st.write("### Current Data")
+            st.dataframe(df, use_container_width=True)
+
+            # ---------------- Delete City ----------------
+            st.subheader("Delete a City")
+            city_to_delete = st.selectbox("Select City to Delete", df["City Name"].unique())
+            if st.button("Delete City"):
+                st.session_state.data = df[df["City Name"] != city_to_delete]
+                st.success(f"✅ {city_to_delete} has been deleted from records.")
+
+            # ---------------- Edit City ----------------
+            st.subheader("Edit City Details")
+            city_to_edit = st.selectbox("Select City to Edit", df["City Name"].unique(), key="edit_city")
+            
+            if city_to_edit:
+                row = df[df["City Name"] == city_to_edit].iloc[0]
+                new_name = st.text_input("City Name", row["City Name"])
+                new_pop = st.number_input("Population", value=int(row["Population"]) if "Population" in df.columns else 0)
+                new_ghg = st.number_input("Reported GHG Emissions (tCO2e)", 
+                                          value=float(row["GHG Emissions"]) if "GHG Emissions" in df.columns else 0.0)
+                new_status = st.selectbox("CAP Status", 
+                                          ["Not Started", "In Progress", "Completed"], 
+                                          index=["Not Started", "In Progress", "Completed"].index(row["CAP Status"]) 
+                                          if "CAP Status" in df.columns and row["CAP Status"] in ["Not Started", "In Progress", "Completed"] else 0)
+
+                if st.button("Save Changes"):
+                    df.loc[df["City Name"] == city_to_edit, "City Name"] = new_name
+                    if "Population" in df.columns:
+                        df.loc[df["City Name"] == new_name, "Population"] = new_pop
+                    if "GHG Emissions" in df.columns:
+                        df.loc[df["City Name"] == new_name, "GHG Emissions"] = new_ghg
+                    if "CAP Status" in df.columns:
+                        df.loc[df["City Name"] == new_name, "CAP Status"] = new_status
+
+                    st.session_state.data = df
+                    st.success(f"✅ {city_to_edit} updated successfully!")
+
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
