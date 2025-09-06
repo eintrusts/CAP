@@ -250,7 +250,7 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Professional SaaS Style)
+# Sidebar (Professional SaaS Style with Sliding Active Highlight)
 # ---------------------------
 st.markdown("""
 <style>
@@ -279,13 +279,14 @@ st.markdown("""
     font-size: 20px;
     font-weight: 600;
     border: none;
-    transition: all 0.25s ease-in-out;
+    transition: all 0.3s ease-in-out;
     text-align: left;
     padding-left: 25px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
 }
 
 /* Hover effect */
@@ -295,12 +296,24 @@ st.markdown("""
     cursor: pointer;
 }
 
-/* Active button */
-[data-testid="stSidebar"] button[data-active="true"] {
+/* Active button sliding indicator */
+[data-testid="stSidebar"] button[data-active="true"]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
     background-color: #42A5F5;
+    border-radius: 6px 0 0 6px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Active button style */
+[data-testid="stSidebar"] button[data-active="true"] {
+    background-color: #3A3F46;
     color: #FFFFFF;
     font-weight: 700;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
 }
 
 /* Separator lines */
@@ -338,6 +351,7 @@ for label, page_name in menu_items:
     is_active = st.session_state.menu == page_name
     if st.sidebar.button(label, key=label):
         st.session_state.menu = page_name
+        is_active = True  # ensure immediate update on click
     st.markdown(f"""
     <script>
     const btn = window.parent.document.querySelector('button[key="{label}"]');
