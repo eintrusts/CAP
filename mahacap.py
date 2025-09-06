@@ -653,84 +653,79 @@ elif menu == "City Information":
         st.metric("Website", website)
         
 # ---------------------------
-# Admin Panel
+# Admin Panel Page
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Dashboard")
     
-    if not st.session_state.authenticated:
-        admin_login()
+    if not st.session_state.get("authenticated", False):
+        admin_login()  # your existing login function
     else:
-        st.subheader("Add / Update City / State Data")
-        
-        # Dropdown for City or Maharashtra
-        location = st.selectbox("Select Location", ["Maharashtra"] + list(cities_districts.keys()))
-        
+        st.subheader("Add / Update City / Maharashtra Data")
+
         with st.form("admin_form", clear_on_submit=False):
-            
-            # Tabs inside form for professional layout
-            tab1, tab2, tab3, tab4 = st.tabs(["Basic Info", "Environmental Info", "Social Info", "Contact Info"])
-            
-            # ---------------- BASIC INFO ----------------
-            with tab1:
+            city = st.selectbox(
+                "Select City",
+                ["Maharashtra"] + list(cities_districts.keys())
+            )
+
+            # ---------- Tabs for organized input ----------
+            tabs = st.tabs(["Basic", "Environmental", "Social", "Contact"])
+
+            # ---------- Basic Info ----------
+            with tabs[0]:
                 st.markdown("### Basic Information")
+                population = st.number_input("Population (2011 Census)", min_value=0, step=1000)
+                area = st.number_input("Geographical Area (sq. km)", min_value=0.0, step=0.1)
+                ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"])
+                est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1)
                 
-                if location != "Maharashtra":
-                    ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat"])
-                    cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-                    cap_link = st.text_input("CAP Link (Optional)")
-                    est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1)
-                else:
-                    ulb_category = st.text_input("ULB Category", value="State")
-                    cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-                    cap_link = st.text_input("CAP Link (Optional)")
-                    est_year = st.number_input("Year of Establishment", min_value=1800, max_value=2100, step=1)
-                
-                population = st.number_input("Population", min_value=0, step=1000)
-                area = st.number_input("Geographical Area (sq.km)", min_value=0.0, step=0.1)
-                district = st.text_input("District", value=(cities_districts.get(location, "—") if location != "Maharashtra" else "Maharashtra"))
-            
-            # ---------------- ENVIRONMENTAL INFO ----------------
-            with tab2:
+                # CAP Status and Link
+                cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+                cap_link = st.text_input("CAP Link")
+
+            # ---------- Environmental Info ----------
+            with tabs[1]:
                 st.markdown("### Environmental Information")
                 ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, step=100.0)
                 renewable_energy = st.number_input("Renewable Energy Generated (MWh/year)", min_value=0, step=10)
-                green_area = st.number_input("Urban Green Area (hectares)", min_value=0, step=1)
+                green_area = st.number_input("Urban Green Area (ha)", min_value=0, step=1)
                 solid_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0, step=10)
                 waste_landfilled = st.number_input("Waste Landfilled (%)", min_value=0.0, max_value=100.0, step=0.1)
                 waste_composted = st.number_input("Waste Composted (%)", min_value=0.0, max_value=100.0, step=0.1)
                 wastewater = st.number_input("Wastewater Treated (m³/year)", min_value=0, step=1000)
-            
-            # ---------------- SOCIAL INFO ----------------
-            with tab3:
+
+            # ---------- Social Info ----------
+            with tabs[2]:
                 st.markdown("### Social Information")
                 males = st.number_input("Male Population", min_value=0, step=100)
                 females = st.number_input("Female Population", min_value=0, step=100)
-                children_m = st.number_input("Children (0–6) Male", min_value=0, step=10)
-                children_f = st.number_input("Children (0–6) Female", min_value=0, step=10)
+                children_m = st.number_input("Children (0–6 Male)", min_value=0, step=10)
+                children_f = st.number_input("Children (0–6 Female)", min_value=0, step=10)
                 literacy = st.number_input("Overall Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
                 literacy_m = st.number_input("Male Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
                 literacy_f = st.number_input("Female Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
                 bpl = st.number_input("BPL Households (%)", min_value=0.0, max_value=100.0, step=0.1)
                 migrant = st.number_input("Migrant Population (%)", min_value=0.0, max_value=100.0, step=0.1)
                 slum = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, step=0.1)
-            
-            # ---------------- CONTACT INFO ----------------
-            with tab4:
+                urban_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
+                households = st.number_input("Total Households", min_value=0, step=100)
+
+            # ---------- Contact Info ----------
+            with tabs[3]:
                 st.markdown("### Contact Information")
                 dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
                 dept_name = st.text_input("Department Name")
                 dept_email = st.text_input("Department Email")
                 contact_number = st.text_input("Contact Number")
                 official_website = st.text_input("Official Website")
-            
-            # ---------------- SUBMIT BUTTON ----------------
+
             submit_admin = st.form_submit_button("Save / Update")
-            
+
             if submit_admin:
                 new_row = {
-                    "City Name": location,
-                    "District": district,
+                    "City Name": city,
+                    "District": cities_districts.get(city, "Maharashtra") if city != "Maharashtra" else "State",
                     "Population": population,
                     "Area (sq.km)": area,
                     "ULB Category": ulb_category,
@@ -754,23 +749,24 @@ elif menu == "Admin":
                     "Migrant (%)": migrant,
                     "Slum (%)": slum,
                     "BPL Households (%)": bpl,
+                    "Urbanization Rate (%)": urban_rate,
+                    "Households": households,
                     "Department Exist": dept_exist,
                     "Department Name": dept_name,
                     "Email": dept_email,
                     "Contact Number": contact_number,
                     "Website": official_website,
                 }
-                
+
                 df_meta = st.session_state.data.copy()
-                
-                if location in df_meta["City Name"].values:
-                    df_meta.loc[df_meta["City Name"] == location, list(new_row.keys())[1:]] = list(new_row.values())[1:]
+                if city in df_meta["City Name"].values:
+                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
                 else:
                     df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
-                
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE, index=False)
-                st.success(f"{location} data updated successfully!")
+                st.success(f"{city} data updated successfully!")
+                
 
 # ---------------------------
 # CAP Preparation Page
