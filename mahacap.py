@@ -372,11 +372,13 @@ elif menu == "City Information":
         st.subheader("Basic Information")
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
+        density = round(population/area, 2) if area else 0
         ulb_category = row.get("ULB Category", "—")
         district = row.get("District", "—")
         est_year = row.get("Est. Year", "—")
         cap_status = row.get("CAP Status", "—")
 
+        # KPI Card Grid for Basic Info
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("District", district)
         col2.metric("ULB Category", ulb_category)
@@ -384,9 +386,8 @@ elif menu == "City Information":
         col4.metric("Area (sq.km)", area)
 
         col5, col6, col7 = st.columns(3)
-        density = round(population/area, 2) if area else "—"
         col5.metric("Density (/sq.km)", density)
-        col6.metric("Est. Year", est_year)
+        col6.metric("Establishment Year", est_year)
         col7.metric("CAP Status", cap_status)
 
         st.markdown("---")
@@ -396,21 +397,28 @@ elif menu == "City Information":
         # =====================
         st.subheader("Environmental Information")
         ghg_total = row.get("GHG Emissions", 0)
-        per_capita = round(ghg_total/population, 2) if population else "—"
+        per_capita = round(ghg_total/population, 2) if population else 0
+        renewable_energy = row.get("Renewable Energy (MWh)", 0)
+        green_area = row.get("Urban Green Area (ha)", 0)
+        solid_waste = row.get("Municipal Solid Waste (tons)", 0)
+        wastewater = row.get("Wastewater Treated (m3)", 0)
+        waste_landfilled = row.get("Waste Landfilled (%)", 0)
+        waste_composted = row.get("Waste Composted (%)", 0)
 
+        # KPI Cards with 3 per row
         col1, col2, col3 = st.columns(3)
         col1.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
         col2.metric("Per Capita Emissions", per_capita)
-        col3.metric("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0)))
+        col3.metric("Renewable Energy (MWh)", format_indian_number(renewable_energy))
 
         col4, col5, col6 = st.columns(3)
-        col4.metric("Urban Green Area (ha)", format_indian_number(row.get("Urban Green Area (ha)", 0)))
-        col5.metric("Solid Waste (tons)", format_indian_number(row.get("Municipal Solid Waste (tons)", 0)))
-        col6.metric("Wastewater Treated (m³)", format_indian_number(row.get("Wastewater Treated (m3)", 0)))
+        col4.metric("Urban Green Area (ha)", format_indian_number(green_area))
+        col5.metric("Solid Waste (tons)", format_indian_number(solid_waste))
+        col6.metric("Wastewater Treated (m³)", format_indian_number(wastewater))
 
         col7, col8 = st.columns(2)
-        col7.metric("Waste Landfilled (%)", f"{row.get('Waste Landfilled (%)', 0)}%")
-        col8.metric("Waste Composted (%)", f"{row.get('Waste Composted (%)', 0)}%")
+        col7.metric("Waste Landfilled (%)", f"{waste_landfilled}%")
+        col8.metric("Waste Composted (%)", f"{waste_composted}%")
 
         st.markdown("---")
 
@@ -418,7 +426,6 @@ elif menu == "City Information":
         # SOCIAL INFORMATION
         # =====================
         st.subheader("Social Information")
-
         males = row.get("Males", 0)
         females = row.get("Females", 0)
         total_population = males + females
@@ -427,11 +434,16 @@ elif menu == "City Information":
         children_f = row.get("Children Female", 0)
         total_children = children_m + children_f
 
-        literacy = row.get("Literacy (%)", 0)
         literacy_m = row.get("Male Literacy (%)", 0)
         literacy_f = row.get("Female Literacy (%)", 0)
-        literacy_avg = round((literacy_m + literacy_f) / 2, 2) if (literacy_m and literacy_f) else literacy
+        literacy_avg = round((literacy_m + literacy_f)/2, 2)
+        literacy = row.get("Literacy (%)", literacy_avg)
 
+        migrant = row.get("Migrant (%)", 0)
+        slum = row.get("Slum (%)", 0)
+        bpl = row.get("BPL Households (%)", 0)
+
+        # KPI Cards for Social
         col1, col2, col3 = st.columns(3)
         col1.metric("Male Population", format_indian_number(males))
         col2.metric("Female Population", format_indian_number(females))
@@ -443,17 +455,14 @@ elif menu == "City Information":
         col6.metric("Total Children (0–6)", format_indian_number(total_children))
 
         col7, col8, col9 = st.columns(3)
-        col7.metric("Overall Literacy (%)", f"{literacy}%")
-        col8.metric("Male Literacy (%)", f"{literacy_m}%")
-        col9.metric("Female Literacy (%)", f"{literacy_f}%")
+        col7.metric("Male Literacy (%)", f"{literacy_m}%")
+        col8.metric("Female Literacy (%)", f"{literacy_f}%")
+        col9.metric("Average Literacy (%)", f"{literacy_avg}%")
 
-        col10, col11 = st.columns(2)
-        col10.metric("Average Literacy (%)", f"{literacy_avg}%")
-        col11.metric("Slum Population (%)", f"{row.get('Slum (%)', 0)}%")
-
-        col12, col13 = st.columns(2)
-        col12.metric("Migrant Population (%)", f"{row.get('Migrant (%)', 0)}%")
-        col13.metric("BPL Households (%)", f"{row.get('BPL Households (%)', 0)}%")
+        col10, col11, col12 = st.columns(3)
+        col10.metric("Slum Population (%)", f"{slum}%")
+        col11.metric("Migrant Population (%)", f"{migrant}%")
+        col12.metric("BPL Households (%)", f"{bpl}%")
 
         st.markdown("---")
 
@@ -461,16 +470,21 @@ elif menu == "City Information":
         # CONTACT INFORMATION
         # =====================
         st.subheader("Contact Information")
+        dept_exist = row.get("Department Exist", "—")
+        dept_name = row.get("Department Name", "—")
+        email = row.get("Email", "—")
+        contact_number = row.get("Contact Number", "—")
+        website = row.get("Website", "—")
 
         col1, col2 = st.columns(2)
-        col1.metric("Department Exist", row.get("Department Exist", "—"))
-        col2.metric("Department Name", row.get("Department Name", "—"))
+        col1.metric("Department Exist", dept_exist)
+        col2.metric("Department Name", dept_name)
 
         col3, col4 = st.columns(2)
-        col3.metric("Email", row.get("Email", "—"))
-        col4.metric("Contact Number", row.get("Contact Number", "—"))
+        col3.metric("Email", email)
+        col4.metric("Contact Number", contact_number)
 
-        st.metric("Website", row.get("Website", "—"))
+        st.metric("Website", website)
         
 # ---------------------------
 # Admin Panel
