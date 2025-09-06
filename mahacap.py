@@ -791,7 +791,7 @@ if st.button("Create CAP PDF Report"):
             for i in range(max_actions):
                 table_data.append([
                     i+1,
-                    goals['Short-term (2030)][i] if i < len(goals['Short-term (2030)']) else "",
+                    goals['Short-term (2030)'][i] if i < len(goals['Short-term (2030)']) else "",
                     goals['Mid-term (2040)][i] if i < len(goals['Mid-term (2040)']) else "",
                     goals['Long-term (2050)][i] if i < len(goals['Long-term (2050)']) else ""
                 ])
