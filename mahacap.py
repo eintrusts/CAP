@@ -398,25 +398,6 @@ elif menu == "City Information":
         st.write(f"**Department Email:** {city_row.get('Department Email', '—')}")
         st.write(f"**City Website:** {city_row.get('City Website', '—')}")
 
-        # --- Vulnerability Scores ---
-        st.subheader("Vulnerability Assessment")
-        evs_cols = ["GHG Emissions", "Municipal Solid Waste (tons)", "Wastewater Treated (m3)"]
-        evs_vals = [city_row.get(c, 0) for c in evs_cols]
-        evs_score = sum(evs_vals)/max(sum([max(df_meta[c].max(),1) for c in evs_cols]),1) * 100
-
-        social_factors = ["Population", "Households", "Urbanization Rate (%)", "Literacy Rate (%)", "Poverty Rate (%)"]
-        social_vals = [city_row.get(c, 0) for c in social_factors]
-        social_score = (
-            (social_vals[0]/max(df_meta["Population"].max(),1))*0.3 +
-            (social_vals[1]/max(df_meta["Households"].max(),1))*0.2 +
-            (social_vals[2]/max(df_meta["Urbanization Rate (%)"].max(),1))*0.2 +
-            (1 - social_vals[3]/max(df_meta["Literacy Rate (%)"].max(),1))*0.15 +
-            (social_vals[4]/max(df_meta["Poverty Rate (%)"].max(),1))*0.15
-        ) * 100
-
-        st.write(f"**Environmental Vulnerability Score (EVS):** {round(evs_score, 1)} / 100")
-        st.write(f"**Social Vulnerability Score (SVS):** {round(social_score, 1)} / 100")
-
 
 # ---------------------------
 # Admin Board Page
