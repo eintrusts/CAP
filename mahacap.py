@@ -739,3 +739,81 @@ if st.button("View Suggested Actions to Achieve Net Zero by 2050"):
         })
         st.table(df_actions)
 
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
+# ---------------------------
+# Create CAP PDF
+# ---------------------------
+if st.button("Create CAP PDF Report"):
+    if not PDF_AVAILABLE:
+        st.warning("PDF generation not available. Install reportlab library.")
+    else:
+        st.success("Generating CAP PDF...")
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+        styles = getSampleStyleSheet()
+        style_title = styles['Title']
+        style_heading = styles['Heading2']
+        style_normal = styles['Normal']
+
+        # --- Title ---
+        elements.append(Paragraph("City Climate Action Plan (CAP) Report", style_title))
+        elements.append(Spacer(1, 12))
+
+        # --- GHG Inventory Table ---
+        elements.append(Paragraph("GHG Inventory", style_heading))
+        ghg_data = [["Sector", "Emissions (tCO2e)"]] + list(emissions_df.itertuples(index=False, name=None))
+        t_ghg = Table(ghg_data, hAlign="LEFT")
+        t_ghg.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black)
+        ]))
+        elements.append(t_ghg)
+        elements.append(Spacer(1, 24))
+
+        # --- Suggested Actions ---
+        elements.append(Paragraph("Suggested Actions to Achieve Net Zero by 2050", style_heading))
+        for sector, goals in actions_data.items():
+            elements.append(Paragraph(f"{sector}", styles['Heading3']))
+            
+            # Prepare data for table: Action #, Short, Mid, Long
+            max_actions = max(len(goals['Short-term (2030)']),
+                              len(goals['Mid-term (2040)']),
+                              len(goals['Long-term (2050)']))
+            
+            table_data = [["#", "Short-term (2030)", "Mid-term (2040)", "Long-term (2050)"]]
+            for i in range(max_actions):
+                table_data.append([
+                    i+1,
+                    goals['Short-term (2030)][i] if i < len(goals['Short-term (2030)']) else "",
+                    goals['Mid-term (2040)][i] if i < len(goals['Mid-term (2040)']) else "",
+                    goals['Long-term (2050)][i] if i < len(goals['Long-term (2050)']) else ""
+                ])
+            
+            t_actions = Table(table_data, hAlign="LEFT")
+            t_actions.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#E67E22")),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+                ('VALIGN', (0,0), (-1,-1), 'TOP')
+            ]))
+            elements.append(t_actions)
+            elements.append(Spacer(1, 12))
+            elements.append(PageBreak())
+
+        # --- Build PDF ---
+        doc.build(elements)
+        buffer.seek(0)
+
+        st.download_button(
+            label="Download CAP Report (PDF)",
+            data=buffer,
+            file_name="CAP_Report.pdf",
+            mime="application/pdf"
+        )
