@@ -118,6 +118,15 @@ cap_cols = []
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 
+# After loading your main dataset
+df = st.session_state.data.copy()
+
+# Remove Raigad Council (case-insensitive match just in case)
+df = df[~df["City Name"].str.contains("Raigad Council", case=False, na=False)]
+
+# Save back into session state for use everywhere
+st.session_state.data = df
+
 # ---------------------------
 # Helper Functions
 # ---------------------------
@@ -315,91 +324,42 @@ elif menu == "City Information":
 # ---------------------------
 # Admin Panel
 # ---------------------------
-if menu == "Admin":
-    st.header("🔑 Admin Login")
+elif menu == "Admin":
+    st.header("Admin Board")
 
-    # If not logged in, show password field
-    if not st.session_state.get("logged_in", False):
-        password = st.text_input("Enter Admin Password", type="password")
-        if st.button("Login"):
-            if password == "admin123":   # <-- you can change this password
-                st.session_state.logged_in = True
-                st.success("✅ Login successful!")
-                st.experimental_rerun()
-            else:
-                st.error("❌ Incorrect password. Please try again.")
-
+    if not st.session_state.authenticated:
+        admin_login()
     else:
-        # If logged in, show admin controls
-        st.header("Admin Panel – Manage City Data")
+        st.subheader("Add/Update City Data")
+        with st.form("admin_form", clear_on_submit=False):
+            city = st.selectbox("Select City", list(cities_districts.keys()))
+            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
+            dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
+            dept_name = st.text_input("Department Name")
+            head_name = st.text_input("Department Head Name")
+            dept_email = st.text_input("Department Email")
+            submit_admin = st.form_submit_button("Add/Update City Data")
 
-        df = st.session_state.data
-
-        if df.empty:
-            st.info("No city records found. Please add data from the Input Form.")
-        else:
-            # ---------------------------
-            # 1) Overview Table
-            # ---------------------------
-            st.subheader("📋 All City Records (Overview)")
-            st.dataframe(df, use_container_width=True)
-
-            st.markdown("---")
-
-            # ---------------------------
-            # 2) Editable Table with Actions
-            # ---------------------------
-            st.subheader("✏️ Manage Entries")
-
-            for idx, row in df.iterrows():
-                with st.container():
-                    cols = st.columns(len(df.columns) + 2)  # extra 2 cols for Edit/Delete
-
-                    # Show existing values
-                    for i, colname in enumerate(df.columns):
-                        cols[i].write(row[colname])
-
-                    # --- Edit Option ---
-                    if cols[-2].button("✏️ Edit", key=f"edit_{idx}"):
-                        with st.form(f"edit_form_{idx}"):
-                            st.write(f"Editing entry for **{row['City Name']}**")
-
-                            new_name = st.text_input("City Name", row["City Name"])
-                            new_pop = st.number_input(
-                                "Population",
-                                value=int(row["Population"]) if "Population" in df.columns else 0
-                            )
-                            new_ghg = st.number_input(
-                                "GHG Emissions (tCO2e)",
-                                value=float(row["GHG Emissions"]) if "GHG Emissions" in df.columns else 0.0
-                            )
-                            new_status = st.selectbox(
-                                "CAP Status",
-                                ["Not Started", "In Progress", "Completed"],
-                                index=["Not Started", "In Progress", "Completed"].index(row["CAP Status"])
-                                if "CAP Status" in df.columns and row["CAP Status"] in ["Not Started", "In Progress", "Completed"] else 0
-                            )
-
-                            submitted = st.form_submit_button("Save Changes")
-                            if submitted:
-                                df.loc[idx, "City Name"] = new_name
-                                if "Population" in df.columns:
-                                    df.loc[idx, "Population"] = new_pop
-                                if "GHG Emissions" in df.columns:
-                                    df.loc[idx, "GHG Emissions"] = new_ghg
-                                if "CAP Status" in df.columns:
-                                    df.loc[idx, "CAP Status"] = new_status
-
-                                st.session_state.data = df
-                                st.success(f"✅ {new_name} updated successfully!")
-                                st.experimental_rerun()
-
-                    # --- Delete Option ---
-                    if cols[-1].button("🗑️ Delete", key=f"delete_{idx}"):
-                        df = df.drop(idx)
-                        st.session_state.data = df
-                        st.success(f"✅ {row['City Name']} deleted successfully!")
-                        st.experimental_rerun()
+            if submit_admin:
+                new_row = {
+                    "City Name": city,
+                    "District": cities_districts.get(city, "—"),
+                    "CAP Status": cap_status,
+                    "GHG Emissions": ghg_val,
+                    "Environment Department Exist": dept_exist,
+                    "Department Name": dept_name,
+                    "Head Name": head_name,
+                    "Department Email": dept_email
+                }
+                df_meta = st.session_state.data
+                if city in df_meta["City Name"].values:
+                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
+                else:
+                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
+                st.session_state.data = df_meta
+                df_meta.to_csv(DATA_FILE, index=False)
+                st.success(f"{city} data updated successfully!")
 
 # ---------------------------
 # CAP Preparation Page
