@@ -219,7 +219,7 @@ if menu == "Home":
         completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
         total_status = not_started + in_progress + completed
 
-        st.markdown("### 📊 CAP Status Overview")
+        st.markdown("### CAP Status Overview")
         c1, c2, c3, c4 = st.columns(4)
 
         block_style = """
