@@ -525,9 +525,8 @@ if menu == "Home":
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information Dashboard")
-
     df_meta = st.session_state.data.copy()
-    city = st.selectbox("Select City", ["Maharashtra"] + list(cities_districts.keys()))
+    city = st.selectbox("Select City", list(cities_districts.keys()))
 
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
@@ -537,27 +536,21 @@ elif menu == "City Information":
         # =====================
         st.subheader("Basic Information")
         population = row.get("Population", 0)
-        area = row.get("Area (sq.km)", 0)
-        ulb_category = row.get("ULB Category", "—")
-        district = row.get("District", "—")
-        est_year = row.get("Est. Year", "—")
-        cap_status = row.get("CAP Status", "—")
-        cap_link = row.get("CAP Link", "—")
-
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("District", district)
-        col2.metric("ULB Category", ulb_category)
-        col3.metric("Population", format_indian_number(population))
-        col4.metric("Area (sq.km)", area)
-
-        col5, col6, col7 = st.columns(3)
+        area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
         density = round(population/area, 2) if area else "—"
-        col5.metric("Density (/sq.km)", density)
-        col6.metric("Est. Year", est_year)
-        col7.metric("CAP Status", cap_status)
 
-        if cap_link and cap_link != "—":
-            st.markdown(f"[View CAP Document]({cap_link})", unsafe_allow_html=True)
+        basic_cols = st.columns(4)
+        basic_cols[0].metric("District", row.get("District", "—"))
+        basic_cols[1].metric("ULB Category", row.get("ULB Category", "—"))
+        basic_cols[2].metric("Population", format_indian_number(population))
+        basic_cols[3].metric("Area (sq.km)", area)
+
+        extra_cols = st.columns(3)
+        extra_cols[0].metric("Density (/sq.km)", density)
+        extra_cols[1].metric("Est. Year", row.get("Est. Year", "—"))
+        cap_status = row.get("CAP Status", "—")
+        cap_color = "green" if cap_status.lower() == "completed" else ("orange" if cap_status.lower() == "in progress" else "red")
+        extra_cols[2].markdown(f"<div style='background-color:{cap_color}; color:white; text-align:center; padding:5px; border-radius:5px'>{cap_status}</div>", unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -566,27 +559,30 @@ elif menu == "City Information":
         # =====================
         st.subheader("Environmental Information")
         ghg_total = row.get("GHG Emissions", 0)
-        ghg_per_capita = round(ghg_total/population, 2) if population else "—"
-        renewable_energy = row.get("Renewable Energy (MWh)", 0)
-        green_area = row.get("Urban Green Area (ha)", 0)
-        solid_waste = row.get("Municipal Solid Waste (tons)", 0)
-        wastewater = row.get("Wastewater Treated (m3)", 0)
-        waste_landfilled = row.get("Waste Landfilled (%)", 0)
-        waste_composted = row.get("Waste Composted (%)", 0)
+        per_capita_ghg = round(ghg_total/population, 2) if population else 0
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
-        col2.metric("Per Capita Emissions", ghg_per_capita)
-        col3.metric("Renewable Energy (MWh)", format_indian_number(renewable_energy))
+        env_cols = st.columns(3)
+        env_cols[0].metric("Total GHG Emissions (tCO2e)", format_indian_number(ghg_total))
+        env_cols[1].metric("Per Capita Emissions", per_capita_ghg)
+        env_cols[2].metric("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0)))
 
-        col4, col5, col6 = st.columns(3)
-        col4.metric("Urban Green Area (ha)", format_indian_number(green_area))
-        col5.metric("Solid Waste (tons)", format_indian_number(solid_waste))
-        col6.metric("Wastewater Treated (m³)", format_indian_number(wastewater))
+        env_cols2 = st.columns(3)
+        env_cols2[0].metric("Urban Green Area (ha)", format_indian_number(row.get("Urban Green Area (ha)", 0)))
+        env_cols2[1].metric("Municipal Solid Waste (tons)", format_indian_number(row.get("Municipal Solid Waste (tons)", 0)))
+        env_cols2[2].metric("Wastewater Treated (m³)", format_indian_number(row.get("Wastewater Treated (m3)", 0)))
 
-        col7, col8 = st.columns(2)
-        col7.metric("Waste Landfilled (%)", f"{waste_landfilled}%")
-        col8.metric("Waste Composted (%)", f"{waste_composted}%")
+        env_cols3 = st.columns(2)
+        env_cols3[0].metric("Waste Landfilled (%)", f"{row.get('Waste Landfilled (%)', 0)}%")
+        env_cols3[1].metric("Waste Composted (%)", f"{row.get('Waste Composted (%)', 0)}%")
+
+        # Optional: Environmental Chart
+        env_chart_data = pd.DataFrame({
+            "Category": ["GHG Emissions", "Solid Waste", "Wastewater Treated"],
+            "Value": [ghg_total, row.get("Municipal Solid Waste (tons)", 0), row.get("Wastewater Treated (m3)", 0)]
+        })
+        fig_env = px.bar(env_chart_data, x="Category", y="Value", text="Value", title="Environmental Metrics")
+        fig_env.update_layout(plot_bgcolor="#f5f5f5", paper_bgcolor="#f5f5f5", font_color="#111")
+        st.plotly_chart(fig_env, use_container_width=True)
 
         st.markdown("---")
 
@@ -596,7 +592,7 @@ elif menu == "City Information":
         st.subheader("Social Information")
         males = row.get("Males", 0)
         females = row.get("Females", 0)
-        total_population = males + females
+        total_pop = males + females
 
         children_m = row.get("Children Male", 0)
         children_f = row.get("Children Female", 0)
@@ -604,32 +600,35 @@ elif menu == "City Information":
 
         literacy_m = row.get("Male Literacy (%)", 0)
         literacy_f = row.get("Female Literacy (%)", 0)
-        overall_lit = row.get("Literacy (%)", 0)
-        literacy_avg = round((literacy_m + literacy_f) / 2, 2) if literacy_m and literacy_f else overall_lit
+        literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2,2))
 
-        migrant = row.get("Migrant (%)", 0)
-        slum = row.get("Slum (%)", 0)
-        bpl = row.get("BPL Households (%)", 0)
+        social_cols1 = st.columns(3)
+        social_cols1[0].metric("Male Population", format_indian_number(males))
+        social_cols1[1].metric("Female Population", format_indian_number(females))
+        social_cols1[2].metric("Total Population", format_indian_number(total_pop))
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Male Population", format_indian_number(males))
-        col2.metric("Female Population", format_indian_number(females))
-        col3.metric("Total Population", format_indian_number(total_population))
+        social_cols2 = st.columns(3)
+        social_cols2[0].metric("Children (0–6 Male)", format_indian_number(children_m))
+        social_cols2[1].metric("Children (0–6 Female)", format_indian_number(children_f))
+        social_cols2[2].metric("Total Children", format_indian_number(total_children))
 
-        col4, col5, col6 = st.columns(3)
-        col4.metric("Children (0–6 Male)", format_indian_number(children_m))
-        col5.metric("Children (0–6 Female)", format_indian_number(children_f))
-        col6.metric("Total Children (0–6)", format_indian_number(total_children))
+        social_cols3 = st.columns(3)
+        social_cols3[0].metric("Male Literacy (%)", f"{literacy_m}%")
+        social_cols3[1].metric("Female Literacy (%)", f"{literacy_f}%")
+        social_cols3[2].metric("Overall Literacy (%)", f"{literacy_total}%")
 
-        col7, col8, col9 = st.columns(3)
-        col7.metric("Male Literacy (%)", f"{literacy_m}%")
-        col8.metric("Female Literacy (%)", f"{literacy_f}%")
-        col9.metric("Average Literacy (%)", f"{literacy_avg}%")
+        social_cols4 = st.columns(3)
+        social_cols4[0].metric("Slum Population (%)", f"{row.get('Slum (%)', 0)}%")
+        social_cols4[1].metric("Migrant Population (%)", f"{row.get('Migrant (%)', 0)}%")
+        social_cols4[2].metric("BPL Households (%)", f"{row.get('BPL Households (%)', 0)}%")
 
-        col10, col11, col12 = st.columns(3)
-        col10.metric("Slum Population (%)", f"{slum}%")
-        col11.metric("Migrant Population (%)", f"{migrant}%")
-        col12.metric("BPL Households (%)", f"{bpl}%")
+        # Optional: Social Distribution Chart
+        social_chart_data = pd.DataFrame({
+            "Category": ["Male", "Female", "Children (0–6)"],
+            "Value": [males, females, total_children]
+        })
+        fig_social = px.pie(social_chart_data, names="Category", values="Value", title="Population Distribution")
+        st.plotly_chart(fig_social, use_container_width=True)
 
         st.markdown("---")
 
@@ -637,21 +636,15 @@ elif menu == "City Information":
         # CONTACT INFORMATION
         # =====================
         st.subheader("Contact Information")
-        dept_exist = row.get("Department Exist", "—")
-        dept_name = row.get("Department Name", "—")
-        email = row.get("Email", "—")
-        contact_number = row.get("Contact Number", "—")
-        website = row.get("Website", "—")
+        contact_cols1 = st.columns(2)
+        contact_cols1[0].metric("Department Exist", row.get("Department Exist", "—"))
+        contact_cols1[1].metric("Department Name", row.get("Department Name", "—"))
 
-        col1, col2 = st.columns(2)
-        col1.metric("Department Exist", dept_exist)
-        col2.metric("Department Name", dept_name)
+        contact_cols2 = st.columns(2)
+        contact_cols2[0].metric("Email", row.get("Email", "—"))
+        contact_cols2[1].metric("Contact Number", row.get("Contact Number", "—"))
 
-        col3, col4 = st.columns(2)
-        col3.metric("Email", email)
-        col4.metric("Contact Number", contact_number)
-
-        st.metric("Website", website)
+        st.metric("Website", row.get("Website", "—"))
 
 # ---------------------------
 # Admin Panel Page
