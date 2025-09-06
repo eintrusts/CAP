@@ -276,16 +276,26 @@ if menu == "Home":
     # Make a copy of the main data
     df = st.session_state.data.copy()  # <-- This must be here
     
-    if not df.empty and "CAP Status" in df.columns:
+    # --- CAP Status Summary ---
+if not df.empty and "CAP Status" in df.columns:
+    # Define columns for metrics
     c1, c2, c3, c4 = st.columns(4)
-    
+
+    # Calculate metrics
+    not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
+    in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
+    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
+    total_status = not_started + in_progress + completed
+
+    # Define card data
     cards = [
         ("Total Cities", len(df)),
-        ("Not Started", df[df["CAP Status"].str.lower() == "not started"].shape[0]),
-        ("In Progress", df[df["CAP Status"].str.lower() == "in progress"].shape[0]),
-        ("Completed", df[df["CAP Status"].str.lower() == "completed"].shape[0])
+        ("Not Started", not_started),
+        ("In Progress", in_progress),
+        ("Completed", completed)
     ]
 
+    # Display metrics as cards
     for col, (title, val) in zip([c1, c2, c3, c4], cards):
         col.markdown(f"<div class='stCard'><h4>{title}</h4><h2>{format_indian_number(val)}</h2></div>", unsafe_allow_html=True)
         
