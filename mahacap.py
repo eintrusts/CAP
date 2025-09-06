@@ -398,7 +398,7 @@ elif menu == "Admin":
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
-    st.header("CAP : Comprehensive Raw Data Collection (Guideline-compliant)")
+    st.header("CAP : Data Collection")
 
     if not st.session_state.authenticated:
         admin_login()
@@ -406,7 +406,7 @@ elif menu == "CAP Preparation":
         with st.form("cap_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
 
-            st.markdown("### Energy Sector")
+            st.markdown("### Energy")
             elec_municipal = st.number_input("Municipal Buildings Electricity (kWh)", 0.0)
             elec_streetlights = st.number_input("Street Lighting (kWh)", 0.0)
             elec_water = st.number_input("Water Pumping (kWh)", 0.0)
@@ -414,7 +414,7 @@ elif menu == "CAP Preparation":
             petrol_municipal = st.number_input("Petrol Consumption (L)", 0.0)
             lpg_consumption = st.number_input("LPG / Gas Consumption (L or kg)", 0.0)
 
-            st.markdown("### Transport Sector")
+            st.markdown("### Transport")
             num_buses = st.number_input("Number of Buses", 0)
             km_buses = st.number_input("Annual km per Bus", 0.0)
             num_cars = st.number_input("Number of Cars", 0)
@@ -423,7 +423,7 @@ elif menu == "CAP Preparation":
             km_2w = st.number_input("Annual km per 2W", 0.0)
             fuel_type_transport = st.selectbox("Dominant Fuel Type", ["Petrol", "Diesel", "CNG", "Electric"])
 
-            st.markdown("### Buildings Sector")
+            st.markdown("### Buildings")
             elec_residential = st.number_input("Residential Electricity (kWh)", 0.0)
             fuel_residential = st.number_input("Residential Fuel Use (L or kg)", 0.0)
             elec_commercial = st.number_input("Commercial Electricity (kWh)", 0.0)
@@ -431,19 +431,19 @@ elif menu == "CAP Preparation":
             floor_area_res = st.number_input("Residential Floor Area (m²)", 0.0)
             floor_area_com = st.number_input("Commercial Floor Area (m²)", 0.0)
 
-            st.markdown("### Industry Sector")
+            st.markdown("### Industry")
             elec_industry = st.number_input("Industrial Electricity (kWh)", 0.0)
             fuel_industry = st.number_input("Industrial Fuel Use (L or kg)", 0.0)
             industrial_output = st.number_input("Industrial Output (optional)", 0.0)
 
-            st.markdown("### Waste Sector")
+            st.markdown("### Waste")
             msw_tons = st.number_input("MSW generated (tons/year)", 0.0)
             waste_org = st.number_input("Organic Fraction (%)", 0.0, max_value=100.0)
             waste_rec = st.number_input("Recyclable Fraction (%)", 0.0, max_value=100.0)
             wastewater_m3 = st.number_input("Wastewater Treated (m³/year)", 0.0)
             open_burning = st.number_input("Open Burning (tons/year)", 0.0)
 
-            st.markdown("### Water Sector")
+            st.markdown("### Water")
             water_consumption_m3 = st.number_input("Water Consumption (m³/year)", 0.0)
             energy_pumping = st.number_input("Energy for Pumping (kWh/year)", 0.0)
             sewage_treatment = st.number_input("Sewage Treated (m³/year)", 0.0)
@@ -452,7 +452,7 @@ elif menu == "CAP Preparation":
             green_area_ha = st.number_input("Green Area (ha)", 0.0)
             trees_planted = st.number_input("Trees Planted", 0)
 
-            st.markdown("### Other Sectors")
+            st.markdown("### Others")
             fugitive_emissions = st.number_input("Fugitive Emissions (tCO2e)", 0.0)
             cooling_energy = st.number_input("Cooling / Refrigeration Energy (kWh)", 0.0)
 
