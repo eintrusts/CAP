@@ -157,84 +157,145 @@ def safe_get(row, col, default="—"):
         return default
 
 # ---------------------------
-# Dark / Professional CSS
+# Dark / Professional SaaS CSS
 # ---------------------------
 st.markdown("""
 <style>
-/* Main container */
+/* ------------------- Main App ------------------- */
 [data-testid="stAppViewContainer"] {
-    background-color: #1E1E2F; 
+    background-color: #1E1E2F;  /* Deep dark background */
     color: #E6E6E6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Sidebar */
+/* ------------------- Sidebar ------------------- */
 [data-testid="stSidebar"] {
+    background-color: #2B2B3B; 
+    color: #E6E6E6;
+    padding-top: 20px;
+    font-size: 18px;
+    font-weight: 500;
+}
+[data-testid="stSidebar"] img {
+    margin-bottom: 25px;
+    border-radius: 6px;
+}
+[data-testid="stSidebar"] hr {
+    border: 0.5px solid #3A3A4A;
+    margin: 20px 0;
+}
+.sidebar-footer {
+    color: #B0BEC5;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+/* ------------------- Buttons ------------------- */
+.stButton>button {
+    background-color: #3A8B34; /* Primary green */
+    color: #FFFFFF; 
+    border-radius: 8px; 
+    height: 45px;
+    font-size: 18px;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.2s ease-in-out;
+}
+.stButton>button:hover {
+    background-color: #2E6B29;
+}
+
+/* Active/selected sidebar buttons */
+.stButton>button[data-active="true"] {
+    background-color: #42A5F5; 
+    color: #FFFFFF;
+}
+
+/* ------------------- Metrics / Cards ------------------- */
+[data-testid="stMetricValue"] {
+    color: #54c750; 
+    font-weight: 700;
+    font-size: 26px;
+}
+.stCard {
+    background-color: #2B2B3B;
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 12px;
+    transition: all 0.2s ease-in-out;
+}
+.stCard:hover {
+    background-color: #353548;
+}
+.stCard h4 {
+    margin: 0;
+    font-weight: 500;
+    color: #E6E6E6;
+    font-size: 16px;
+}
+.stCard h2 {
+    margin: 6px 0 0 0;
+    font-weight: 700;
+    color: #54c750;
+    font-size: 28px;
+}
+
+/* ------------------- Inputs & Forms ------------------- */
+input, textarea, select {
+    background-color: #2B2B3B; 
+    color: #E6E6E6; 
+    border: 1px solid #54c750;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+.stExpander>div>div>div>div {
     background-color: #2B2B3B; 
     color: #E6E6E6;
 }
 
-/* Buttons */
-.stButton>button {
-    background-color:#54c750; 
-    color:#FFFFFF; 
-    border-radius:8px; 
-    height:40px;
-}
-.stButton>button:hover {
-    background-color:#3a8b34;
-}
-
-/* Metrics */
-[data-testid="stMetricValue"] {
-    color:#54c750; 
-    font-weight:700;
-}
-
-/* Expander */
-.stExpander>div>div>div>div {
-    background-color:#2B2B3B; 
-    color:#E6E6E6;
-}
-
-/* Inputs */
-input, textarea, select {
-    background-color:#2B2B3B; 
-    color:#E6E6E6; 
-    border-color:#54c750;
-}
-
-/* Tables */
+/* ------------------- Tables ------------------- */
 .stDataFrame, .stTable {
-    color:#E6E6E6;
-    background-color:#1E1E2F;
+    color: #E6E6E6;
+    background-color: #1E1E2F;
+    border-radius: 8px;
 }
 
-/* Links */
+/* ------------------- Links ------------------- */
 a {
-    color:#54c750;
+    color: #42A5F5;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
 }
 
-/* Custom cards */
-.stCard {
-    background-color:#2B2B3B;
-    padding:20px;
-    border-radius:12px;
-    text-align:center;
-    margin-bottom:10px;
+/* ------------------- Headers ------------------- */
+h2, h3, h4 {
+    color: #CFD8DC;
+    font-weight: 600;
 }
-.stCard h4 {
-    margin:0;
-    font-weight:500;
-    color:#E6E6E6;
+
+/* ------------------- Scrollbar ------------------- */
+::-webkit-scrollbar {
+    width: 8px;
 }
-.stCard h2 {
-    margin:5px 0 0 0;
-    font-weight:700;
-    color:#54c750;
-    font-size:28px;
+::-webkit-scrollbar-track {
+    background: #1E1E2F;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #42A5F5;
+    border-radius: 6px;
+}
+
+/* ------------------- Dark theme consistency for charts ------------------- */
+[data-testid="stPlotlyChart"] {
+    background-color: #1E1E2F !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 # ---------------------------
 # Admin Login
 # ---------------------------
