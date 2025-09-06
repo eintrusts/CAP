@@ -398,129 +398,85 @@ elif menu == "Admin":
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
-    st.header("CAP Preparation: Raw Data Input")
+    st.header("CAP : Raw Data Collection for GHG Inventory")
 
     if not st.session_state.authenticated:
         admin_login()
     else:
-        with st.form("cap_form", clear_on_submit=False):
+        st.markdown("""
+        Enter city-level activity data below. This data will be used to automatically calculate GHG emissions
+        for each sector based on GPC/C40/ICLEI guidelines.
+        """)
+
+        with st.form("cap_raw_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
 
-            st.markdown("### Energy & Buildings")
-            population = st.number_input("City Population", min_value=0, value=0, step=1000)
-            num_households = st.number_input("Number of Households", min_value=0, value=0, step=100)
-            avg_electricity_consumption_kwh = st.number_input("Average Annual Electricity Consumption per Household (kWh)", min_value=0.0, value=0.0)
-            fuel_diesel_liters = st.number_input("Diesel used in Buildings / Generators (Liters)", min_value=0.0, value=0.0)
-            fuel_petrol_liters = st.number_input("Petrol used in Buildings / Generators (Liters)", min_value=0.0, value=0.0)
-            fuel_gas_cubic_m = st.number_input("CNG / LPG consumption (m³)", min_value=0.0, value=0.0)
+            st.subheader("Population & Housing")
+            population = st.number_input("Total Population", min_value=0, value=0, step=1000)
+            households = st.number_input("Number of Households", min_value=0, value=0, step=100)
+            avg_household_electricity_kwh = st.number_input("Average Household Electricity Consumption (kWh/year)", min_value=0, value=0, step=100)
 
-            st.markdown("### Transport")
-            num_buses = st.number_input("Number of Buses", min_value=0, value=0, step=1)
-            km_buses = st.number_input("Average km per Bus per Year", min_value=0.0, value=0.0)
-            fuel_type_buses = st.selectbox("Fuel Type for Buses", ["Diesel", "Petrol", "CNG", "Electricity"])
+            st.subheader("Transport Activity")
+            vehicles_diesel = st.number_input("Number of Diesel Vehicles", min_value=0, value=0, step=10)
+            vehicles_petrol = st.number_input("Number of Petrol Vehicles", min_value=0, value=0, step=10)
+            vehicles_cng = st.number_input("Number of CNG Vehicles", min_value=0, value=0, step=10)
+            vehicles_electric = st.number_input("Number of Electric Vehicles", min_value=0, value=0, step=10)
+            avg_km_per_vehicle_year = st.number_input("Average km per vehicle per year", min_value=0, value=0, step=100)
 
-            num_cars = st.number_input("Number of Cars", min_value=0, value=0, step=1)
-            km_cars = st.number_input("Average km per Car per Year", min_value=0.0, value=0.0)
-            fuel_type_cars = st.selectbox("Fuel Type for Cars", ["Diesel", "Petrol", "CNG", "Electricity"])
+            st.subheader("Industry & Commercial Activity")
+            industrial_energy_mwh = st.number_input("Total Industrial Energy Use (MWh/year)", min_value=0, value=0, step=100)
+            industrial_fuel_tons = st.number_input("Total Industrial Fuel Consumption (tons/year)", min_value=0, value=0, step=10)
 
-            num_2w = st.number_input("Number of Two Wheelers", min_value=0, value=0, step=1)
-            km_2w = st.number_input("Average km per Two-Wheeler per Year", min_value=0.0, value=0.0)
-            fuel_type_2w = st.selectbox("Fuel Type for Two Wheelers", ["Diesel", "Petrol", "CNG", "Electricity"])
+            st.subheader("Buildings & Commercial")
+            commercial_energy_mwh = st.number_input("Total Commercial Energy Use (MWh/year)", min_value=0, value=0, step=100)
+            residential_energy_mwh = st.number_input("Total Residential Energy Use (MWh/year)", min_value=0, value=0, step=100)
 
-            st.markdown("### Waste")
-            municipal_waste_t = st.number_input("Municipal Solid Waste Generated (t/year)", min_value=0.0, value=0.0)
-            waste_biogas_capture_percent = st.number_input("Percentage of Waste Biogas Captured (%)", min_value=0.0, value=0.0)
+            st.subheader("Waste")
+            municipal_solid_waste_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, value=0, step=10)
+            wastewater_volume_m3 = st.number_input("Wastewater Treated (m3/year)", min_value=0, value=0, step=1000)
 
-            st.markdown("### Water & Sewage")
-            water_consumption_m3 = st.number_input("Total Water Consumption (m³/year)", min_value=0.0, value=0.0)
-            sewage_treatment_percent = st.number_input("Percentage of Sewage Treated (%)", min_value=0.0, value=0.0)
+            st.subheader("Water & Sewage")
+            water_supply_m3 = st.number_input("Total Water Supplied (m3/year)", min_value=0, value=0, step=1000)
 
-            st.markdown("### Urban Green / Other")
-            green_area_ha = st.number_input("Urban Green Area (ha)", min_value=0.0, value=0.0)
+            st.subheader("Urban Green & Other")
+            urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
 
-            file_upload = st.file_uploader("Attach Verification File (optional)", type=["pdf", "xlsx", "csv"])
+            submit_cap = st.form_submit_button("Submit Raw Data and Generate GHG Inventory")
 
-            submit_cap = st.form_submit_button("Submit Raw Data & Calculate GHG Inventory")
             if submit_cap:
-                # --- Emission Factors (tCO2e/unit) ---
-                EF = {
-                    "Diesel": 2.68 / 1000,       # tCO2e/liter
-                    "Petrol": 2.31 / 1000,
-                    "CNG": 2.74 / 1000,
-                    "Electricity": 0.82 / 1000,  # tCO2e/kWh
-                    "Waste": 0.25,               # tCO2e/t
-                    "Water": 0.000298             # tCO2e/m3
-                }
-
-                # --- Calculations ---
-                emissions = {}
-
-                # Energy & Buildings
-                emissions["Buildings"] = (
-                    num_households * avg_electricity_consumption_kwh * EF["Electricity"] +
-                    fuel_diesel_liters * EF["Diesel"] +
-                    fuel_petrol_liters * EF["Petrol"] +
-                    fuel_gas_cubic_m * EF["CNG"]
-                )
-
-                # Transport
-                emissions["Transport"] = (
-                    num_buses * km_buses * EF[fuel_type_buses] +
-                    num_cars * km_cars * EF[fuel_type_cars] +
-                    num_2w * km_2w * EF[fuel_type_2w]
-                )
-
-                # Waste
-                emissions["Waste"] = municipal_waste_t * EF["Waste"] * (1 - waste_biogas_capture_percent/100)
-
-                # Water & Sewage
-                emissions["Water"] = water_consumption_m3 * EF["Water"] * (sewage_treatment_percent/100)
-
-                # Urban Green / Other (simple proxy: negative emissions)
-                emissions["Urban Green / Other"] = -green_area_ha * 0.05  # sequestration tCO2e/ha
-
-                # Save CAP raw data
-                new_row = {
+                # Save raw data into CAP dataframe
+                raw_row = {
                     "City Name": city,
                     "Population": population,
-                    "Num Households": num_households,
-                    "Avg Elec kWh/HH": avg_electricity_consumption_kwh,
-                    "Diesel Liters": fuel_diesel_liters,
-                    "Petrol Liters": fuel_petrol_liters,
-                    "CNG m3": fuel_gas_cubic_m,
-                    "Num Buses": num_buses,
-                    "Km Buses": km_buses,
-                    "Fuel Buses": fuel_type_buses,
-                    "Num Cars": num_cars,
-                    "Km Cars": km_cars,
-                    "Fuel Cars": fuel_type_cars,
-                    "Num 2W": num_2w,
-                    "Km 2W": km_2w,
-                    "Fuel 2W": fuel_type_2w,
-                    "Municipal Waste t": municipal_waste_t,
-                    "Waste Biogas %": waste_biogas_capture_percent,
-                    "Water Consumption m3": water_consumption_m3,
-                    "Sewage Treated %": sewage_treatment_percent,
-                    "Green Area ha": green_area_ha
+                    "Households": households,
+                    "Avg Household Electricity (kWh)": avg_household_electricity_kwh,
+                    "Diesel Vehicles": vehicles_diesel,
+                    "Petrol Vehicles": vehicles_petrol,
+                    "CNG Vehicles": vehicles_cng,
+                    "Electric Vehicles": vehicles_electric,
+                    "Avg km per Vehicle/Year": avg_km_per_vehicle_year,
+                    "Industrial Energy (MWh)": industrial_energy_mwh,
+                    "Industrial Fuel (tons)": industrial_fuel_tons,
+                    "Commercial Energy (MWh)": commercial_energy_mwh,
+                    "Residential Energy (MWh)": residential_energy_mwh,
+                    "Municipal Solid Waste (tons)": municipal_solid_waste_tons,
+                    "Wastewater Treated (m3)": wastewater_volume_m3,
+                    "Water Supplied (m3)": water_supply_m3,
+                    "Urban Green Area (ha)": urban_green_area_ha,
+                    "Submission Date": datetime.now()
                 }
 
-                df_cap = st.session_state.cap_data
+                df_cap = st.session_state.cap_data.copy()
                 if not df_cap.empty and city in df_cap["City Name"].values:
-                    for k, v in new_row.items():
+                    for k, v in raw_row.items():
                         df_cap.loc[df_cap["City Name"] == city, k] = v
                 else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([new_row])], ignore_index=True)
+                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_row])], ignore_index=True)
 
-                # Save raw data
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
                 st.session_state.last_updated = datetime.now()
 
-                # Save calculated emissions in session
-                st.session_state.current_emissions = emissions
-
-                st.success(f"Raw data submitted & GHG Inventory calculated for {city}!")
-
-                # Redirect to GHG Inventory Dashboard
-                st.session_state.menu = "GHG Inventory"
+                st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
+                st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
                 st.experimental_rerun()
