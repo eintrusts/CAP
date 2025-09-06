@@ -645,243 +645,259 @@ elif menu == "GHG Inventory":
 # Actions Page
 # ---------------------------
 elif menu == "Actions":
-    st.header(f"Actions & Roadmap for {st.session_state.selected_city} to Achieve Net Zero by 2050")
+    selected_city = st.session_state.get("selected_city", None)
+    if not selected_city:
+        st.warning("Please select a city from GHG Inventory page first.")
+    else:
+        st.header(f"Actions & Roadmap for {selected_city} to Achieve Net Zero by 2050")
 
-    # Sector-wise short, mid, long-term actions
-    sectors_actions = {
-        "Energy": {
-            "Short-term": [
-                "Replace streetlights with LED bulbs",
-                "Energy audits for public buildings",
-                "Promote rooftop solar for households",
-                "Implement smart meters in commercial buildings",
-                "Encourage energy-efficient appliances",
-                "Retrofitting old buildings with insulation",
-                "Install solar-powered water pumps",
-                "Promote energy conservation campaigns",
-                "Grid optimization for peak load reduction",
-                "Transition municipal buildings to renewable energy"
-            ],
-            "Mid-term": [
-                "Expand city-level solar parks",
-                "Promote decentralized renewable energy projects",
-                "Smart grid integration for distributed energy",
-                "Electrify public transport fleet",
-                "Phase out fossil fuel boilers in industries",
-                "Encourage green building certification",
-                "Battery storage implementation for renewables",
-                "Energy efficiency retrofit for industries",
-                "District cooling projects in commercial zones",
-                "Incentivize private sector renewable adoption"
-            ],
-            "Long-term": [
-                "100% renewable electricity for city",
-                "Smart city energy management system",
-                "Zero-emission industrial zones",
-                "City-wide energy storage infrastructure",
-                "Net-zero municipal operations",
-                "Phase out coal-based power entirely",
-                "Urban microgrid networks",
-                "Net-zero residential and commercial sectors",
-                "Carbon-neutral public transport network",
-                "Integration of green hydrogen for industries"
-            ]
-        },
-        "Transport": {
-            "Short-term": [
-                "Promote public transport usage",
-                "Introduce electric buses on high-density routes",
-                "Create bicycle lanes",
-                "Implement vehicle emission inspections",
-                "Carpooling awareness campaigns",
-                "Optimize traffic signals to reduce idle emissions",
-                "Encourage e-rickshaws in last-mile transport",
-                "Parking restrictions for high-emission vehicles",
-                "Electric vehicle subsidies for citizens",
-                "Promote low-emission logistics for goods transport"
-            ],
-            "Mid-term": [
-                "Expand metro and urban rail network",
-                "City-wide EV charging infrastructure",
-                "Bus rapid transit (BRT) corridors",
-                "Fleet electrification for municipal services",
-                "Adopt EV taxis and commercial vehicles",
-                "Low-emission zones for congested areas",
-                "Public bike-sharing systems",
-                "Smart traffic management for emission reduction",
-                "Integration of hydrogen fuel buses",
-                "Promote EV adoption incentives for private vehicles"
-            ],
-            "Long-term": [
-                "100% electric public transport",
-                "Autonomous electric vehicle network",
-                "Net-zero freight transport system",
-                "City-wide modal shift to non-motorized transport",
-                "Integrated transport-energy planning",
-                "Zero-emission logistic hubs",
-                "Phasing out fossil fuel vehicles",
-                "Carbon-neutral metro and rail",
-                "Urban mobility-as-a-service platform",
-                "City-wide low-carbon transport policy"
-            ]
-        },
-        "Industry": {
-            "Short-term": [
-                "Energy audits for industries",
-                "Fuel switching to cleaner fuels",
-                "Promote energy efficiency in industrial processes",
-                "Waste heat recovery in industries",
-                "Substitute high-emission raw materials",
-                "Install pollution monitoring systems",
-                "Promote ISO 50001 energy management",
-                "Optimize production schedules for efficiency",
-                "Awareness workshops on carbon reduction",
-                "Encourage green logistics"
-            ],
-            "Mid-term": [
-                "Electrification of industrial processes",
-                "Install onsite renewable energy systems",
-                "Carbon capture pilot projects",
-                "Green certification for industrial units",
-                "Adopt circular economy practices",
-                "Optimize supply chain for lower emissions",
-                "Industrial symbiosis networks",
-                "Energy-efficient machinery replacement",
-                "Industry-wide renewable PPA contracts",
-                "Benchmarking and performance tracking"
-            ],
-            "Long-term": [
-                "Net-zero industrial zones",
-                "Complete process electrification",
-                "Large-scale carbon capture and storage",
-                "Green hydrogen integration",
-                "Industrial circular economy adoption",
-                "Zero-emission logistics within industrial parks",
-                "Net-zero industrial buildings",
-                "Full adoption of renewable energy",
-                "City-wide industrial energy optimization platform",
-                "Advanced automation to minimize emissions"
-            ]
-        },
-        "Waste": {
-            "Short-term": [
-                "Segregate waste at source",
-                "Promote composting at household level",
-                "Awareness campaigns for waste reduction",
-                "Optimize waste collection routes",
-                "Pilot anaerobic digestion for organic waste",
-                "Install methane capture in landfills",
-                "Promote recycling centers",
-                "Reduce single-use plastics",
-                "Encourage EPR (Extended Producer Responsibility)",
-                "Municipal solid waste monitoring"
-            ],
-            "Mid-term": [
-                "City-wide composting facilities",
-                "Waste-to-energy pilot projects",
-                "Expanded recycling programs",
-                "Organic waste management in commercial areas",
-                "Methane capture & flaring systems",
-                "Industrial waste reduction programs",
-                "Integration with circular economy",
-                "Upgrade landfill management technology",
-                "Promote zero-waste commercial zones",
-                "Smart waste monitoring & reporting"
-            ],
-            "Long-term": [
-                "100% organic waste recycling",
-                "City-wide waste-to-energy plants",
-                "Net-zero landfill emissions",
-                "Complete industrial waste circularity",
-                "Zero-waste policies for commercial zones",
-                "Advanced anaerobic digestion",
-                "Full-scale methane capture from waste",
-                "Integrated smart waste management",
-                "Community-led zero-waste initiatives",
-                "Net-zero municipal waste sector"
-            ]
-        },
-        "Water": {
-            "Short-term": [
-                "Reduce water losses in pipelines",
-                "Energy audits of pumping stations",
-                "Promote water-efficient appliances",
-                "Rainwater harvesting promotion",
-                "Awareness campaigns for water conservation",
-                "Optimize wastewater treatment energy",
-                "Pilot solar pumping projects",
-                "Leakage detection programs",
-                "Encourage greywater reuse",
-                "Install flow meters in water distribution"
-            ],
-            "Mid-term": [
-                "Upgrade water treatment plants to efficient tech",
-                "Decentralized wastewater reuse systems",
-                "Solar-powered pumping stations",
-                "Smart metering for city-wide water network",
-                "Energy recovery in water pipelines",
-                "Integrated urban water management",
-                "Wastewater energy recovery",
-                "Incentivize industries for water efficiency",
-                "Water recycling in commercial buildings",
-                "Stormwater management & recharge projects"
-            ],
-            "Long-term": [
-                "Net-zero water sector energy use",
-                "City-wide wastewater reuse networks",
-                "100% efficient water distribution",
-                "Fully solar-powered water infrastructure",
-                "Smart city water-energy integration",
-                "Closed-loop water management",
-                "Net-zero municipal pumping stations",
-                "Advanced leakage-free distribution network",
-                "Net-zero industrial water use",
-                "Urban resilience to water scarcity"
-            ]
-        },
-        "Urban Green / Renewable": {
-            "Short-term": [
-                "Plant trees in vacant land",
-                "Promote rooftop gardens",
-                "Protect existing green spaces",
-                "Urban park awareness campaigns",
-                "Promote community gardens",
-                "Plant along streets and roads",
-                "Encourage school greening programs",
-                "Restore degraded urban areas",
-                "Install green roofs on public buildings",
-                "Integrate green belts in urban planning"
-            ],
-            "Mid-term": [
-                "Develop city-wide green corridors",
-                "Expand urban parks and forests",
-                "Promote urban agriculture",
-                "Increase green cover in industrial areas",
-                "Urban wetlands restoration",
-                "Eco-sensitive landscaping in public areas",
-                "Green infrastructure for climate resilience",
-                "Biodiversity enhancement programs",
-                "Promote rooftop solar with greenery",
-                "Carbon sequestration monitoring"
-            ],
-            "Long-term": [
-                "Net-zero urban green and offset strategy",
-                "Carbon sink programs integrated with city planning",
-                "City-wide ecosystem restoration",
-                "Urban forest expansion",
-                "Full integration of green and blue infrastructure",
-                "Net-zero emissions from urban land use",
-                "Green building mandates city-wide",
-                "City-wide renewable energy + green synergy",
-                "Biodiverse urban ecosystems",
-                "Community-led climate resilience forests"
-            ]
+        # ---------------------------
+        # Sector-wise actions aligned with NAPCCC (Indian city-specific)
+        # ---------------------------
+        sectors_actions = {
+            "Energy": {
+                "Short-term": [
+                    "Replace streetlights with LED bulbs",
+                    "Energy audits for public buildings",
+                    "Promote rooftop solar for households",
+                    "Implement smart meters in commercial buildings",
+                    "Encourage energy-efficient appliances",
+                    "Retrofitting old buildings with insulation",
+                    "Install solar-powered water pumps",
+                    "Promote energy conservation campaigns",
+                    "Grid optimization for peak load reduction",
+                    "Transition municipal buildings to renewable energy"
+                ],
+                "Mid-term": [
+                    "Expand city-level solar parks",
+                    "Promote decentralized renewable energy projects",
+                    "Smart grid integration for distributed energy",
+                    "Electrify public transport fleet",
+                    "Phase out fossil fuel boilers in industries",
+                    "Encourage green building certification",
+                    "Battery storage implementation for renewables",
+                    "Energy efficiency retrofit for industries",
+                    "District cooling projects in commercial zones",
+                    "Incentivize private sector renewable adoption"
+                ],
+                "Long-term": [
+                    "100% renewable electricity for city",
+                    "Smart city energy management system",
+                    "Zero-emission industrial zones",
+                    "City-wide energy storage infrastructure",
+                    "Net-zero municipal operations",
+                    "Phase out coal-based power entirely",
+                    "Urban microgrid networks",
+                    "Net-zero residential and commercial sectors",
+                    "Carbon-neutral public transport network",
+                    "Integration of green hydrogen for industries"
+                ]
+            },
+            "Transport": {
+                "Short-term": [
+                    "Promote public transport usage",
+                    "Introduce electric buses on high-density routes",
+                    "Create bicycle lanes",
+                    "Implement vehicle emission inspections",
+                    "Carpooling awareness campaigns",
+                    "Optimize traffic signals to reduce idle emissions",
+                    "Encourage e-rickshaws in last-mile transport",
+                    "Parking restrictions for high-emission vehicles",
+                    "Electric vehicle subsidies for citizens",
+                    "Promote low-emission logistics for goods transport"
+                ],
+                "Mid-term": [
+                    "Expand metro and urban rail network",
+                    "City-wide EV charging infrastructure",
+                    "Bus rapid transit (BRT) corridors",
+                    "Fleet electrification for municipal services",
+                    "Adopt EV taxis and commercial vehicles",
+                    "Low-emission zones for congested areas",
+                    "Public bike-sharing systems",
+                    "Smart traffic management for emission reduction",
+                    "Integration of hydrogen fuel buses",
+                    "Promote EV adoption incentives for private vehicles"
+                ],
+                "Long-term": [
+                    "100% electric public transport",
+                    "Autonomous electric vehicle network",
+                    "Net-zero freight transport system",
+                    "City-wide modal shift to non-motorized transport",
+                    "Integrated transport-energy planning",
+                    "Zero-emission logistic hubs",
+                    "Phasing out fossil fuel vehicles",
+                    "Carbon-neutral metro and rail",
+                    "Urban mobility-as-a-service platform",
+                    "City-wide low-carbon transport policy"
+                ]
+            },
+            "Industry": {
+                "Short-term": [
+                    "Energy audits for industries",
+                    "Fuel switching to cleaner fuels",
+                    "Promote energy efficiency in industrial processes",
+                    "Waste heat recovery in industries",
+                    "Substitute high-emission raw materials",
+                    "Install pollution monitoring systems",
+                    "Promote ISO 50001 energy management",
+                    "Optimize production schedules for efficiency",
+                    "Awareness workshops on carbon reduction",
+                    "Encourage green logistics"
+                ],
+                "Mid-term": [
+                    "Electrification of industrial processes",
+                    "Install onsite renewable energy systems",
+                    "Carbon capture pilot projects",
+                    "Green certification for industrial units",
+                    "Adopt circular economy practices",
+                    "Optimize supply chain for lower emissions",
+                    "Industrial symbiosis networks",
+                    "Energy-efficient machinery replacement",
+                    "Industry-wide renewable PPA contracts",
+                    "Benchmarking and performance tracking"
+                ],
+                "Long-term": [
+                    "Net-zero industrial zones",
+                    "Complete process electrification",
+                    "Large-scale carbon capture and storage",
+                    "Green hydrogen integration",
+                    "Industrial circular economy adoption",
+                    "Zero-emission logistics within industrial parks",
+                    "Net-zero industrial buildings",
+                    "Full adoption of renewable energy",
+                    "City-wide industrial energy optimization platform",
+                    "Advanced automation to minimize emissions"
+                ]
+            },
+            "Waste": {
+                "Short-term": [
+                    "Segregate waste at source",
+                    "Promote composting at household level",
+                    "Awareness campaigns for waste reduction",
+                    "Optimize waste collection routes",
+                    "Pilot anaerobic digestion for organic waste",
+                    "Install methane capture in landfills",
+                    "Promote recycling centers",
+                    "Reduce single-use plastics",
+                    "Encourage EPR (Extended Producer Responsibility)",
+                    "Municipal solid waste monitoring"
+                ],
+                "Mid-term": [
+                    "City-wide composting facilities",
+                    "Waste-to-energy pilot projects",
+                    "Expanded recycling programs",
+                    "Organic waste management in commercial areas",
+                    "Methane capture & flaring systems",
+                    "Industrial waste reduction programs",
+                    "Integration with circular economy",
+                    "Upgrade landfill management technology",
+                    "Promote zero-waste commercial zones",
+                    "Smart waste monitoring & reporting"
+                ],
+                "Long-term": [
+                    "100% organic waste recycling",
+                    "City-wide waste-to-energy plants",
+                    "Net-zero landfill emissions",
+                    "Complete industrial waste circularity",
+                    "Zero-waste policies for commercial zones",
+                    "Advanced anaerobic digestion",
+                    "Full-scale methane capture from waste",
+                    "Integrated smart waste management",
+                    "Community-led zero-waste initiatives",
+                    "Net-zero municipal waste sector"
+                ]
+            },
+            "Water": {
+                "Short-term": [
+                    "Reduce water losses in pipelines",
+                    "Energy audits of pumping stations",
+                    "Promote water-efficient appliances",
+                    "Rainwater harvesting promotion",
+                    "Awareness campaigns for water conservation",
+                    "Optimize wastewater treatment energy",
+                    "Pilot solar pumping projects",
+                    "Leakage detection programs",
+                    "Encourage greywater reuse",
+                    "Install flow meters in water distribution"
+                ],
+                "Mid-term": [
+                    "Upgrade water treatment plants to efficient tech",
+                    "Decentralized wastewater reuse systems",
+                    "Solar-powered pumping stations",
+                    "Smart metering for city-wide water network",
+                    "Energy recovery in water pipelines",
+                    "Integrated urban water management",
+                    "Wastewater energy recovery",
+                    "Incentivize industries for water efficiency",
+                    "Water recycling in commercial buildings",
+                    "Stormwater management & recharge projects"
+                ],
+                "Long-term": [
+                    "Net-zero water sector energy use",
+                    "City-wide wastewater reuse networks",
+                    "100% efficient water distribution",
+                    "Fully solar-powered water infrastructure",
+                    "Smart city water-energy integration",
+                    "Closed-loop water management",
+                    "Net-zero municipal pumping stations",
+                    "Advanced leakage-free distribution network",
+                    "Net-zero industrial water use",
+                    "Urban resilience to water scarcity"
+                ]
+            },
+            "Urban Green / Renewable": {
+                "Short-term": [
+                    "Plant trees in vacant land",
+                    "Promote rooftop gardens",
+                    "Protect existing green spaces",
+                    "Urban park awareness campaigns",
+                    "Promote community gardens",
+                    "Plant along streets and roads",
+                    "Encourage school greening programs",
+                    "Restore degraded urban areas",
+                    "Install green roofs on public buildings",
+                    "Integrate green belts in urban planning"
+                ],
+                "Mid-term": [
+                    "Develop city-wide green corridors",
+                    "Expand urban parks and forests",
+                    "Promote urban agriculture",
+                    "Increase green cover in industrial areas",
+                    "Urban wetlands restoration",
+                    "Eco-sensitive landscaping in public areas",
+                    "Green infrastructure for climate resilience",
+                    "Biodiversity enhancement programs",
+                    "Promote rooftop solar with greenery",
+                    "Carbon sequestration monitoring"
+                ],
+                "Long-term": [
+                    "Net-zero urban green and offset strategy",
+                    "Carbon sink programs integrated with city planning",
+                    "City-wide ecosystem restoration",
+                    "Urban forest expansion",
+                    "Full integration of green and blue infrastructure",
+                    "Net-zero emissions from urban land use",
+                    "Green building mandates city-wide",
+                    "City-wide renewable energy + green synergy",
+                    "Biodiverse urban ecosystems",
+                    "Community-led climate resilience forests"
+                ]
+            }
         }
-    }
 
-    for sector, goals in sectors_actions.items():
-        st.subheader(sector)
-        for term, actions_list in goals.items():
-            st.markdown(f"**{term} Goals:**")
-            for idx, action in enumerate(actions_list, start=1):
-                st.markdown(f"{idx}. {action}")
+        # ---------------------------
+        # Display sector actions in tables
+        # ---------------------------
+        for sector, goals in sectors_actions.items():
+            st.subheader(sector)
+
+            max_len = max(len(goals["Short-term"]), len(goals["Mid-term"]), len(goals["Long-term"]))
+            table_data = []
+            for i in range(max_len):
+                table_data.append({
+                    "Short-term (by 2030)": goals["Short-term"][i] if i < len(goals["Short-term"]) else "",
+                    "Mid-term (by 2040)": goals["Mid-term"][i] if i < len(goals["Mid-term"]) else "",
+                    "Long-term (by 2050)": goals["Long-term"][i] if i < len(goals["Long-term"]) else ""
+                })
+
+            st.dataframe(pd.DataFrame(table_data), use_container_width=True)
