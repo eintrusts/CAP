@@ -523,65 +523,146 @@ elif menu == "CAP Preparation":
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
-if menu == "GHG Inventory":  # Make sure it's exactly this
-    st.header("GHG Inventory")
+elif menu == "GHG Inventory":
+    st.title("GHG Inventory")
 
-    if not st.session_state.authenticated:
-        admin_login()
+    if "ghg_results" not in st.session_state:
+        st.warning("Please complete the CAP Preparation form first.")
     else:
-        df_cap = st.session_state.cap_data.copy()
-        if df_cap.empty:
-            st.warning("No CAP data available. Please submit raw data first.")
-        else:
-            city = st.selectbox("Select City to View GHG Inventory", list(df_cap["City Name"].unique()))
-            city_row = df_cap[df_cap["City Name"] == city].iloc[0]
+        ghg_results = st.session_state.ghg_results
 
-            # --- Calculate Sector Emissions ---
-            # ... your existing emissions calculations ...
+        st.subheader("Summary of GHG Emissions by Sector")
+        df_results = pd.DataFrame(list(ghg_results.items()), columns=["Sector", "Emissions (tCO2e)"])
+        st.dataframe(df_results, use_container_width=True)
 
-            # Display charts
-            st.subheader(f"{city} — Sector-wise GHG Emissions (tCO2e)")
-            # ... your existing charts and table ...
+        fig = px.pie(df_results, names="Sector", values="Emissions (tCO2e)", title="GHG Emissions Share by Sector")
+        st.plotly_chart(fig, use_container_width=True)
 
-            # ---------------------------
-            # Suggested Actions Section (STRICTLY HERE)
-            # ---------------------------
-            if st.button("Show Suggested Actions to Achieve Net Zero by 2050"):
-                st.subheader("Suggested Actions per Sector (Short, Mid, Long-term Goals)")
+        st.subheader("Total Emissions")
+        total_emissions = df_results["Emissions (tCO2e)"].sum()
+        st.metric("Total GHG Emissions (tCO2e)", f"{total_emissions:,.0f}")
 
-                # Example goals dictionary
-                goals = {
-                    "Residential Energy": {
-                        "Short-term (2030)": [
-                            "1. Implement energy-efficient lighting (Priority 1)",
-                            "2. Promote rooftop solar adoption (Priority 2)"
-                        ],
-                        "Mid-term (2040)": [
-                            "1. Incentivize heat pump systems (Priority 1)"
-                        ],
-                        "Long-term (2050)": [
-                            "1. Achieve 100% renewable electricity in households (Priority 1)"
-                        ]
+        # ✅ Suggested Actions button only on GHG Inventory page
+        if st.button("View Suggested Actions to Achieve Net Zero by 2050"):
+            st.session_state.show_actions = True
+
+        # ✅ Show actions only after button click
+        if st.session_state.get("show_actions", False):
+            st.subheader("Suggested Actions by Sector")
+
+            # Use only active sectors (non-zero emissions)
+            active_sectors = df_results[df_results["Emissions (tCO2e)"] > 0]["Sector"].tolist()
+
+            goals = {
+                "Short-term (2030)": [
+                    "Implement large-scale rooftop solar programs",
+                    "Promote electric two-wheelers adoption",
+                    "Expand waste segregation coverage",
+                    "Mandatory energy efficiency audits for public buildings",
+                    "Support MSMEs in energy-efficient tech upgrades",
+                    "Promote low-emission farming practices",
+                    "Upgrade water pumping to energy-efficient systems",
+                    "Phase out diesel gensets in cities",
+                    "Expand CNG/e-mobility in public buses",
+                    "Promote decentralized composting at ward level"
+                ],
+                "Mid-term (2040)": [
+                    "Achieve 60% renewable electricity mix",
+                    "Full electrification of public bus fleets",
+                    "100% scientific disposal of waste",
+                    "All new buildings Net Zero compliant",
+                    "Green hydrogen adoption in industries",
+                    "Shift to climate-smart irrigation systems",
+                    "Achieve 50% water recycling",
+                    "Expand city-wide EV charging infra",
+                    "Mandate retrofits for inefficient buildings",
+                    "Circular economy clusters for industrial hubs"
+                ],
+                "Long-term (2050)": [
+                    "100% renewable electricity mix",
+                    "100% electrified private and commercial vehicles",
+                    "Zero waste to landfill",
+                    "All buildings Net Positive Energy",
+                    "100% decarbonized industry with hydrogen/CCUS",
+                    "100% climate-resilient farming",
+                    "100% treated wastewater reuse",
+                    "Urban transport fully electrified/autonomous",
+                    "Carbon neutral construction materials",
+                    "Fully circular city economy"
+                ]
+            }
+
+            for sector in active_sectors:
+                st.markdown(f"### 🔹 {sector}")
+                actions_data = []
+                for i in range(10):
+                    row = {
+                        "Priority": i + 1,
+                        "Short-term (2030)": goals["Short-term (2030)"][i],
+                        "Mid-term (2040)": goals["Mid-term (2040)"][i],
+                        "Long-term (2050)": goals["Long-term (2050)"][i],
                     }
-                    # Add other sectors here...
-                }
+                    actions_data.append(row)
 
-                # Build table
-                table_data = []
-                for sector, s_goals in goals.items():
-                    max_len = max(len(s_goals.get("Short-term (2030)", [])),
-                                  len(s_goals.get("Mid-term (2040)", [])),
-                                  len(s_goals.get("Long-term (2050)", [])))
-                    for i in range(max_len):
-                        row = {
-                            "Sector": sector if i == 0 else "",
-                            "Short-term (2030)": s_goals.get("Short-term (2030)", [])[i] if i < len(s_goals.get("Short-term (2030)", [])) else "",
-                            "Mid-term (2040)": s_goals.get("Mid-term (2040)", [])[i] if i < len(s_goals.get("Mid-term (2040)", [])) else "",
-                            "Long-term (2050)": s_goals.get("Long-term (2050)", [])[i] if i < len(s_goals.get("Long-term (2050)", [])) else ""
-                        }
-                        table_data.append(row)
-                
-                st.table(pd.DataFrame(table_data))
+                df_actions = pd.DataFrame(actions_data)
+                st.table(df_actions)
+
+            # Create CAP Report button
+            if st.button("Create CAP Report (PDF)"):
+                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+                from reportlab.lib.styles import getSampleStyleSheet
+                from reportlab.lib import colors
+                from io import BytesIO
+
+                buffer = BytesIO()
+                doc = SimpleDocTemplate(buffer, pagesize=A4)
+                styles = getSampleStyleSheet()
+                story = []
+
+                story.append(Paragraph("City Climate Action Plan (CAP) Report", styles["Title"]))
+                story.append(Spacer(1, 12))
+                story.append(Paragraph("GHG Inventory Summary", styles["Heading2"]))
+
+                data = [["Sector", "Emissions (tCO2e)"]] + df_results.values.tolist()
+                table = Table(data)
+                table.setStyle(TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                story.append(table)
+                story.append(Spacer(1, 12))
+
+                story.append(Paragraph("Suggested Actions by Sector", styles["Heading2"]))
+                for sector in active_sectors:
+                    story.append(Paragraph(f"{sector}", styles["Heading3"]))
+                    data = [["Priority", "Short-term (2030)", "Mid-term (2040)", "Long-term (2050)"]]
+                    for i in range(10):
+                        data.append([
+                            str(i + 1),
+                            goals["Short-term (2030)"][i],
+                            goals["Mid-term (2040)"][i],
+                            goals["Long-term (2050)"][i],
+                        ])
+                    table = Table(data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("GRID", (0, 0), (-1, -1), 1, colors.black)
+                    ]))
+                    story.append(table)
+                    story.append(Spacer(1, 12))
+
+                doc.build(story)
+                buffer.seek(0)
+                st.download_button(
+                    " Download CAP Report",
+                    data=buffer,
+                    file_name="CAP_Report.pdf",
+                    mime="application/pdf"
+                )
                 
 # ---------------------------
 # Suggested Actions Button
