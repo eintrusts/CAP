@@ -122,24 +122,17 @@ st.session_state.data = st.session_state.data[
     ~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)
 ]
 def reset_all_data():
-    keys_to_clear = [
-        "data",             # main meta data
-        "cap_data",         # CAP data
-        "last_updated",     # last updated timestamp
-        # Add any other session keys used by admin
-    ]
-    for key in keys_to_clear:
-        if key in st.session_state:
-            del st.session_state[key]
-
-    # Optional: If you are using CSV/Excel storage, also clear files
-    try:
-        open(CAP_DATA_FILE, "w").close()  # clears CAP CSV file
-        open(META_DATA_FILE, "w").close() # clears meta CSV file
-    except:
-        pass
-
-    st.success("All admin and CAP data has been reset successfully!")
+    # Clear session state
+    st.session_state.clear()
+    
+    # Optionally, reset CSV files
+    if os.path.exists(DATA_FILE):
+        os.remove(DATA_FILE)
+    if os.path.exists(CAP_DATA_FILE):
+        os.remove(CAP_DATA_FILE)
+    
+    st.success("All data has been reset successfully!")
+    st.experimental_rerun()  # Refresh the app
 
 # ---------------------------
 # Helper Functions
@@ -461,6 +454,7 @@ elif menu == "City Information":
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Board")
+
     if not st.session_state.authenticated:
         admin_login()
     else:
@@ -502,8 +496,10 @@ elif menu == "Admin":
             Population=lambda d: d["Population"].map(format_indian_number),
             GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
         ))
-if st.button("Reset All Data", key="reset_admin"):
-    reset_all_data()
+
+        # --- Reset Button ---
+        if st.button("Reset All Data", key="reset_admin"):
+            reset_all_data()
 
 # ---------------------------
 # CAP Preparation Page
@@ -534,7 +530,7 @@ elif menu == "CAP Generation":
             industrial_electricity_mwh = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
             streetlights_energy_mwh = st.number_input("Streetlights & Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
 
-            # --- Fuel Consumption (Transport + Industry) ---
+            # --- Transport & Industry Fuel ---
             st.subheader("Transport Activity")
             vehicles_diesel = st.number_input("Number of Diesel Vehicles", min_value=0, value=0, step=10)
             vehicles_petrol = st.number_input("Number of Petrol Vehicles", min_value=0, value=0, step=10)
@@ -550,7 +546,7 @@ elif menu == "CAP Generation":
             industrial_fuel_lpg_tons = st.number_input("Industrial LPG Fuel (tons/year)", min_value=0, value=0, step=10)
             industrial_energy_mwh = st.number_input("Industrial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
 
-            # --- Buildings & Commercial Activity ---
+            # --- Buildings ---
             st.subheader("Buildings & Commercial")
             residential_energy_mwh = st.number_input("Residential Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
             commercial_energy_mwh = st.number_input("Commercial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
@@ -563,7 +559,7 @@ elif menu == "CAP Generation":
             fraction_composted = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
             wastewater_volume_m3 = st.number_input("Wastewater Treated (m3/year)", min_value=0, value=0, step=1000)
 
-            # --- Water Supply & Sewage ---
+            # --- Water & Sewage ---
             st.subheader("Water & Sewage")
             water_supply_m3 = st.number_input("Total Water Supplied (m3/year)", min_value=0, value=0, step=1000)
             energy_for_water_mwh = st.number_input("Energy Used for Water Supply & Treatment (MWh/year)", min_value=0, value=0, step=10)
@@ -629,9 +625,9 @@ elif menu == "CAP Generation":
                 st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
                 st.experimental_rerun()
 
-if st.button("Reset All Data", key="reset_cap_data"):
-    reset_all_data()
-
+        # --- Reset Button ---
+        if st.button("Reset All Data", key="reset_cap_data"):
+            reset_all_data()
 
 # ---------------------------
 # GHG Inventory Page
