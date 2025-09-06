@@ -376,6 +376,7 @@ elif menu == "Admin":
         st.subheader("Add/Update City Data")
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
+            population = st.number_input("Population (as per census 2011)", min_value=0, value=0, step=1000)
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
             dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
@@ -388,6 +389,7 @@ elif menu == "Admin":
                 new_row = {
                     "City Name": city,
                     "District": cities_districts.get(city, "—"),
+                    "Population": population,
                     "CAP Status": cap_status,
                     "GHG Emissions": ghg_val,
                     "Environment Department Exist": dept_exist,
