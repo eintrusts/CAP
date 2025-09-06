@@ -203,21 +203,18 @@ if menu == "Home":
 
     df = st.session_state.data.copy()
 
-    # --- Basic Metrics ---
-    total_selected = len(cities_districts)
-    reporting = df.shape[0]
-    completed_caps = df[df["CAP Status"].str.lower() == "completed"].shape[0] if "CAP Status" in df.columns else 0
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Cities Selected", f"{total_selected}")
-    col2.metric("Cities Reporting", f"{reporting}")
-    col3.metric("CAPs Completed", f"{completed_caps}")
-
     # --- CAP Status Summary ---
-    if "CAP Status" in df.columns and not df.empty:
-        not_started = (df["CAP Status"].str.lower() == "not started").sum()
-        in_progress = (df["CAP Status"].str.lower() == "in progress").sum()
-        completed = (df["CAP Status"].str.lower() == "completed").sum()
+    if not df.empty and "CAP Status" in df.columns:
+    not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
+    in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
+    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
+    total_status = not_started + in_progress + completed
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Not Started", f"{not_started}")
+    col2.metric("In Progress", f"{in_progress}")
+    col3.metric("Completed", f"{completed}")
+    col4.metric("Total", f"{total_status}")
 
         st.markdown("### 📊 CAP Status Overview")
         s1, s2, s3 = st.columns(3)
