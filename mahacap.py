@@ -491,7 +491,9 @@ elif menu == "City Information":
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Board")
-    if not st.session_state.authenticated:
+
+    # Authentication check
+    if not st.session_state.get("authenticated", False):
         admin_login()
     else:
         st.subheader("Add / Update City Data")
@@ -499,7 +501,6 @@ elif menu == "Admin":
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
 
-            # ---------------- BASIC INFO ----------------
             st.markdown("### Basic Information")
             population = st.number_input("Population (2011 Census)", min_value=0, step=1000)
             area = st.number_input("Geographical Area (sq. km)", min_value=0.0, step=0.1)
@@ -507,7 +508,6 @@ elif menu == "Admin":
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1)
 
-            # ---------------- ENVIRONMENTAL INFO ----------------
             st.markdown("### Environmental Information")
             ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, step=100.0)
             renewable_energy = st.number_input("Renewable Energy Generated (MWh/year)", min_value=0, step=10)
@@ -517,7 +517,6 @@ elif menu == "Admin":
             waste_composted = st.number_input("Waste Composted (%)", min_value=0.0, max_value=100.0, step=0.1)
             wastewater = st.number_input("Wastewater Treated (m³/year)", min_value=0, step=1000)
 
-            # ---------------- SOCIAL INFO ----------------
             st.markdown("### Social Information")
             males = st.number_input("Male Population", min_value=0, step=100)
             females = st.number_input("Female Population", min_value=0, step=100)
@@ -530,7 +529,6 @@ elif menu == "Admin":
             migrant = st.number_input("Migrant Population (%)", min_value=0.0, max_value=100.0, step=0.1)
             slum = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, step=0.1)
 
-            # ---------------- CONTACT INFO ----------------
             st.markdown("### Contact Information")
             dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
             dept_name = st.text_input("Department Name")
@@ -544,42 +542,44 @@ elif menu == "Admin":
                 new_row = {
                     "City Name": city,
                     "District": cities_districts.get(city, "—"),
-                    "Population": population or 0,
-                    "Area (sq.km)": area or 0,
-                    "ULB Category": ulb_category or "—",
-                    "CAP Status": cap_status or "—",
-                    "Est. Year": est_year or "—",
-                    "GHG Emissions": ghg_val or 0,
-                    "Renewable Energy (MWh)": renewable_energy or 0,
-                    "Urban Green Area (ha)": green_area or 0,
-                    "Municipal Solid Waste (tons)": solid_waste or 0,
-                    "Waste Landfilled (%)": waste_landfilled or 0,
-                    "Waste Composted (%)": waste_composted or 0,
-                    "Wastewater Treated (m3)": wastewater or 0,
-                    "Males": males or 0,
-                    "Females": females or 0,
-                    "Children Male": children_m or 0,
-                    "Children Female": children_f or 0,
-                    "Literacy (%)": literacy or 0,
-                    "Male Literacy (%)": literacy_m or 0,
-                    "Female Literacy (%)": literacy_f or 0,
-                    "Migrant (%)": migrant or 0,
-                    "Slum (%)": slum or 0,
-                    "Department Exist": dept_exist or "—",
-                    "Department Name": dept_name or "—",
-                    "Email": dept_email or "—",
-                    "Contact Number": contact_number or "—",
-                    "Website": official_website or "—",
+                    "Population": population,
+                    "Area (sq.km)": area,
+                    "ULB Category": ulb_category,
+                    "CAP Status": cap_status,
+                    "Est. Year": est_year,
+                    "GHG Emissions": ghg_val,
+                    "Renewable Energy (MWh)": renewable_energy,
+                    "Urban Green Area (ha)": green_area,
+                    "Municipal Solid Waste (tons)": solid_waste,
+                    "Waste Landfilled (%)": waste_landfilled,
+                    "Waste Composted (%)": waste_composted,
+                    "Wastewater Treated (m3)": wastewater,
+                    "Males": males,
+                    "Females": females,
+                    "Children Male": children_m,
+                    "Children Female": children_f,
+                    "Literacy (%)": literacy,
+                    "Male Literacy (%)": literacy_m,
+                    "Female Literacy (%)": literacy_f,
+                    "Migrant (%)": migrant,
+                    "Slum (%)": slum,
+                    "BPL Households (%)": bpl,
+                    "Department Exist": dept_exist,
+                    "Department Name": dept_name,
+                    "Email": dept_email,
+                    "Contact Number": contact_number,
+                    "Website": official_website,
                 }
+
                 df_meta = st.session_state.data.copy()
                 if city in df_meta["City Name"].values:
                     df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
                 else:
                     df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
+
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
-                
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
