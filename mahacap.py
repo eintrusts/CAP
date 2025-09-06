@@ -311,128 +311,82 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Premium SaaS Dark Gradient Style)
+# Sidebar: Dark SaaS Professional
 # ---------------------------
 st.markdown("""
 <style>
-/* Sidebar background */
+/* Sidebar container */
 [data-testid="stSidebar"] {
-    background-color: #1B1F23;
+    background-color: #2B2B3B;
     color: #ECEFF1;
     padding-top: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Sidebar logo */
-[data-testid="stSidebar"] img {
-    margin-bottom: 25px;
+[data-testid="stSidebar"] .css-1d391kg img {
     border-radius: 8px;
+    margin-bottom: 20px;
 }
 
 /* Sidebar buttons */
-[data-testid="stSidebar"] button {
-    background: linear-gradient(90deg, #2A2E33 0%, #2A2E33 100%);
-    color: #ECEFF1;
+.stButton>button {
     width: 100%;
-    height: 55px;
-    margin-bottom: 12px;
-    border-radius: 6px;
-    font-size: 20px;
-    font-weight: 600;
-    border: none;
-    transition: all 0.3s ease-in-out;
     text-align: left;
-    padding-left: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    position: relative;
-    overflow: hidden;
+    padding: 10px 15px;
+    margin: 5px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #ECEFF1;
+    background-color: #34495E;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.2s;
 }
 
-/* Hover effect with subtle gradient */
-[data-testid="stSidebar"] button:hover {
-    background: linear-gradient(90deg, #3A3F46 0%, #2F343C 100%);
-    transform: translateX(3px);
-    cursor: pointer;
-}
-
-/* Active button sliding indicator */
-[data-testid="stSidebar"] button[data-active="true"]::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 5px;
-    height: 100%;
-    background-color: #42A5F5;
-    border-radius: 6px 0 0 6px;
-    transition: all 0.3s ease-in-out;
-}
-
-/* Active button gradient */
-[data-testid="stSidebar"] button[data-active="true"] {
-    background: linear-gradient(90deg, #3A3F46 0%, #343A42 100%);
+.stButton>button:hover {
+    background-color: #3E556E;
     color: #FFFFFF;
-    font-weight: 700;
+    transform: translateX(3px);
 }
 
-/* Separator lines */
+.stButton>button:focus {
+    outline: none;
+    background-color: #54C750;
+    color: #FFFFFF;
+}
+
+/* Sidebar dividers */
 [data-testid="stSidebar"] hr {
-    border: 0.5px solid #546E7A;
-    margin: 20px 0;
+    border-top: 1px solid #546E7A;
+    margin: 15px 0;
 }
 
-/* Sidebar footer */
+/* Sidebar copyright */
 .sidebar-footer {
-    color: #B0BEC5;
+    color: #909090;
     font-size: 13px;
     text-align: center;
-    margin-top: 30px;
+    padding-top: 20px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------
-# Sidebar Logo
-# ---------------------------
+# Sidebar logo
 st.sidebar.image(
     "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
     use_container_width=True
 )
 
-# ---------------------------
-# Sidebar Menu Buttons
-# ---------------------------
-menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
-if st.session_state.authenticated:
-    menu_items.append(("CAP Generation", "CAP Generation"))
+# Menu buttons
+for btn, name in [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]:
+    if st.sidebar.button(btn):
+        st.session_state.menu = name
 
-for label, page_name in menu_items:
-    is_active = st.session_state.menu == page_name
-    if st.sidebar.button(label, key=label):
-        st.session_state.menu = page_name
-        is_active = True
-    st.markdown(f"""
-    <script>
-    const btn = window.parent.document.querySelector('button[key="{label}"]');
-    if (btn) {{
-        btn.setAttribute('data-active', {'true' if is_active else 'false'});
-    }}
-    </script>
-    """, unsafe_allow_html=True)
+if st.session_state.get("authenticated") and st.sidebar.button("CAP Generation"):
+    st.session_state.menu = "CAP Generation"
 
-# ---------------------------
-# Sidebar Footer
-# ---------------------------
-st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsafe_allow_html=True)
-
-# ---------------------------
-# Current Menu
-# ---------------------------
-menu = st.session_state.menu
-
 
 # ---------------------------
 # Home Page: Maharashtra Dashboard (Dark SaaS Style)
