@@ -159,26 +159,15 @@ def safe_get(row, col, default="—"):
 # ---------------------------
 st.markdown("""
 <style>
-/* App Background */
-[data-testid="stAppViewContainer"] {background-color: #0f1115; color: #E6E6E6;}
-[data-testid="stSidebar"] {background-color: #141518; color: #E6E6E6;}
-/* Buttons */
-.stButton>button {
-    background-color:#228B22; 
-    color:#FFFFFF; 
-    border-radius:8px; 
-    height:40px;
-}
-.stButton>button:hover {background-color:#196619;}
-/* Metric Values */
-[data-testid="stMetricValue"] {color:#228B22; font-weight:700;}
-/* Expander / Cards */
-.stExpander>div>div>div>div {background-color:#1A1C20; color:#E6E6E6; border-radius:8px;}
-/* Inputs */
-input, textarea, select {background-color:#1A1C20; color:#E6E6E6; border-color:#228B22;}
-/* Tables */
-table th {background-color:#228B22; color:white;}
-table td {background-color:#1A1C20; color:#E6E6E6;}
+[data-testid="stAppViewContainer"] {background-color: #1e1e1e; color: #f0f2f0; font-family: 'Inter', sans-serif;}
+[data-testid="stSidebar"] {background-color: #060c06; color: #f0f2f0; font-family: 'Inter', sans-serif;}
+.stButton>button {background-color:#54c750; color:#f0f2f0; border-radius:8px; height:40px;}
+.stButton>button:hover {background-color:#3e3f3e;}
+[data-testid="stMetricValue"] {color:#54c750; font-weight:700; font-size:26px;}
+.stExpander>div>div>div>div {background-color:#060c06; color:#f0f2f0;}
+input, textarea, select {background-color:#060c06; color:#f0f2f0; border-color:#54c750;}
+table th {background-color:#54c750; color:white;}
+.stCard {background-color:#060c06; padding:15px; border-radius:10px; box-shadow: 0px 0px 15px rgba(0,0,0,0.5);}
 </style>
 """, unsafe_allow_html=True)
 # ---------------------------
@@ -198,10 +187,8 @@ def admin_login():
 # ---------------------------
 # Sidebar
 # ---------------------------
-st.sidebar.image(
-    "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
-    use_container_width=True
-)
+st.sidebar.image("https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png", use_container_width=True)
+
 
 for btn, name in [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]:
     if st.sidebar.button(btn):
@@ -224,6 +211,8 @@ if menu == "Home":
     df = st.session_state.data.copy()
 
     # --- CAP Status Summary ---
+    
+    
     if not df.empty and "CAP Status" in df.columns:
         not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
         in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
@@ -233,14 +222,15 @@ if menu == "Home":
         st.markdown("### CAP Status Overview")
         c1, c2, c3, c4 = st.columns(4)
 
-        block_style = """
-            background-color:#141518;
-            padding:20px;
-            border-radius:12px;
-            text-align:center;
-        """
-        title_style = "color:#E6E6E6; margin:0;"
-        value_style = "font-size:28px; font-weight:bold; color:#3E6BE6;"
+      c1, c2, c3, c4 = st.columns(4)
+cards = [
+    ("Total Cities", len(cities_data)),
+    ("Not Started", cities_data[cities_data["CAP Status"]=="Not Started"].shape[0]),
+    ("In Progress", cities_data[cities_data["CAP Status"]=="In Progress"].shape[0]),
+    ("Completed", cities_data[cities_data["CAP Status"]=="Completed"].shape[0])
+]
+for col, (title, val) in zip([c1,c2,c3,c4], cards):
+    col.markdown(f"<div class='stCard'><h4>{title}</h4><h2 style='color:#54c750'>{val}</h2></div>", unsafe_allow_html=True)
 
         c1.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Not Started</h3><p style='{value_style}'>{format_indian_number(not_started)}</p></div>", unsafe_allow_html=True)
         c2.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>In Progress</h3><p style='{value_style}'>{format_indian_number(in_progress)}</p></div>", unsafe_allow_html=True)
