@@ -531,12 +531,6 @@ elif menu == "CAP Preparation":
                 st.session_state.menu = "GHG Inventory"
                 st.experimental_rerun()
 
-st.session_state.menu = "GHG Inventory"
-st.experimental_rerun()
-
-df_cap.to_csv(CAP_DATA_FILE, index=False)
-st.session_state.last_updated = datetime.now()
-
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
