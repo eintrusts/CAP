@@ -358,51 +358,85 @@ if menu == "Home":
 # City Information Page
 # ---------------------------
 elif menu == "City Information":
-    st.header("City Dashboard")
-    
+    st.header("📌 City Information")
     df_meta = st.session_state.data.copy()
-    cities_for_select = list(cities_districts.keys())
-    
-    city = st.selectbox("Select City", cities_for_select)
-    city_row = df_meta[df_meta["City Name"] == city].iloc[0] if city in df_meta["City Name"].values else None
-    
-    if city_row is not None:
-        # --- Cards Layout ---
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Population", format_indian_number(city_row.get("Population",0)))
-        c2.metric("Reported GHG (tCO2e)", format_indian_number(city_row.get("GHG Emissions",0)))
-        c3.metric("Environmental Vulnerability (EVS)", city_row.get("EVS","—"))
-        c4.metric("Social Vulnerability (SVS)", city_row.get("SVS","—"))
-        
-        st.markdown("---")
-        
-        # --- Basic Info Section ---
+    city = st.selectbox("Select City", list(cities_districts.keys()))
+
+    if not df_meta.empty and city in df_meta["City Name"].values:
+        row = df_meta[df_meta["City Name"] == city].iloc[0]
+
+        # -------- BASIC INFO --------
         st.subheader("Basic Information")
-        st.write(f"**District:** {city_row.get('District','—')}")
-        st.write(f"**ULB Category:** {city_row.get('ULB Category','—')}")
-        st.write(f"**CAP Status:** {city_row.get('CAP Status','—')}")
-        
-        # --- Environmental Info Section ---
+        st.table(pd.DataFrame({
+            "Attribute": ["District", "ULB Category", "Population", "Area (sq.km)", "Density (per sq.km)", "Est. Year", "CAP Status"],
+            "Value": [
+                row["District"],
+                row["ULB Category"],
+                format_indian_number(row["Population"]),
+                row["Area (sq.km)"],
+                round(row["Population"]/row["Area (sq.km)"], 2) if row["Area (sq.km)"] else "—",
+                row["Est. Year"],
+                row["CAP Status"]
+            ]
+        }))
+
+        # -------- ENVIRONMENTAL INFO --------
         st.subheader("Environmental Information")
-        st.write(f"**Emission Factor per Capita (tCO2e/person):** {city_row.get('EF per Capita','—')}")
-        st.write(f"**Estimated GHG Emissions (tCO2e):** {format_indian_number(round(city_row.get('Population',0)*city_row.get('EF per Capita',0)))}")
-        st.write(f"**Other EVS Data:** Literacy Rate {city_row.get('Literacy Rate','—')}%, Urbanization Rate {city_row.get('Urbanization Rate','—')}%, Poverty Rate {city_row.get('Poverty Rate','—')}%")
-        
-        # --- Social Info Section ---
+        st.table(pd.DataFrame({
+            "Indicator": [
+                "Total GHG Emissions (tCO2e)",
+                "Per Capita Emissions (tCO2e)",
+                "Renewable Energy (MWh/year)",
+                "Urban Green Area (ha)",
+                "Municipal Solid Waste (tons/year)",
+                "Waste Landfilled (%)",
+                "Waste Composted (%)",
+                "Wastewater Treated (m³/year)",
+            ],
+            "Value": [
+                format_indian_number(row["GHG Emissions"]),
+                round(row["GHG Emissions"]/row["Population"], 2) if row["Population"] else "—",
+                format_indian_number(row["Renewable Energy (MWh)"]),
+                format_indian_number(row["Urban Green Area (ha)"]),
+                format_indian_number(row["Municipal Solid Waste (tons)"]),
+                f"{row['Waste Landfilled (%)']}%",
+                f"{row['Waste Composted (%)']}%",
+                format_indian_number(row["Wastewater Treated (m3)"]),
+            ]
+        }))
+
+        # -------- SOCIAL INFO --------
         st.subheader("Social Information")
-        st.write(f"**Literacy Rate:** {city_row.get('Literacy Rate','—')}%")
-        st.write(f"**Urbanization Rate:** {city_row.get('Urbanization Rate','—')}%")
-        st.write(f"**Poverty Rate:** {city_row.get('Poverty Rate','—')}%")
-        
-        # --- Contact Info Section ---
-        st.subheader("City Contact Information")
-        st.write(f"**Department Name:** {city_row.get('Department Name','—')}")
-        st.write(f"**Head Name:** {city_row.get('Head Name','—')}")
-        st.write(f"**Email:** {city_row.get('Department Email','—')}")
-        st.write(f"**Website:** {city_row.get('Department Website','—')}")
-        
-    else:
-        st.info("City data not available. Please update via Admin Dashboard.")
+        st.table(pd.DataFrame({
+            "Indicator": [
+                "Male Population", "Female Population", "Children (0–6 Male)", "Children (0–6 Female)",
+                "Overall Literacy (%)", "Male Literacy (%)", "Female Literacy (%)", "Migrant (%)", "Slum (%)"
+            ],
+            "Value": [
+                format_indian_number(row["Males"]),
+                format_indian_number(row["Females"]),
+                format_indian_number(row["Children Male"]),
+                format_indian_number(row["Children Female"]),
+                f"{row['Literacy (%)']}%",
+                f"{row['Male Literacy (%)']}%",
+                f"{row['Female Literacy (%)']}%",
+                f"{row['Migrant (%)']}%",
+                f"{row['Slum (%)']}%"
+            ]
+        }))
+
+        # -------- CONTACT INFO --------
+        st.subheader("Contact Information")
+        st.table(pd.DataFrame({
+            "Field": ["Department Exist", "Department Name", "Email", "Contact Number", "Website"],
+            "Details": [
+                row["Department Exist"],
+                row["Department Name"],
+                row["Email"],
+                row["Contact Number"],
+                row["Website"],
+            ]
+        }))
 
 
 # ---------------------------
