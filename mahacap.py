@@ -209,7 +209,55 @@ if menu == "Home":
     col1, col2, col3 = st.columns(3)
     col1.metric("Cities Selected", f"{total_selected}")
     col2.metric("Cities Reporting", f"{reporting}")
-    col3.metric("CAPs Completed", f"{completed}")
+# ---------------------------
+# CAP Status Summary
+# ---------------------------
+st.markdown("### 📊 CAP Status Overview")
+
+if not df.empty and "CAP Status" in df.columns:
+    status_counts = df["CAP Status"].value_counts().to_dict()
+
+    not_started = status_counts.get("Not Started", 0)
+    in_progress = status_counts.get("In Progress", 0)
+    completed = status_counts.get("Completed", 0)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(
+            f"""
+            <div style="background-color:#f8d7da; padding:20px; border-radius:12px; text-align:center;">
+                <h2 style="margin:0; color:#721c24;">{not_started}</h2>
+                <p style="margin:0; font-weight:600;">Not Started</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background-color:#fff3cd; padding:20px; border-radius:12px; text-align:center;">
+                <h2 style="margin:0; color:#856404;">{in_progress}</h2>
+                <p style="margin:0; font-weight:600;">In Progress</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col3:
+        st.markdown(
+            f"""
+            <div style="background-color:#d4edda; padding:20px; border-radius:12px; text-align:center;">
+                <h2 style="margin:0; color:#155724;">{completed}</h2>
+                <p style="margin:0; font-weight:600;">Completed</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+else:
+    st.info("No CAP status data available yet. Please update city details in Admin Panel.")
+
 
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
