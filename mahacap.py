@@ -639,12 +639,6 @@ elif menu == "GHG Inventory":
                 st.session_state.menu = "Actions"
                 st.experimental_rerun()
 
-                if st.button("View Sector-wise Net Zero Actions"):
-            if "selected_city" not in st.session_state:
-            st.session_state.selected_city = city
-        st.session_state.menu = "Actions"
-        st.experimental_rerun()
-
 # ---------------------------
 # Actions Page
 # ---------------------------
