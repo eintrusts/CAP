@@ -502,8 +502,7 @@ elif menu == "Admin":
             Population=lambda d: d["Population"].map(format_indian_number),
             GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
         ))
-st.subheader("Admin Controls")
-if st.button("Reset All Data"):
+if st.button("Reset All Data", key="reset_admin"):
     reset_all_data()
 
 # ---------------------------
@@ -630,9 +629,9 @@ elif menu == "CAP Generation":
                 st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
                 st.experimental_rerun()
 
-st.subheader("Data Collection Controls")
-if st.button("Reset All Data"):
+if st.button("Reset All Data", key="reset_cap_data"):
     reset_all_data()
+
 
 # ---------------------------
 # GHG Inventory Page
