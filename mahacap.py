@@ -315,114 +315,81 @@ elif menu == "City Information":
 # ---------------------------
 # Admin Panel
 # ---------------------------
-elif menu == "Admin":
-    st.header("Admin Board")
-
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        st.subheader("Add/Update City Data")
-        with st.form("admin_form", clear_on_submit=False):
-            city = st.selectbox("Select City", list(cities_districts.keys()))
-            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
-            dept_name = st.text_input("Department Name")
-            head_name = st.text_input("Department Head Name")
-            dept_email = st.text_input("Department Email")
-            submit_admin = st.form_submit_button("Add/Update City Data")
-
-            if submit_admin:
-                new_row = {
-                    "City Name": city,
-                    "District": cities_districts.get(city, "—"),
-                    "CAP Status": cap_status,
-                    "GHG Emissions": ghg_val,
-                    "Environment Department Exist": dept_exist,
-                    "Department Name": dept_name,
-                    "Head Name": head_name,
-                    "Department Email": dept_email
-                }
-                df_meta = st.session_state.data
-                if city in df_meta["City Name"].values:
-                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
-                else:
-                    df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.data = df_meta
-                df_meta.to_csv(DATA_FILE, index=False)
-                st.success(f"{city} data updated successfully!")
-
 if menu == "Admin":
     if not st.session_state.get("logged_in", False):
         st.warning("Please log in as Admin to continue.")
     else:
         st.header("Admin Panel – Manage City Data")
-        df = st.session_state.data.copy()
+
+        # Load stored data
+        df = st.session_state.data
 
         if df.empty:
-            st.info("No data available.")
+            st.info("No city records found. Please add data from the Input Form.")
         else:
-            st.write("### City Records")
+            # ---------------------------
+            # 1) Overview Table
+            # ---------------------------
+            st.subheader("📋 All City Records (Overview)")
+            st.dataframe(df, use_container_width=True)
 
-            # Create header row
-            header_cols = st.columns(len(df.columns) + 2)  # +2 for Edit & Delete
-            for i, colname in enumerate(df.columns):
-                header_cols[i].markdown(f"**{colname}**")
-            header_cols[-2].markdown("**Edit**")
-            header_cols[-1].markdown("**Delete**")
+            st.markdown("---")
 
-            # Create rows with data + buttons
+            # ---------------------------
+            # 2) Editable Table with Actions
+            # ---------------------------
+            st.subheader("✏️ Manage Entries")
+
             for idx, row in df.iterrows():
-                cols = st.columns(len(df.columns) + 2)
+                with st.container():
+                    cols = st.columns(len(df.columns) + 2)  # extra 2 cols for Edit/Delete
 
-                # Fill row values
-                for i, colname in enumerate(df.columns):
-                    cols[i].write(row[colname])
+                    # Show existing values
+                    for i, colname in enumerate(df.columns):
+                        cols[i].write(row[colname])
 
-                # Edit button
-                if cols[-2].button("✏️", key=f"edit_{idx}"):
-                    st.session_state["edit_row"] = idx  # store which row is being edited
+                    # --- Edit Option ---
+                    if cols[-2].button("✏️ Edit", key=f"edit_{idx}"):
+                        with st.form(f"edit_form_{idx}"):
+                            st.write(f"Editing entry for **{row['City Name']}**")
 
-                # Delete button
-                if cols[-1].button("🗑️", key=f"delete_{idx}"):
-                    df = df.drop(idx)
-                    st.session_state.data = df
-                    st.success(f"✅ {row['City Name']} deleted successfully!")
-                    st.experimental_rerun()
+                            new_name = st.text_input("City Name", row["City Name"])
+                            new_pop = st.number_input(
+                                "Population",
+                                value=int(row["Population"]) if "Population" in df.columns else 0
+                            )
+                            new_ghg = st.number_input(
+                                "GHG Emissions (tCO2e)",
+                                value=float(row["GHG Emissions"]) if "GHG Emissions" in df.columns else 0.0
+                            )
+                            new_status = st.selectbox(
+                                "CAP Status",
+                                ["Not Started", "In Progress", "Completed"],
+                                index=["Not Started", "In Progress", "Completed"].index(row["CAP Status"])
+                                if "CAP Status" in df.columns and row["CAP Status"] in ["Not Started", "In Progress", "Completed"] else 0
+                            )
 
-            # Show edit form if a row is selected
-            if "edit_row" in st.session_state:
-                edit_idx = st.session_state["edit_row"]
-                row = df.loc[edit_idx]
+                            submitted = st.form_submit_button("Save Changes")
+                            if submitted:
+                                df.loc[idx, "City Name"] = new_name
+                                if "Population" in df.columns:
+                                    df.loc[idx, "Population"] = new_pop
+                                if "GHG Emissions" in df.columns:
+                                    df.loc[idx, "GHG Emissions"] = new_ghg
+                                if "CAP Status" in df.columns:
+                                    df.loc[idx, "CAP Status"] = new_status
 
-                st.markdown("---")
-                st.subheader(f"Edit Entry – {row['City Name']}")
+                                st.session_state.data = df
+                                st.success(f"✅ {new_name} updated successfully!")
+                                st.experimental_rerun()
 
-                with st.form(f"edit_form_{edit_idx}", clear_on_submit=True):
-                    new_name = st.text_input("City Name", value=row["City Name"])
-                    new_pop = st.number_input("Population", 
-                                              value=int(row["Population"]) if "Population" in df.columns else 0)
-                    new_ghg = st.number_input("Reported GHG Emissions (tCO2e)", 
-                                              value=float(row["GHG Emissions"]) if "GHG Emissions" in df.columns else 0.0)
-                    new_status = st.selectbox("CAP Status", 
-                                              ["Not Started", "In Progress", "Completed"], 
-                                              index=["Not Started", "In Progress", "Completed"].index(row["CAP Status"]) 
-                                              if "CAP Status" in df.columns and row["CAP Status"] in ["Not Started", "In Progress", "Completed"] else 0)
-
-                    submitted = st.form_submit_button("Save Changes")
-                    if submitted:
-                        df.loc[edit_idx, "City Name"] = new_name
-                        if "Population" in df.columns:
-                            df.loc[edit_idx, "Population"] = new_pop
-                        if "GHG Emissions" in df.columns:
-                            df.loc[edit_idx, "GHG Emissions"] = new_ghg
-                        if "CAP Status" in df.columns:
-                            df.loc[edit_idx, "CAP Status"] = new_status
-
+                    # --- Delete Option ---
+                    if cols[-1].button("🗑️ Delete", key=f"delete_{idx}"):
+                        df = df.drop(idx)
                         st.session_state.data = df
-                        st.success(f"✅ {row['City Name']} updated successfully!")
-                        del st.session_state["edit_row"]  # reset edit state
+                        st.success(f"✅ {row['City Name']} deleted successfully!")
                         st.experimental_rerun()
+
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
