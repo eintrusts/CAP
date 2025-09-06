@@ -524,127 +524,110 @@ if menu == "Home":
 # City Information Page
 # ---------------------------
 elif menu == "City Information":
-    st.header("City Information Dashboard")
+    st.markdown("<h2 style='color:#E0E0E0;'>City Information Dashboard</h2>", unsafe_allow_html=True)
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
 
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
 
+        st.markdown("---", unsafe_allow_html=True)
+
         # =====================
         # BASIC INFORMATION
         # =====================
-        st.subheader("Basic Information")
+        st.markdown("<h4 style='color:#B0BEC5;'>Basic Information</h4>", unsafe_allow_html=True)
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
-        density = round(population/area, 2) if area else "—"
-
-        basic_cols = st.columns(4)
-        basic_cols[0].metric("District", row.get("District", "—"))
-        basic_cols[1].metric("ULB Category", row.get("ULB Category", "—"))
-        basic_cols[2].metric("Population", format_indian_number(population))
-        basic_cols[3].metric("Area (sq.km)", area)
-
-        extra_cols = st.columns(3)
-        extra_cols[0].metric("Density (/sq.km)", density)
-        extra_cols[1].metric("Est. Year", row.get("Est. Year", "—"))
+        density = round(population / area, 2) if area else "—"
         cap_status = row.get("CAP Status", "—")
-        cap_color = "green" if cap_status.lower() == "completed" else ("orange" if cap_status.lower() == "in progress" else "red")
-        extra_cols[2].markdown(f"<div style='background-color:{cap_color}; color:white; text-align:center; padding:5px; border-radius:5px'>{cap_status}</div>", unsafe_allow_html=True)
+        cap_color = "#66BB6A" if cap_status.lower() == "completed" else ("#FFA726" if cap_status.lower() == "in progress" else "#EF5350")
 
-        st.markdown("---")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.markdown(f"<div style='background-color:#263238; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>District</b><br>{row.get('District', '—')}</div>", unsafe_allow_html=True)
+        col2.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>ULB Category</b><br>{row.get('ULB Category', '—')}</div>", unsafe_allow_html=True)
+        col3.markdown(f"<div style='background-color:#455A64; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Population</b><br>{format_indian_number(population)}</div>", unsafe_allow_html=True)
+        col4.markdown(f"<div style='background-color:#546E7A; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Area (sq.km)</b><br>{area}</div>", unsafe_allow_html=True)
+
+        col5, col6, col7 = st.columns(3)
+        col5.markdown(f"<div style='background-color:#263238; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Density (/sq.km)</b><br>{density}</div>", unsafe_allow_html=True)
+        col6.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Est. Year</b><br>{row.get('Est. Year', '—')}</div>", unsafe_allow_html=True)
+        col7.markdown(f"<div style='background-color:{cap_color}; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>CAP Status</b><br>{cap_status}</div>", unsafe_allow_html=True)
+
+        st.markdown("---", unsafe_allow_html=True)
 
         # =====================
         # ENVIRONMENTAL INFORMATION
         # =====================
-        st.subheader("Environmental Information")
+        st.markdown("<h4 style='color:#B0BEC5;'>Environmental Information</h4>", unsafe_allow_html=True)
         ghg_total = row.get("GHG Emissions", 0)
-        per_capita_ghg = round(ghg_total/population, 2) if population else 0
+        per_capita_ghg = round(ghg_total / population, 2) if population else 0
 
-        env_cols = st.columns(3)
-        env_cols[0].metric("Total GHG Emissions (tCO2e)", format_indian_number(ghg_total))
-        env_cols[1].metric("Per Capita Emissions", per_capita_ghg)
-        env_cols[2].metric("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0)))
+        col1, col2, col3 = st.columns(3)
+        col1.markdown(f"<div style='background-color:#1B5E20; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>GHG Emissions (tCO2e)</b><br>{format_indian_number(ghg_total)}</div>", unsafe_allow_html=True)
+        col2.markdown(f"<div style='background-color:#2E7D32; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Per Capita Emissions</b><br>{per_capita_ghg}</div>", unsafe_allow_html=True)
+        col3.markdown(f"<div style='background-color:#388E3C; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Renewable Energy (MWh)</b><br>{format_indian_number(row.get('Renewable Energy (MWh)',0))}</div>", unsafe_allow_html=True)
 
-        env_cols2 = st.columns(3)
-        env_cols2[0].metric("Urban Green Area (ha)", format_indian_number(row.get("Urban Green Area (ha)", 0)))
-        env_cols2[1].metric("Municipal Solid Waste (tons)", format_indian_number(row.get("Municipal Solid Waste (tons)", 0)))
-        env_cols2[2].metric("Wastewater Treated (m³)", format_indian_number(row.get("Wastewater Treated (m3)", 0)))
+        col4, col5, col6 = st.columns(3)
+        col4.markdown(f"<div style='background-color:#1B5E20; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Urban Green Area (ha)</b><br>{format_indian_number(row.get('Urban Green Area (ha)',0))}</div>", unsafe_allow_html=True)
+        col5.markdown(f"<div style='background-color:#2E7D32; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Solid Waste (tons)</b><br>{format_indian_number(row.get('Municipal Solid Waste (tons)',0))}</div>", unsafe_allow_html=True)
+        col6.markdown(f"<div style='background-color:#388E3C; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Wastewater Treated (m³)</b><br>{format_indian_number(row.get('Wastewater Treated (m3)',0))}</div>", unsafe_allow_html=True)
 
-        env_cols3 = st.columns(2)
-        env_cols3[0].metric("Waste Landfilled (%)", f"{row.get('Waste Landfilled (%)', 0)}%")
-        env_cols3[1].metric("Waste Composted (%)", f"{row.get('Waste Composted (%)', 0)}%")
+        col7, col8 = st.columns(2)
+        col7.markdown(f"<div style='background-color:#43A047; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Waste Landfilled (%)</b><br>{row.get('Waste Landfilled (%)',0)}%</div>", unsafe_allow_html=True)
+        col8.markdown(f"<div style='background-color:#66BB6A; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Waste Composted (%)</b><br>{row.get('Waste Composted (%)',0)}%</div>", unsafe_allow_html=True)
 
-        # Optional: Environmental Chart
-        env_chart_data = pd.DataFrame({
-            "Category": ["GHG Emissions", "Solid Waste", "Wastewater Treated"],
-            "Value": [ghg_total, row.get("Municipal Solid Waste (tons)", 0), row.get("Wastewater Treated (m3)", 0)]
-        })
-        fig_env = px.bar(env_chart_data, x="Category", y="Value", text="Value", title="Environmental Metrics")
-        fig_env.update_layout(plot_bgcolor="#f5f5f5", paper_bgcolor="#f5f5f5", font_color="#111")
-        st.plotly_chart(fig_env, use_container_width=True)
-
-        st.markdown("---")
+        st.markdown("---", unsafe_allow_html=True)
 
         # =====================
         # SOCIAL INFORMATION
         # =====================
-        st.subheader("Social Information")
+        st.markdown("<h4 style='color:#B0BEC5;'>Social Information</h4>", unsafe_allow_html=True)
         males = row.get("Males", 0)
         females = row.get("Females", 0)
         total_pop = males + females
-
-        children_m = row.get("Children Male", 0)
-        children_f = row.get("Children Female", 0)
+        children_m = row.get("Children Male",0)
+        children_f = row.get("Children Female",0)
         total_children = children_m + children_f
-
-        literacy_m = row.get("Male Literacy (%)", 0)
-        literacy_f = row.get("Female Literacy (%)", 0)
+        literacy_m = row.get("Male Literacy (%)",0)
+        literacy_f = row.get("Female Literacy (%)",0)
         literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2,2))
 
-        social_cols1 = st.columns(3)
-        social_cols1[0].metric("Male Population", format_indian_number(males))
-        social_cols1[1].metric("Female Population", format_indian_number(females))
-        social_cols1[2].metric("Total Population", format_indian_number(total_pop))
+        col1, col2, col3 = st.columns(3)
+        col1.markdown(f"<div style='background-color:#FF6F00; color:#FFF3E0; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Male Population</b><br>{format_indian_number(males)}</div>", unsafe_allow_html=True)
+        col2.markdown(f"<div style='background-color:#FF8F00; color:#FFF3E0; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Female Population</b><br>{format_indian_number(females)}</div>", unsafe_allow_html=True)
+        col3.markdown(f"<div style='background-color:#FF6F00; color:#FFF3E0; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Total Population</b><br>{format_indian_number(total_pop)}</div>", unsafe_allow_html=True)
 
-        social_cols2 = st.columns(3)
-        social_cols2[0].metric("Children (0–6 Male)", format_indian_number(children_m))
-        social_cols2[1].metric("Children (0–6 Female)", format_indian_number(children_f))
-        social_cols2[2].metric("Total Children", format_indian_number(total_children))
+        col4, col5, col6 = st.columns(3)
+        col4.markdown(f"<div style='background-color:#FFB300; color:#FFF3E0; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Children (0–6 Male)</b><br>{format_indian_number(children_m)}</div>", unsafe_allow_html=True)
+        col5.markdown(f"<div style='background-color:#FFC107; color:#FFF3E0; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Children (0–6 Female)</b><br>{format_indian_number(children_f)}</div>", unsafe_allow_html=True)
+        col6.markdown(f"<div style='background-color:#FFB300; color:#FFF3E0; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Total Children</b><br>{format_indian_number(total_children)}</div>", unsafe_allow_html=True)
 
-        social_cols3 = st.columns(3)
-        social_cols3[0].metric("Male Literacy (%)", f"{literacy_m}%")
-        social_cols3[1].metric("Female Literacy (%)", f"{literacy_f}%")
-        social_cols3[2].metric("Overall Literacy (%)", f"{literacy_total}%")
+        col7, col8, col9 = st.columns(3)
+        col7.markdown(f"<div style='background-color:#6A1B9A; color:#EDE7F6; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Male Literacy (%)</b><br>{literacy_m}%</div>", unsafe_allow_html=True)
+        col8.markdown(f"<div style='background-color:#8E24AA; color:#EDE7F6; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Female Literacy (%)</b><br>{literacy_f}%</div>", unsafe_allow_html=True)
+        col9.markdown(f"<div style='background-color:#6A1B9A; color:#EDE7F6; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Overall Literacy (%)</b><br>{literacy_total}%</div>", unsafe_allow_html=True)
 
-        social_cols4 = st.columns(3)
-        social_cols4[0].metric("Slum Population (%)", f"{row.get('Slum (%)', 0)}%")
-        social_cols4[1].metric("Migrant Population (%)", f"{row.get('Migrant (%)', 0)}%")
-        social_cols4[2].metric("BPL Households (%)", f"{row.get('BPL Households (%)', 0)}%")
+        col10, col11, col12 = st.columns(3)
+        col10.markdown(f"<div style='background-color:#00695C; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Slum Population (%)</b><br>{row.get('Slum (%)',0)}%</div>", unsafe_allow_html=True)
+        col11.markdown(f"<div style='background-color:#00897B; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Migrant Population (%)</b><br>{row.get('Migrant (%)',0)}%</div>", unsafe_allow_html=True)
+        col12.markdown(f"<div style='background-color:#00695C; color:#E0F2F1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>BPL Households (%)</b><br>{row.get('BPL Households (%)',0)}%</div>", unsafe_allow_html=True)
 
-        # Optional: Social Distribution Chart
-        social_chart_data = pd.DataFrame({
-            "Category": ["Male", "Female", "Children (0–6)"],
-            "Value": [males, females, total_children]
-        })
-        fig_social = px.pie(social_chart_data, names="Category", values="Value", title="Population Distribution")
-        st.plotly_chart(fig_social, use_container_width=True)
-
-        st.markdown("---")
+        st.markdown("---", unsafe_allow_html=True)
 
         # =====================
         # CONTACT INFORMATION
         # =====================
-        st.subheader("Contact Information")
-        contact_cols1 = st.columns(2)
-        contact_cols1[0].metric("Department Exist", row.get("Department Exist", "—"))
-        contact_cols1[1].metric("Department Name", row.get("Department Name", "—"))
+        st.markdown("<h4 style='color:#B0BEC5;'>Contact Information</h4>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        c1.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Department Exist</b><br>{row.get('Department Exist','—')}</div>", unsafe_allow_html=True)
+        c2.markdown(f"<div style='background-color:#455A64; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Department Name</b><br>{row.get('Department Name','—')}</div>", unsafe_allow_html=True)
 
-        contact_cols2 = st.columns(2)
-        contact_cols2[0].metric("Email", row.get("Email", "—"))
-        contact_cols2[1].metric("Contact Number", row.get("Contact Number", "—"))
+        c3, c4 = st.columns(2)
+        c3.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Email</b><br>{row.get('Email','—')}</div>", unsafe_allow_html=True)
+        c4.markdown(f"<div style='background-color:#455A64; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Contact Number</b><br>{row.get('Contact Number','—')}</div>", unsafe_allow_html=True)
 
-        st.metric("Website", row.get("Website", "—"))
+        st.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>Website</b><br>{row.get('Website','—')}</div>", unsafe_allow_html=True)
 
 # ---------------------------
 # Admin Panel Page
