@@ -398,48 +398,73 @@ elif menu == "Admin":
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
-    st.header("CAP : Raw Data Collection for GHG Inventory")
+    st.header("CAP : Raw Data Collection for Comprehensive GHG Inventory")
 
     if not st.session_state.authenticated:
         admin_login()
     else:
         st.markdown("""
-        Enter city-level activity data below. This data will be used to automatically calculate GHG emissions
-        for each sector based on GPC/C40/ICLEI guidelines.
+        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
+        GPC/C40/ICLEI guidelines. Only raw data is collected; emissions are calculated automatically.
         """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
 
-            st.subheader("Population & Housing")
+            # --- Demographics ---
+            st.subheader("Population & Demographics")
             population = st.number_input("Total Population", min_value=0, value=0, step=1000)
             households = st.number_input("Number of Households", min_value=0, value=0, step=100)
-            avg_household_electricity_kwh = st.number_input("Average Household Electricity Consumption (kWh/year)", min_value=0, value=0, step=100)
+            urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
+            # --- Electricity & Energy ---
+            st.subheader("Electricity & Energy Use")
+            residential_electricity_mwh = st.number_input("Residential Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
+            commercial_electricity_mwh = st.number_input("Commercial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
+            industrial_electricity_mwh = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
+            streetlights_energy_mwh = st.number_input("Streetlights & Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
+
+            # --- Fuel Consumption (Transport + Industry) ---
             st.subheader("Transport Activity")
             vehicles_diesel = st.number_input("Number of Diesel Vehicles", min_value=0, value=0, step=10)
             vehicles_petrol = st.number_input("Number of Petrol Vehicles", min_value=0, value=0, step=10)
             vehicles_cng = st.number_input("Number of CNG Vehicles", min_value=0, value=0, step=10)
+            vehicles_lpg = st.number_input("Number of LPG Vehicles", min_value=0, value=0, step=10)
             vehicles_electric = st.number_input("Number of Electric Vehicles", min_value=0, value=0, step=10)
-            avg_km_per_vehicle_year = st.number_input("Average km per vehicle per year", min_value=0, value=0, step=100)
+            avg_km_per_vehicle_year = st.number_input("Average km per Vehicle per Year", min_value=0, value=0, step=100)
 
-            st.subheader("Industry & Commercial Activity")
-            industrial_energy_mwh = st.number_input("Total Industrial Energy Use (MWh/year)", min_value=0, value=0, step=100)
-            industrial_fuel_tons = st.number_input("Total Industrial Fuel Consumption (tons/year)", min_value=0, value=0, step=10)
+            st.subheader("Industry & Commercial Fuel Use")
+            industrial_fuel_diesel_tons = st.number_input("Industrial Diesel Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_fuel_petrol_tons = st.number_input("Industrial Petrol Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_fuel_cng_tons = st.number_input("Industrial CNG Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_fuel_lpg_tons = st.number_input("Industrial LPG Fuel (tons/year)", min_value=0, value=0, step=10)
+            industrial_energy_mwh = st.number_input("Industrial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
 
+            # --- Buildings & Commercial Activity ---
             st.subheader("Buildings & Commercial")
-            commercial_energy_mwh = st.number_input("Total Commercial Energy Use (MWh/year)", min_value=0, value=0, step=100)
-            residential_energy_mwh = st.number_input("Total Residential Energy Use (MWh/year)", min_value=0, value=0, step=100)
+            residential_energy_mwh = st.number_input("Residential Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
+            commercial_energy_mwh = st.number_input("Commercial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
+            public_buildings_energy_mwh = st.number_input("Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
 
-            st.subheader("Waste")
+            # --- Waste ---
+            st.subheader("Waste Management")
             municipal_solid_waste_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, value=0, step=10)
+            fraction_landfilled = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+            fraction_composted = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
             wastewater_volume_m3 = st.number_input("Wastewater Treated (m3/year)", min_value=0, value=0, step=1000)
 
+            # --- Water Supply & Sewage ---
             st.subheader("Water & Sewage")
             water_supply_m3 = st.number_input("Total Water Supplied (m3/year)", min_value=0, value=0, step=1000)
+            energy_for_water_mwh = st.number_input("Energy Used for Water Supply & Treatment (MWh/year)", min_value=0, value=0, step=10)
 
-            st.subheader("Urban Green & Other")
+            # --- Urban Green / Other ---
+            st.subheader("Urban Green / Other")
             urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
+            renewable_energy_mwh = st.number_input("Renewable Energy Generated in City (MWh/year)", min_value=0, value=0, step=10)
+
+            # --- Optional Files / Verification ---
+            file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
 
             submit_cap = st.form_submit_button("Submit Raw Data and Generate GHG Inventory")
 
@@ -449,20 +474,33 @@ elif menu == "CAP Preparation":
                     "City Name": city,
                     "Population": population,
                     "Households": households,
-                    "Avg Household Electricity (kWh)": avg_household_electricity_kwh,
+                    "Urbanization Rate (%)": urbanization_rate,
+                    "Residential Electricity (MWh)": residential_electricity_mwh,
+                    "Commercial Electricity (MWh)": commercial_electricity_mwh,
+                    "Industrial Electricity (MWh)": industrial_electricity_mwh,
+                    "Streetlights Energy (MWh)": streetlights_energy_mwh,
                     "Diesel Vehicles": vehicles_diesel,
                     "Petrol Vehicles": vehicles_petrol,
                     "CNG Vehicles": vehicles_cng,
+                    "LPG Vehicles": vehicles_lpg,
                     "Electric Vehicles": vehicles_electric,
-                    "Avg km per Vehicle/Year": avg_km_per_vehicle_year,
+                    "Avg km/Vehicle": avg_km_per_vehicle_year,
+                    "Industrial Diesel (tons)": industrial_fuel_diesel_tons,
+                    "Industrial Petrol (tons)": industrial_fuel_petrol_tons,
+                    "Industrial CNG (tons)": industrial_fuel_cng_tons,
+                    "Industrial LPG (tons)": industrial_fuel_lpg_tons,
                     "Industrial Energy (MWh)": industrial_energy_mwh,
-                    "Industrial Fuel (tons)": industrial_fuel_tons,
-                    "Commercial Energy (MWh)": commercial_energy_mwh,
                     "Residential Energy (MWh)": residential_energy_mwh,
+                    "Commercial Energy (MWh)": commercial_energy_mwh,
+                    "Public Buildings Energy (MWh)": public_buildings_energy_mwh,
                     "Municipal Solid Waste (tons)": municipal_solid_waste_tons,
+                    "Waste Landfilled (%)": fraction_landfilled,
+                    "Waste Composted (%)": fraction_composted,
                     "Wastewater Treated (m3)": wastewater_volume_m3,
                     "Water Supplied (m3)": water_supply_m3,
+                    "Energy for Water (MWh)": energy_for_water_mwh,
                     "Urban Green Area (ha)": urban_green_area_ha,
+                    "Renewable Energy (MWh)": renewable_energy_mwh,
                     "Submission Date": datetime.now()
                 }
 
