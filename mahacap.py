@@ -1321,10 +1321,11 @@ elif menu == "GHG Inventory":
                 """)
 
                 st.success(f"GHG Inventory for {selected_city} generated successfully!")
-# --- Bottom Actions Button ---
-st.markdown("---")
-if st.button("View Actions / Goals for Net Zero by 2050"):
-    st.session_state.menu = "Actions / Goals"
-    st.experimental_rerun()
+
+                # --- Bottom Actions Button ---
+                st.markdown("---")
+                if st.button("View Actions / Goals for Net Zero by 2050"):
+                st.session_state.menu = "Actions / Goals"
+                st.experimental_rerun()
 
 
