@@ -521,10 +521,10 @@ if menu == "Home":
         st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page (SaaS Dashboard Enhanced)
+# City Information Page (Minimalist Dark SaaS Style)
 # ---------------------------
 elif menu == "City Information":
-    st.markdown("<h2 style='color:#ECEFF1; margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#ECEFF1; margin-bottom:10px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
 
@@ -532,29 +532,8 @@ elif menu == "City Information":
         row = df_meta[df_meta["City Name"] == city].iloc[0]
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
-        # -------- Utility Function for Cards --------
-        def render_card(col, label, value, bg_color="#37474F", font_size=15, bold=False):
-            weight = "bold" if bold else "normal"
-            card_html = f"""
-            <div style='
-                background:{bg_color};
-                color:#ECEFF1;
-                padding:16px 10px;
-                border-radius:10px;
-                font-size:{font_size}px;
-                font-weight:{weight};
-                text-align:center;
-                min-height:75px;
-                margin-bottom:8px;
-            '>
-                <div>{label}</div>
-                <div style='font-size:{font_size+4}px; margin-top:4px;'>{value}</div>
-            </div>
-            """
-            col.markdown(card_html, unsafe_allow_html=True)
-
         # ---------- BASIC INFORMATION ----------
-        st.markdown("<h4 style='background: linear-gradient(90deg, #455A64, #607D8B); padding:6px 10px; border-radius:5px; color:#ECEFF1;'>Basic Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#CFD8DC;'>Basic Information</h4>", unsafe_allow_html=True)
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
         density = round(population / area, 2) if area else "—"
@@ -571,17 +550,32 @@ elif menu == "City Information":
             ("CAP Status", cap_status)
         ]
 
+        def render_card(col, label, value, bg_color="#37474F"):
+            card_html = f"""
+            <div style='
+                background-color:{bg_color};
+                color:#ECEFF1;
+                padding:14px 10px;
+                border-radius:8px;
+                font-size:15px;
+                text-align:center;
+                min-height:70px;
+            '>
+                <b>{label}</b><br>{value}
+            </div>
+            """
+            col.markdown(card_html, unsafe_allow_html=True)
+
         for i in range(0, len(basic_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
-                bg = cap_color if label == "CAP Status" else "#37474F"
-                font_bold = True if label in ["Population", "CAP Status"] else False
-                render_card(col, label, value, bg_color=bg, font_size=15, bold=font_bold)
+                bg_color = cap_color if label == "CAP Status" else "#37474F"
+                render_card(col, label, value, bg_color)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- ENVIRONMENTAL INFORMATION ----------
-        st.markdown("<h4 style='background: linear-gradient(90deg, #37474F, #546E7A); padding:6px 10px; border-radius:5px; color:#ECEFF1;'>Environmental Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#CFD8DC;'>Environmental Information</h4>", unsafe_allow_html=True)
         ghg_total = row.get("GHG Emissions", 0)
         per_capita_ghg = round(ghg_total / population, 2) if population else 0
 
@@ -599,21 +593,20 @@ elif menu == "City Information":
         for i in range(0, len(env_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, env_metrics[i:i+3]):
-                bold = True if label in ["GHG Emissions (tCO2e)", "Per Capita Emissions"] else False
-                render_card(col, label, value, font_size=14, bold=bold)
+                render_card(col, label, value)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- SOCIAL INFORMATION ----------
-        st.markdown("<h4 style='background: linear-gradient(90deg, #37474F, #607D8B); padding:6px 10px; border-radius:5px; color:#ECEFF1;'>Social Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#CFD8DC;'>Social Information</h4>", unsafe_allow_html=True)
         males = row.get("Males", 0)
         females = row.get("Females", 0)
         total_pop = males + females
-        children_m = row.get("Children Male", 0)
-        children_f = row.get("Children Female", 0)
+        children_m = row.get("Children Male",0)
+        children_f = row.get("Children Female",0)
         total_children = children_m + children_f
-        literacy_m = row.get("Male Literacy (%)", 0)
-        literacy_f = row.get("Female Literacy (%)", 0)
+        literacy_m = row.get("Male Literacy (%)",0)
+        literacy_f = row.get("Female Literacy (%)",0)
         literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2,2))
 
         social_metrics = [
@@ -634,13 +627,12 @@ elif menu == "City Information":
         for i in range(0, len(social_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, social_metrics[i:i+3]):
-                bold = True if label in ["Total Population", "Total Children", "Overall Literacy (%)"] else False
-                render_card(col, label, value, font_size=14, bold=bold)
+                render_card(col, label, value)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- CONTACT INFORMATION ----------
-        st.markdown("<h4 style='background: linear-gradient(90deg, #455A64, #607D8B); padding:6px 10px; border-radius:5px; color:#ECEFF1;'>Contact Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#CFD8DC;'>Contact Information</h4>", unsafe_allow_html=True)
         contact_metrics = [
             ("Department Exist", row.get("Department Exist","—")),
             ("Department Name", row.get("Department Name","—")),
@@ -652,7 +644,7 @@ elif menu == "City Information":
         for i in range(0, len(contact_metrics), 2):
             cols = st.columns(2)
             for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
-                render_card(col, label, value, font_size=14)
+                render_card(col, label, value)
 
 # ---------------------------
 # Admin Panel Page
