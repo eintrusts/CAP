@@ -250,7 +250,7 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Professional SaaS Style with Sliding Active Highlight)
+# Sidebar (Premium SaaS Dark Gradient Style)
 # ---------------------------
 st.markdown("""
 <style>
@@ -270,7 +270,7 @@ st.markdown("""
 
 /* Sidebar buttons */
 [data-testid="stSidebar"] button {
-    background-color: #2A2E33;
+    background: linear-gradient(90deg, #2A2E33 0%, #2A2E33 100%);
     color: #ECEFF1;
     width: 100%;
     height: 55px;
@@ -289,9 +289,9 @@ st.markdown("""
     overflow: hidden;
 }
 
-/* Hover effect */
+/* Hover effect with subtle gradient */
 [data-testid="stSidebar"] button:hover {
-    background-color: #3A3F46;
+    background: linear-gradient(90deg, #3A3F46 0%, #2F343C 100%);
     transform: translateX(3px);
     cursor: pointer;
 }
@@ -309,9 +309,9 @@ st.markdown("""
     transition: all 0.3s ease-in-out;
 }
 
-/* Active button style */
+/* Active button gradient */
 [data-testid="stSidebar"] button[data-active="true"] {
-    background-color: #3A3F46;
+    background: linear-gradient(90deg, #3A3F46 0%, #343A42 100%);
     color: #FFFFFF;
     font-weight: 700;
 }
@@ -351,7 +351,7 @@ for label, page_name in menu_items:
     is_active = st.session_state.menu == page_name
     if st.sidebar.button(label, key=label):
         st.session_state.menu = page_name
-        is_active = True  # ensure immediate update on click
+        is_active = True
     st.markdown(f"""
     <script>
     const btn = window.parent.document.querySelector('button[key="{label}"]');
