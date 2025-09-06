@@ -6,16 +6,6 @@ import os
 import io
 from datetime import datetime
 
-# PDF support
-try:
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet
-    PDF_AVAILABLE = True
-except:
-    PDF_AVAILABLE = False
-
 # ---------------------------
 # Page Config
 # ---------------------------
@@ -420,34 +410,17 @@ elif menu == "City Information":
     last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
     st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
 
-    # --- PDF Download ---
-    if PDF_AVAILABLE:
-        st.subheader("Download GHG Inventory Report")
-        with st.form("pdf_form"):
-            user_name = st.text_input("Your Full Name")
-            user_email = st.text_input("Your Work Email")
-            user_contact = st.text_input("Contact Number")
-            submit_pdf = st.form_submit_button("Generate PDF")
-            if submit_pdf:
-                buffer = io.BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4)
-                elements = []
-                styles = getSampleStyleSheet()
-                elements.append(Paragraph(f"{city} — GHG Inventory Report", styles["Title"]))
-                elements.append(Spacer(1, 12))
-                data = [["Sector", "Emissions (tCO2e)"]] + [[s, format_indian_number(round(v))] for s, v in sectors.items()]
-                t = Table(data, hAlign="LEFT")
-                t.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3E6BE6")),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.white)
-                ]))
-                elements.append(t)
-                doc.build(elements)
-                buffer.seek(0)
-                st.download_button("Download PDF", buffer, file_name=f"{city}_GHG_Report.pdf", mime="application/pdf")
-    else:
-        st.warning("PDF generation not available. Install reportlab library.")
+    # --- CSV Download ---
+if sectors:
+    st.subheader("Download GHG Inventory (CSV)")
+    csv_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions (tCO2e)": list(sectors.values())})
+    csv = csv_df.to_csv(index=False)
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name=f"{city}_GHG_Inventory.csv",
+        mime="text/csv"
+    )
 
 # ---------------------------
 # Admin Panel
