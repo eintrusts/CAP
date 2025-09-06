@@ -366,6 +366,17 @@ elif menu == "City Information":
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
 
+        # Helper function for conditional formatting
+        def format_metric(value, positive=True):
+            """Returns value with color: green if positive, red if negative/warning"""
+            if isinstance(value, (int, float)):
+                if positive:
+                    color = "green" if value > 0 else "gray"
+                else:
+                    color = "red" if value > 0 else "gray"
+                return f"<span style='color:{color}; font-weight:bold'>{value}</span>"
+            return value
+
         # =====================
         # BASIC INFORMATION
         # =====================
@@ -378,7 +389,6 @@ elif menu == "City Information":
         est_year = row.get("Est. Year", "—")
         cap_status = row.get("CAP Status", "—")
 
-        # KPI Card Grid for Basic Info
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("District", district)
         col2.metric("ULB Category", ulb_category)
@@ -405,20 +415,19 @@ elif menu == "City Information":
         waste_landfilled = row.get("Waste Landfilled (%)", 0)
         waste_composted = row.get("Waste Composted (%)", 0)
 
-        # KPI Cards with 3 per row
         col1, col2, col3 = st.columns(3)
-        col1.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
-        col2.metric("Per Capita Emissions", per_capita)
-        col3.metric("Renewable Energy (MWh)", format_indian_number(renewable_energy))
+        col1.metric("GHG Emissions (tCO2e)", format_metric(format_indian_number(ghg_total), positive=False))
+        col2.metric("Per Capita Emissions", format_metric(per_capita, positive=False))
+        col3.metric("Renewable Energy (MWh)", format_metric(format_indian_number(renewable_energy), positive=True))
 
         col4, col5, col6 = st.columns(3)
-        col4.metric("Urban Green Area (ha)", format_indian_number(green_area))
-        col5.metric("Solid Waste (tons)", format_indian_number(solid_waste))
-        col6.metric("Wastewater Treated (m³)", format_indian_number(wastewater))
+        col4.metric("Urban Green Area (ha)", format_metric(format_indian_number(green_area), positive=True))
+        col5.metric("Solid Waste (tons)", format_metric(format_indian_number(solid_waste), positive=False))
+        col6.metric("Wastewater Treated (m³)", format_metric(format_indian_number(wastewater), positive=True))
 
         col7, col8 = st.columns(2)
-        col7.metric("Waste Landfilled (%)", f"{waste_landfilled}%")
-        col8.metric("Waste Composted (%)", f"{waste_composted}%")
+        col7.metric("Waste Landfilled (%)", format_metric(waste_landfilled, positive=False))
+        col8.metric("Waste Composted (%)", format_metric(waste_composted, positive=True))
 
         st.markdown("---")
 
@@ -443,26 +452,26 @@ elif menu == "City Information":
         slum = row.get("Slum (%)", 0)
         bpl = row.get("BPL Households (%)", 0)
 
-        # KPI Cards for Social
+        # KPI Cards for Social with conditional colors
         col1, col2, col3 = st.columns(3)
-        col1.metric("Male Population", format_indian_number(males))
-        col2.metric("Female Population", format_indian_number(females))
-        col3.metric("Total Population", format_indian_number(total_population))
+        col1.metric("Male Population", format_metric(format_indian_number(males), positive=True))
+        col2.metric("Female Population", format_metric(format_indian_number(females), positive=True))
+        col3.metric("Total Population", format_metric(format_indian_number(total_population), positive=True))
 
         col4, col5, col6 = st.columns(3)
-        col4.metric("Children (0–6 Male)", format_indian_number(children_m))
-        col5.metric("Children (0–6 Female)", format_indian_number(children_f))
-        col6.metric("Total Children (0–6)", format_indian_number(total_children))
+        col4.metric("Children (0–6 Male)", format_metric(format_indian_number(children_m), positive=True))
+        col5.metric("Children (0–6 Female)", format_metric(format_indian_number(children_f), positive=True))
+        col6.metric("Total Children (0–6)", format_metric(format_indian_number(total_children), positive=True))
 
         col7, col8, col9 = st.columns(3)
-        col7.metric("Male Literacy (%)", f"{literacy_m}%")
-        col8.metric("Female Literacy (%)", f"{literacy_f}%")
-        col9.metric("Average Literacy (%)", f"{literacy_avg}%")
+        col7.metric("Male Literacy (%)", format_metric(literacy_m, positive=True))
+        col8.metric("Female Literacy (%)", format_metric(literacy_f, positive=True))
+        col9.metric("Average Literacy (%)", format_metric(literacy_avg, positive=True))
 
         col10, col11, col12 = st.columns(3)
-        col10.metric("Slum Population (%)", f"{slum}%")
-        col11.metric("Migrant Population (%)", f"{migrant}%")
-        col12.metric("BPL Households (%)", f"{bpl}%")
+        col10.metric("Slum Population (%)", format_metric(slum, positive=False))
+        col11.metric("Migrant Population (%)", format_metric(migrant, positive=False))
+        col12.metric("BPL Households (%)", format_metric(bpl, positive=False))
 
         st.markdown("---")
 
