@@ -531,6 +531,11 @@ elif menu == "CAP Preparation":
                 st.session_state.menu = "GHG Inventory"
                 st.experimental_rerun()
 
+st.session_state.menu = "GHG Inventory"
+st.experimental_rerun()
+
+df_cap.to_csv(CAP_DATA_FILE, index=False)
+st.session_state.last_updated = datetime.now()
 
 # ---------------------------
 # GHG Inventory Page
@@ -640,6 +645,11 @@ elif menu == "GHG Inventory":
                 st.session_state.menu = "Actions"
                 st.experimental_rerun()
 
+                if st.button("View Sector-wise Net Zero Actions"):
+            if "selected_city" not in st.session_state:
+            st.session_state.selected_city = city
+        st.session_state.menu = "Actions"
+        st.experimental_rerun()
 
 # ---------------------------
 # Actions Page
