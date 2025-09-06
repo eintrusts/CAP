@@ -358,7 +358,7 @@ if menu == "Home":
 # City Information Page
 # ---------------------------
 elif menu == "City Information":
-    st.header("City Information")
+    st.header("City Information Dashboard")
 
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
@@ -369,7 +369,7 @@ elif menu == "City Information":
         # =====================
         # BASIC INFORMATION
         # =====================
-        st.markdown("### Basic Information")
+        st.subheader("Basic Information")
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
         ulb_category = row.get("ULB Category", "—")
@@ -394,11 +394,13 @@ elif menu == "City Information":
         # =====================
         # ENVIRONMENTAL INFORMATION
         # =====================
-        st.markdown("### Environmental Information")
+        st.subheader("Environmental Information")
+        ghg_total = row.get("GHG Emissions", 0)
+        per_capita = round(ghg_total/population, 2) if population else "—"
+
         col1, col2, col3 = st.columns(3)
-        col1.metric("GHG Emissions (tCO2e)", format_indian_number(row.get("GHG Emissions", 0)))
-        per_capita = round(row.get("GHG Emissions", 0)/population, 2) if population else "—"
-        col2.metric("Per Capita Emissions (tCO2e)", per_capita)
+        col1.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
+        col2.metric("Per Capita Emissions", per_capita)
         col3.metric("Renewable Energy (MWh)", format_indian_number(row.get("Renewable Energy (MWh)", 0)))
 
         col4, col5, col6 = st.columns(3)
@@ -415,43 +417,61 @@ elif menu == "City Information":
         # =====================
         # SOCIAL INFORMATION
         # =====================
-        st.markdown("### Social Information")
+        st.subheader("Social Information")
+
+        males = row.get("Males", 0)
+        females = row.get("Females", 0)
+        total_population = males + females
+
+        children_m = row.get("Children Male", 0)
+        children_f = row.get("Children Female", 0)
+        total_children = children_m + children_f
+
+        literacy = row.get("Literacy (%)", 0)
+        literacy_m = row.get("Male Literacy (%)", 0)
+        literacy_f = row.get("Female Literacy (%)", 0)
+        literacy_avg = round((literacy_m + literacy_f) / 2, 2) if (literacy_m and literacy_f) else literacy
+
         col1, col2, col3 = st.columns(3)
-        col1.metric("Males", format_indian_number(row.get("Males", 0)))
-        col2.metric("Females", format_indian_number(row.get("Females", 0)))
-        col3.metric("Children (0–6 Male)", format_indian_number(row.get("Children Male", 0)))
+        col1.metric("Male Population", format_indian_number(males))
+        col2.metric("Female Population", format_indian_number(females))
+        col3.metric("Total Population", format_indian_number(total_population))
 
-        col4, col5 = st.columns(2)
-        col4.metric("Children (0–6 Female)", format_indian_number(row.get("Children Female", 0)))
-        col5.metric("Slum Population (%)", f"{row.get('Slum (%)', 0)}%")
+        col4, col5, col6 = st.columns(3)
+        col4.metric("Children (0–6 Male)", format_indian_number(children_m))
+        col5.metric("Children (0–6 Female)", format_indian_number(children_f))
+        col6.metric("Total Children (0–6)", format_indian_number(total_children))
 
-        col6, col7, col8 = st.columns(3)
-        col6.metric("Overall Literacy (%)", f"{row.get('Literacy (%)', 0)}%")
-        col7.metric("Male Literacy (%)", f"{row.get('Male Literacy (%)', 0)}%")
-        col8.metric("Female Literacy (%)", f"{row.get('Female Literacy (%)', 0)}%")
+        col7, col8, col9 = st.columns(3)
+        col7.metric("Overall Literacy (%)", f"{literacy}%")
+        col8.metric("Male Literacy (%)", f"{literacy_m}%")
+        col9.metric("Female Literacy (%)", f"{literacy_f}%")
 
-        col9, col10 = st.columns(2)
-        col9.metric("Migrant Population (%)", f"{row.get('Migrant (%)', 0)}%")
-        col10.metric("BPL Households (%)", f"{row.get('BPL Households (%)', 0)}%")
+        col10, col11 = st.columns(2)
+        col10.metric("Average Literacy (%)", f"{literacy_avg}%")
+        col11.metric("Slum Population (%)", f"{row.get('Slum (%)', 0)}%")
+
+        col12, col13 = st.columns(2)
+        col12.metric("Migrant Population (%)", f"{row.get('Migrant (%)', 0)}%")
+        col13.metric("BPL Households (%)", f"{row.get('BPL Households (%)', 0)}%")
 
         st.markdown("---")
 
         # =====================
         # CONTACT INFORMATION
         # =====================
-        st.markdown("### Contact Information")
-        contact_table = pd.DataFrame({
-            "Field": ["Department Exist", "Department Name", "Email", "Contact Number", "Website"],
-            "Details": [
-                row.get("Department Exist", "—"),
-                row.get("Department Name", "—"),
-                row.get("Email", "—"),
-                row.get("Contact Number", "—"),
-                row.get("Website", "—")
-            ]
-        })
-        st.table(contact_table)
+        st.subheader("Contact Information")
 
+        col1, col2 = st.columns(2)
+        col1.metric("Department Exist", row.get("Department Exist", "—"))
+        col2.metric("Department Name", row.get("Department Name", "—"))
+
+        col3, col4 = st.columns(2)
+        col3.metric("Email", row.get("Email", "—"))
+        col4.metric("Contact Number", row.get("Contact Number", "—"))
+
+        st.metric("Website", row.get("Website", "—"))
+        
 # ---------------------------
 # Admin Panel
 # ---------------------------
