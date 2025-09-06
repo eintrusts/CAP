@@ -273,16 +273,19 @@ st.markdown("""
     background-color: #2A2E33;
     color: #ECEFF1;
     width: 100%;
-    padding: 15px 0;
+    height: 55px;
     margin-bottom: 12px;
     border-radius: 6px;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
     border: none;
     transition: all 0.25s ease-in-out;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     text-align: left;
-    padding-left: 20px;
+    padding-left: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 /* Hover effect */
@@ -325,7 +328,7 @@ st.sidebar.image(
 )
 
 # ---------------------------
-# Sidebar Menu Buttons (Functional + Active Highlight)
+# Sidebar Menu Buttons
 # ---------------------------
 menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
 if st.session_state.authenticated:
@@ -335,7 +338,6 @@ for label, page_name in menu_items:
     is_active = st.session_state.menu == page_name
     if st.sidebar.button(label, key=label):
         st.session_state.menu = page_name
-    # Add data-active attribute for CSS
     st.markdown(f"""
     <script>
     const btn = window.parent.document.querySelector('button[key="{label}"]');
@@ -346,7 +348,7 @@ for label, page_name in menu_items:
     """, unsafe_allow_html=True)
 
 # ---------------------------
-# Sidebar Footer with Separator
+# Sidebar Footer
 # ---------------------------
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsafe_allow_html=True)
