@@ -146,6 +146,23 @@ def safe_get(row, col, default="—"):
         return default
 
 # ---------------------------
+# Indian Number Format
+# ---------------------------
+def format_indian_number(num):
+    try:
+        num = int(num)
+        s = str(num)[::-1]
+        lst = []
+        lst.append(s[:3])
+        s = s[3:]
+        while s:
+            lst.append(s[:2])
+            s = s[2:]
+        return ','.join(lst)[::-1]
+    except:
+        return str(num)
+
+# ---------------------------
 # Dark / Professional CSS
 # ---------------------------
 st.markdown("""
