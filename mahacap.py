@@ -5,6 +5,11 @@ import plotly.express as px
 import os
 import io
 from datetime import datetime
+import numpy as np
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+import requests
 
 # PDF support
 try:
