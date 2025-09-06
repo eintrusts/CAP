@@ -393,10 +393,7 @@ elif menu == "CAP Generation":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.markdown("""
-        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
-        GPC/C40/ICLEI guidelines.
-        """)
+        st.markdown("""Collect detailed city-level activity data for generating a comprehensive GHG inventory""")
 
         with st.form("cap_raw_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
