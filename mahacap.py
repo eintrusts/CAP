@@ -159,15 +159,78 @@ def safe_get(row, col, default="—"):
 # ---------------------------
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {background-color: #1e1e1e; color: #f0f2f0; font-family: 'Inter', sans-serif;}
-[data-testid="stSidebar"] {background-color: #060c06; color: #f0f2f0; font-family: 'Inter', sans-serif;}
-.stButton>button {background-color:#54c750; color:#f0f2f0; border-radius:8px; height:40px;}
-.stButton>button:hover {background-color:#3e3f3e;}
-[data-testid="stMetricValue"] {color:#54c750; font-weight:700; font-size:26px;}
-.stExpander>div>div>div>div {background-color:#060c06; color:#f0f2f0;}
-input, textarea, select {background-color:#060c06; color:#f0f2f0; border-color:#54c750;}
-table th {background-color:#54c750; color:white;}
-.stCard {background-color:#060c06; padding:15px; border-radius:10px; box-shadow: 0px 0px 15px rgba(0,0,0,0.5);}
+/* Main container */
+[data-testid="stAppViewContainer"] {
+    background-color: #1E1E2F; 
+    color: #E6E6E6;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background-color: #2B2B3B; 
+    color: #E6E6E6;
+}
+
+/* Buttons */
+.stButton>button {
+    background-color:#54c750; 
+    color:#FFFFFF; 
+    border-radius:8px; 
+    height:40px;
+}
+.stButton>button:hover {
+    background-color:#3a8b34;
+}
+
+/* Metrics */
+[data-testid="stMetricValue"] {
+    color:#54c750; 
+    font-weight:700;
+}
+
+/* Expander */
+.stExpander>div>div>div>div {
+    background-color:#2B2B3B; 
+    color:#E6E6E6;
+}
+
+/* Inputs */
+input, textarea, select {
+    background-color:#2B2B3B; 
+    color:#E6E6E6; 
+    border-color:#54c750;
+}
+
+/* Tables */
+.stDataFrame, .stTable {
+    color:#E6E6E6;
+    background-color:#1E1E2F;
+}
+
+/* Links */
+a {
+    color:#54c750;
+}
+
+/* Custom cards */
+.stCard {
+    background-color:#2B2B3B;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    margin-bottom:10px;
+}
+.stCard h4 {
+    margin:0;
+    font-weight:500;
+    color:#E6E6E6;
+}
+.stCard h2 {
+    margin:5px 0 0 0;
+    font-weight:700;
+    color:#54c750;
+    font-size:28px;
+}
 </style>
 """, unsafe_allow_html=True)
 # ---------------------------
