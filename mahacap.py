@@ -521,7 +521,7 @@ if menu == "Home":
         st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page
+# City Information Page (Interactive Dark SaaS Style)
 # ---------------------------
 elif menu == "City Information":
     st.markdown("<h2 style='color:#ECEFF1;'>City Information Dashboard</h2>", unsafe_allow_html=True)
@@ -533,9 +533,7 @@ elif menu == "City Information":
 
         st.markdown("---", unsafe_allow_html=True)
 
-        # =====================
-        # BASIC INFORMATION
-        # =====================
+        # ---------- BASIC INFORMATION ----------
         st.markdown("<h4 style='color:#CFD8DC;'>Basic Information</h4>", unsafe_allow_html=True)
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
@@ -543,28 +541,44 @@ elif menu == "City Information":
         cap_status = row.get("CAP Status", "—")
         cap_color = "#42A5F5" if cap_status.lower() == "completed" else ("#FFA726" if cap_status.lower() == "in progress" else "#B0BEC5")
 
-        col1, col2, col3, col4 = st.columns(4)
-        for col, label, value in zip(
-            [col1, col2, col3, col4],
-            ["District", "ULB Category", "Population", "Area (sq.km)"],
-            [row.get("District", "—"), row.get("ULB Category", "—"), format_indian_number(population), area]
-        ):
-            col.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>{label}</b><br>{value}</div>", unsafe_allow_html=True)
+        basic_metrics = [
+            ("District", row.get("District", "—")),
+            ("ULB Category", row.get("ULB Category", "—")),
+            ("Population", format_indian_number(population)),
+            ("Area (sq.km)", area),
+            ("Density (/sq.km)", density),
+            ("Est. Year", row.get("Est. Year", "—")),
+            ("CAP Status", cap_status)
+        ]
 
-        col5, col6, col7 = st.columns(3)
-        for col, label, value, bg_color in zip(
-            [col5, col6, col7],
-            ["Density (/sq.km)", "Est. Year", "CAP Status"],
-            [density, row.get("Est. Year", "—"), cap_status],
-            ["#37474F", "#37474F", cap_color]
-        ):
-            col.markdown(f"<div style='background-color:{bg_color}; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>{label}</b><br>{value}</div>", unsafe_allow_html=True)
+        # Function to render card with hover effect
+        def render_card(col, label, value, bg_color="#37474F"):
+            card_html = f"""
+            <div style='
+                background-color:{bg_color};
+                color:#ECEFF1;
+                padding:16px;
+                border-radius:10px;
+                font-size:16px;
+                text-align:center;
+                transition: transform 0.2s, box-shadow 0.2s;
+                border: 1px solid #546E7A;
+            ' onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.5)';" 
+              onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                <b>{label}</b><br>{value}
+            </div>
+            """
+            col.markdown(card_html, unsafe_allow_html=True)
+
+        for i in range(0, len(basic_metrics), 3):
+            cols = st.columns(3)
+            for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
+                bg_color = cap_color if label == "CAP Status" else "#37474F"
+                render_card(col, label, value, bg_color)
 
         st.markdown("---", unsafe_allow_html=True)
 
-        # =====================
-        # ENVIRONMENTAL INFORMATION
-        # =====================
+        # ---------- ENVIRONMENTAL INFORMATION ----------
         st.markdown("<h4 style='color:#CFD8DC;'>Environmental Information</h4>", unsafe_allow_html=True)
         ghg_total = row.get("GHG Emissions", 0)
         per_capita_ghg = round(ghg_total / population, 2) if population else 0
@@ -583,13 +597,11 @@ elif menu == "City Information":
         for i in range(0, len(env_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, env_metrics[i:i+3]):
-                col.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>{label}</b><br>{value}</div>", unsafe_allow_html=True)
+                render_card(col, label, value)
 
         st.markdown("---", unsafe_allow_html=True)
 
-        # =====================
-        # SOCIAL INFORMATION
-        # =====================
+        # ---------- SOCIAL INFORMATION ----------
         st.markdown("<h4 style='color:#CFD8DC;'>Social Information</h4>", unsafe_allow_html=True)
         males = row.get("Males", 0)
         females = row.get("Females", 0)
@@ -619,13 +631,11 @@ elif menu == "City Information":
         for i in range(0, len(social_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, social_metrics[i:i+3]):
-                col.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>{label}</b><br>{value}</div>", unsafe_allow_html=True)
+                render_card(col, label, value)
 
         st.markdown("---", unsafe_allow_html=True)
 
-        # =====================
-        # CONTACT INFORMATION
-        # =====================
+        # ---------- CONTACT INFORMATION ----------
         st.markdown("<h4 style='color:#CFD8DC;'>Contact Information</h4>", unsafe_allow_html=True)
         contact_metrics = [
             ("Department Exist", row.get("Department Exist","—")),
@@ -638,7 +648,7 @@ elif menu == "City Information":
         for i in range(0, len(contact_metrics), 2):
             cols = st.columns(2)
             for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
-                col.markdown(f"<div style='background-color:#37474F; color:#ECEFF1; padding:12px; border-radius:8px; font-size:16px; text-align:center'><b>{label}</b><br>{value}</div>", unsafe_allow_html=True)
+                render_card(col, label, value)
 
 # ---------------------------
 # Admin Panel Page
