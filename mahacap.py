@@ -250,7 +250,7 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Professional SaaS Dark Theme + Functional Buttons)
+# Sidebar (Premium SaaS Dark Theme + Hover Animations + Separators)
 # ---------------------------
 st.markdown("""
 <style>
@@ -258,7 +258,13 @@ st.markdown("""
 [data-testid="stSidebar"] {
     background-color: #1E272E;
     color: #ECEFF1;
-    padding-top: 15px;
+    padding-top: 20px;
+}
+
+/* Sidebar logo */
+[data-testid="stSidebar"] img {
+    margin-bottom: 20px;
+    border-radius: 6px;
 }
 
 /* Sidebar buttons */
@@ -266,41 +272,45 @@ st.markdown("""
     background-color: #37474F;
     color: #ECEFF1;
     width: 100%;
-    padding: 10px 0;
-    margin-bottom: 6px;
+    padding: 12px 0;
+    margin-bottom: 10px;
     border-radius: 6px;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 500;
     border: none;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Button hover effect */
 [data-testid="stSidebar"] button:hover {
     background-color: #42A5F5;
     color: #FFFFFF;
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     cursor: pointer;
 }
 
 /* Active button */
-[data-testid="stSidebar"] button.active {
+[data-testid="stSidebar"] button[data-active="true"] {
     background-color: #42A5F5;
     color: #FFFFFF;
     font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-/* Sidebar logo */
-[data-testid="stSidebar"] img {
-    margin-bottom: 15px;
-    border-radius: 6px;
+/* Separator lines */
+[data-testid="stSidebar"] hr {
+    border: 0.5px solid #546E7A;
+    margin: 15px 0;
 }
 
 /* Sidebar footer */
 .sidebar-footer {
     color: #B0BEC5;
-    font-size: 12px;
+    font-size: 13px;
     text-align: center;
-    margin-top: 20px;
+    margin-top: 25px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -314,20 +324,31 @@ st.sidebar.image(
 )
 
 # ---------------------------
-# Sidebar Menu Buttons (Functional)
+# Sidebar Menu Buttons (Functional + Active Highlight)
 # ---------------------------
 menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
 if st.session_state.authenticated:
     menu_items.append(("CAP Generation", "CAP Generation"))
 
 for label, page_name in menu_items:
-    if st.sidebar.button(label):
+    is_active = st.session_state.menu == page_name
+    if st.sidebar.button(label, key=label):
         st.session_state.menu = page_name
+    # Add data-active attribute for CSS
+    button_html = f"""
+    <script>
+    const btn = window.parent.document.querySelector('button[key="{label}"]');
+    if (btn) {{
+        btn.setAttribute('data-active', {'true' if is_active else 'false'});
+    }}
+    </script>
+    """
+    st.markdown(button_html, unsafe_allow_html=True)
 
 # ---------------------------
-# Sidebar Footer
+# Sidebar Footer with Separator
 # ---------------------------
-st.sidebar.markdown("---")
+st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsafe_allow_html=True)
 
 # ---------------------------
