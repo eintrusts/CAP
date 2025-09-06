@@ -211,32 +211,42 @@ if menu == "Home":
     df = st.session_state.data.copy()
 
     # --- CAP Status Summary ---
-    
-    
-    if not df.empty and "CAP Status" in df.columns:
-        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
-        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
-        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
-        total_status = not_started + in_progress + completed
+if not df.empty and "CAP Status" in df.columns:
+    not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
+    in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
+    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
+    total_status = not_started + in_progress + completed
 
-        st.markdown("### CAP Status Overview")
-        c1, c2, c3, c4 = st.columns(4)
+    st.markdown("### CAP Status Overview")
 
-      c1, c2, c3, c4 = st.columns(4)
-cards = [
-    ("Total Cities", len(cities_data)),
-    ("Not Started", cities_data[cities_data["CAP Status"]=="Not Started"].shape[0]),
-    ("In Progress", cities_data[cities_data["CAP Status"]=="In Progress"].shape[0]),
-    ("Completed", cities_data[cities_data["CAP Status"]=="Completed"].shape[0])
-]
-for col, (title, val) in zip([c1,c2,c3,c4], cards):
-    col.markdown(f"<div class='stCard'><h4>{title}</h4><h2 style='color:#54c750'>{val}</h2></div>", unsafe_allow_html=True)
+    # Define columns
+    c1, c2, c3, c4 = st.columns(4)
 
-        c1.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Not Started</h3><p style='{value_style}'>{format_indian_number(not_started)}</p></div>", unsafe_allow_html=True)
-        c2.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>In Progress</h3><p style='{value_style}'>{format_indian_number(in_progress)}</p></div>", unsafe_allow_html=True)
-        c3.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Completed</h3><p style='{value_style}'>{format_indian_number(completed)}</p></div>", unsafe_allow_html=True)
-        c4.markdown(f"<div style='{block_style}'><h3 style='{title_style}'>Total</h3><p style='{value_style}'>{format_indian_number(total_status)}</p></div>", unsafe_allow_html=True)
+    # Card styling
+    block_style = """
+        background-color:#1E1E2F;
+        padding:20px;
+        border-radius:12px;
+        text-align:center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    """
+    title_style = "color:#E6E6E6; margin:0; font-size:16px;"
+    value_style = "font-size:28px; font-weight:bold; color:#54c750; margin:5px 0 0 0;"
 
+    # Metrics dictionary
+    metrics = {
+        "Not Started": not_started,
+        "In Progress": in_progress,
+        "Completed": completed,
+        "Total": total_status
+    }
+
+    # Render cards
+    for col, (title, val) in zip([c1, c2, c3, c4], metrics.items()):
+        col.markdown(
+            f"<div style='{block_style}'><h3 style='{title_style}'>{title}</h3><p style='{value_style}'>{format_indian_number(val)}</p></div>",
+            unsafe_allow_html=True
+        )
     # --- Reported GHG ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
