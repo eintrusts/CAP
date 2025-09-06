@@ -515,8 +515,10 @@ elif menu == "CAP Preparation":
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
                 st.session_state.last_updated = datetime.now()
 
+                st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
                 st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
 st.success(f"Raw data for {city} submitted successfully! You can now view the GHG Inventory.")
+
 
 # ---------------------------
 # GHG Inventory Page
