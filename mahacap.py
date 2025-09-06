@@ -355,83 +355,71 @@ if menu == "Home":
     st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information
+# City Information Page
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
     df_meta = st.session_state.data.copy()
-    df_cap = st.session_state.cap_data.copy() if not st.session_state.cap_data.empty else pd.DataFrame()
 
     cities_for_select = list(cities_districts.keys())
     city = st.selectbox("Select City", cities_for_select)
 
-    meta_row = df_meta[df_meta["City Name"] == city].iloc[0] if (not df_meta.empty and city in df_meta["City Name"].values) else None
-    cap_row = df_cap[df_cap["City Name"] == city].iloc[0] if (not df_cap.empty and city in df_cap["City Name"].values) else None
+    city_row = df_meta[df_meta["City Name"] == city].iloc[0] if city in df_meta["City Name"].values else None
 
-    # --- Basic Information ---
-    st.subheader("Basic Information")
-    st.write(f"**City:** {city}")
-    st.write(f"**District:** {safe_get(meta_row, 'District')}")
-    st.write(f"**ULB Category:** {safe_get(meta_row, 'ULB Category')}")
-    st.write(f"**CAP Status:** {safe_get(meta_row, 'CAP Status')}")
+    if city_row is not None:
+        # --- Basic Information ---
+        st.subheader("Basic Information")
+        st.write(f"**Population:** {format_population(city_row.get('Population', '—'))}")
+        st.write(f"**Households:** {city_row.get('Households', '—')}")
+        st.write(f"**Urbanization Rate (%):** {city_row.get('Urbanization Rate (%)', '—')}")
+        st.write(f"**Literacy Rate (%):** {city_row.get('Literacy Rate (%)', '—')}")
+        st.write(f"**Poverty Rate (%):** {city_row.get('Poverty Rate (%)', '—')}")
 
-    # --- Environmental Information ---
-    st.subheader("Environmental Information")
-    if cap_row is not None:
-        population = cap_row.get("Population", 0)
-        total_ghg = cap_row.get("GHG Emissions", 0)
-        per_capita_ghg = total_ghg / population if population > 0 else 0
-        st.write(f"**Total GHG Emissions (tCO2e):** {format_indian_number(round(total_ghg))}")
-        st.write(f"**Per Capita GHG Emissions (tCO2e/person):** {round(per_capita_ghg, 2)}")
-        st.write(f"**Urban Green Area (ha):** {cap_row.get('Urban Green Area (ha)', '—')}")
-        st.write(f"**Renewable Energy (MWh):** {cap_row.get('Renewable Energy (MWh)', '—')}")
-        st.write(f"**Municipal Solid Waste (tons/year):** {cap_row.get('Municipal Solid Waste (tons)', '—')}")
-        st.write(f"**Wastewater Treated (m3/year):** {cap_row.get('Wastewater Treated (m3)', '—')}")
+        # --- Environmental Information ---
+        st.subheader("Environmental Information")
+        st.write(f"**CAP Status:** {city_row.get('CAP Status', '—')}")
+        st.write(f"**GHG Emissions (tCO2e):** {format_indian_number(city_row.get('GHG Emissions', 0))}")
+        st.write(f"**Municipal Solid Waste (tons/year):** {format_indian_number(city_row.get('Municipal Solid Waste (tons)', 0))}")
+        st.write(f"**Wastewater Treated (m3/year):** {format_indian_number(city_row.get('Wastewater Treated (m3)', 0))}")
 
-        # Environmental Vulnerability Score (normalized)
-        ev_factors = ["Per Capita GHG Emissions (tCO2e/person)", "Wastewater Treated (m3/year)", "Urban Green Area (ha)"]
-        ev_score = 0
-        try:
-            # Simple example: higher green area → lower vulnerability, higher per capita GHG → higher vulnerability
-            ev_score = round((per_capita_ghg * 0.5 + max(0, 1000 - cap_row.get("Urban Green Area (ha)",0))*0.3 + 0)/100,2)
-        except:
-            ev_score = None
-        st.write(f"**Environmental Vulnerability Score (EVS):** {ev_score if ev_score is not None else '—'}")
+        # --- Social Information ---
+        st.subheader("Social Information")
+        st.write(f"**Population:** {format_population(city_row.get('Population', '—'))}")
+        st.write(f"**Households:** {city_row.get('Households', '—')}")
+        st.write(f"**Urbanization Rate (%):** {city_row.get('Urbanization Rate (%)', '—')}")
+        st.write(f"**Literacy Rate (%):** {city_row.get('Literacy Rate (%)', '—')}")
+        st.write(f"**Poverty Rate (%):** {city_row.get('Poverty Rate (%)', '—')}")
 
-    # --- Social Information ---
-    st.subheader("Social Information")
-    if meta_row is not None:
-        st.write(f"**Population:** {format_population(safe_get(meta_row, 'Population'))}")
-        st.write(f"**Literacy Rate (%):** {safe_get(meta_row, 'Literacy Rate', '—')}")
-        st.write(f"**Children (%)**: {safe_get(meta_row, 'Children (%)', '—')}")
-        st.write(f"**Elderly (%)**: {safe_get(meta_row, 'Elderly (%)', '—')}")
-        st.write(f"**Poverty Rate (%)**: {safe_get(meta_row, 'Poverty (%)', '—')}")
-        st.write(f"**Slum Population (%)**: {safe_get(meta_row, 'Slum (%)', '—')}")
-        st.write(f"**Access to Water/Sanitation (%)**: {safe_get(meta_row, 'Water/Sanitation (%)', '—')}")
+        # --- Contact Information ---
+        st.subheader("Contact Information")
+        st.write(f"**Environment Department Exist:** {city_row.get('Environment Department Exist', '—')}")
+        st.write(f"**Department Name:** {city_row.get('Department Name', '—')}")
+        st.write(f"**Department Head Name:** {city_row.get('Head Name', '—')}")
+        st.write(f"**Department Email:** {city_row.get('Department Email', '—')}")
+        st.write(f"**City Website:** {city_row.get('City Website', '—')}")
 
-        # Social Vulnerability Score (normalized)
-        sv_score = 0
-        try:
-            sv_score = round(
-                (safe_get(meta_row,"Poverty (%)",0)*0.4 + safe_get(meta_row,"Slum (%)",0)*0.3 + (100 - safe_get(meta_row,"Literacy Rate",100))*0.3)/100,2
-            )
-        except:
-            sv_score = None
-        st.write(f"**Social Vulnerability Score (SVS):** {sv_score if sv_score is not None else '—'}")
+        # --- Vulnerability Scores ---
+        st.subheader("Vulnerability Assessment")
+        evs_cols = ["GHG Emissions", "Municipal Solid Waste (tons)", "Wastewater Treated (m3)"]
+        evs_vals = [city_row.get(c, 0) for c in evs_cols]
+        evs_score = sum(evs_vals)/max(sum([max(df_meta[c].max(),1) for c in evs_cols]),1) * 100
 
-    # --- Contact Information ---
-    st.subheader("Contact Information")
-    if meta_row is not None:
-        st.write(f"**City Official Name:** {safe_get(meta_row,'Department Head Name')}")
-        st.write(f"**Email ID:** {safe_get(meta_row,'Department Email')}")
-        st.write(f"**Website:** {safe_get(meta_row,'Department Website','—')}")
+        social_factors = ["Population", "Households", "Urbanization Rate (%)", "Literacy Rate (%)", "Poverty Rate (%)"]
+        social_vals = [city_row.get(c, 0) for c in social_factors]
+        social_score = (
+            (social_vals[0]/max(df_meta["Population"].max(),1))*0.3 +
+            (social_vals[1]/max(df_meta["Households"].max(),1))*0.2 +
+            (social_vals[2]/max(df_meta["Urbanization Rate (%)"].max(),1))*0.2 +
+            (1 - social_vals[3]/max(df_meta["Literacy Rate (%)"].max(),1))*0.15 +
+            (social_vals[4]/max(df_meta["Poverty Rate (%)"].max(),1))*0.15
+        ) * 100
 
-    last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
-    st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
+        st.write(f"**Environmental Vulnerability Score (EVS):** {round(evs_score, 1)} / 100")
+        st.write(f"**Social Vulnerability Score (SVS):** {round(social_score, 1)} / 100")
 
 
 # ---------------------------
-# Admin Panel
+# Admin Board Page
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Board")
@@ -443,32 +431,34 @@ elif menu == "Admin":
 
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
-            
-            # --- Basic Info ---
-            population = st.number_input("Population", min_value=0, value=0, step=1000)
-            ulb_category = st.text_input("ULB Category")
-            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-            
-            # --- Environmental Info ---
-            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
-            urban_green_area = st.number_input("Urban Green Area (ha)", min_value=0.0, value=0.0, step=1.0)
-            renewable_energy = st.number_input("Renewable Energy (MWh/year)", min_value=0.0, value=0.0, step=1.0)
-            municipal_solid_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0.0, value=0.0, step=10.0)
-            wastewater_volume = st.number_input("Wastewater Treated (m3/year)", min_value=0.0, value=0.0, step=100.0)
 
-            # --- Social Info ---
+            # --- Basic Information ---
+            st.markdown("### Basic Information")
+            population = st.number_input("Population (as per census 2011)", min_value=0, value=0, step=1000)
+            households = st.number_input("Number of Households", min_value=0, value=0, step=100)
+            urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
             literacy_rate = st.number_input("Literacy Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            children_pct = st.number_input("Children (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            elderly_pct = st.number_input("Elderly (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            poverty_pct = st.number_input("Poverty Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            slum_pct = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-            water_sanitation_access = st.number_input("Access to Water/Sanitation (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+            poverty_rate = st.number_input("Poverty Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
-            # --- Contact Info ---
+            # --- Environmental Information ---
+            st.markdown("### Environmental Information")
+            cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+            ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
+            municipal_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0.0, value=0.0, step=10.0)
+            wastewater_treated = st.number_input("Wastewater Treated (m3/year)", min_value=0.0, value=0.0, step=1000.0)
+
+            # --- Social Information ---
+            st.markdown("### Social Information")
+            # Already captured under basic info: population, households, literacy_rate, poverty_rate
+            # Additional social fields can be added here if needed
+
+            # --- Contact Information ---
+            st.markdown("### Contact Information")
+            dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
             dept_name = st.text_input("Department Name")
-            head_name = st.text_input("City Official Name")
+            head_name = st.text_input("Department Head Name")
             dept_email = st.text_input("Department Email")
-            dept_website = st.text_input("Department Website")
+            city_website = st.text_input("City Official Website")
 
             submit_admin = st.form_submit_button("Add/Update City Data")
 
@@ -477,23 +467,19 @@ elif menu == "Admin":
                     "City Name": city,
                     "District": cities_districts.get(city, "—"),
                     "Population": population,
-                    "ULB Category": ulb_category,
+                    "Households": households,
+                    "Urbanization Rate (%)": urbanization_rate,
+                    "Literacy Rate (%)": literacy_rate,
+                    "Poverty Rate (%)": poverty_rate,
                     "CAP Status": cap_status,
                     "GHG Emissions": ghg_val,
-                    "Urban Green Area (ha)": urban_green_area,
-                    "Renewable Energy (MWh)": renewable_energy,
-                    "Municipal Solid Waste (tons)": municipal_solid_waste,
-                    "Wastewater Treated (m3)": wastewater_volume,
-                    "Literacy Rate": literacy_rate,
-                    "Children (%)": children_pct,
-                    "Elderly (%)": elderly_pct,
-                    "Poverty (%)": poverty_pct,
-                    "Slum (%)": slum_pct,
-                    "Water/Sanitation (%)": water_sanitation_access,
+                    "Municipal Solid Waste (tons)": municipal_waste,
+                    "Wastewater Treated (m3)": wastewater_treated,
+                    "Environment Department Exist": dept_exist,
                     "Department Name": dept_name,
-                    "Department Head Name": head_name,
+                    "Head Name": head_name,
                     "Department Email": dept_email,
-                    "Department Website": dept_website
+                    "City Website": city_website
                 }
 
                 df_meta = st.session_state.data.copy()
@@ -506,16 +492,13 @@ elif menu == "Admin":
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
 
-        # --- All Cities Data Table ---
         st.write("### All Cities Data")
-        st.table(st.session_state.data.assign(
-            Population=lambda d: d["Population"].map(format_indian_number),
-            GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
-        ))
-
+        st.table(st.session_state.data)
+        
         # --- Reset Button ---
         if st.button("Reset All Data", key="reset_admin"):
             reset_all_data()
+
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
