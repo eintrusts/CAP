@@ -205,48 +205,45 @@ menu = st.session_state.menu
 # ---------------------------
 # Home Page
 # ---------------------------
+# --- Home Page ---
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
-    df = st.session_state.data.copy()
-
+    
+    # Make a copy of the main data
+    df = st.session_state.data.copy()  # <-- This must be here
+    
     # --- CAP Status Summary ---
-if not df.empty and "CAP Status" in df.columns:
-    not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
-    in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
-    completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
-    total_status = not_started + in_progress + completed
+    if not df.empty and "CAP Status" in df.columns:
+        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
+        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
+        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
+        total_status = not_started + in_progress + completed
 
-    st.markdown("### CAP Status Overview")
+        st.markdown("### CAP Status Overview")
+        c1, c2, c3, c4 = st.columns(4)
+        block_style = """
+            background-color:#1E1E2F;
+            padding:20px;
+            border-radius:12px;
+            text-align:center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        """
+        title_style = "color:#E6E6E6; margin:0; font-size:16px;"
+        value_style = "font-size:28px; font-weight:bold; color:#54c750; margin:5px 0 0 0;"
 
-    # Define columns
-    c1, c2, c3, c4 = st.columns(4)
+        metrics = {
+            "Not Started": not_started,
+            "In Progress": in_progress,
+            "Completed": completed,
+            "Total": total_status
+        }
 
-    # Card styling
-    block_style = """
-        background-color:#1E1E2F;
-        padding:20px;
-        border-radius:12px;
-        text-align:center;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    """
-    title_style = "color:#E6E6E6; margin:0; font-size:16px;"
-    value_style = "font-size:28px; font-weight:bold; color:#54c750; margin:5px 0 0 0;"
-
-    # Metrics dictionary
-    metrics = {
-        "Not Started": not_started,
-        "In Progress": in_progress,
-        "Completed": completed,
-        "Total": total_status
-    }
-
-    # Render cards
-    for col, (title, val) in zip([c1, c2, c3, c4], metrics.items()):
-        col.markdown(
-            f"<div style='{block_style}'><h3 style='{title_style}'>{title}</h3><p style='{value_style}'>{format_indian_number(val)}</p></div>",
-            unsafe_allow_html=True
-        )
+        for col, (title, val) in zip([c1, c2, c3, c4], metrics.items()):
+            col.markdown(
+                f"<div style='{block_style}'><h3 style='{title_style}'>{title}</h3><p style='{value_style}'>{format_indian_number(val)}</p></div>",
+                unsafe_allow_html=True
+            )
     # --- Reported GHG ---
     if not df.empty and "GHG Emissions" in df.columns:
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
