@@ -355,7 +355,7 @@ if menu == "Home":
     st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page
+# City Information Page (Dashboard Style)
 # ---------------------------
 elif menu == "City Information":
     st.header("City Information")
@@ -367,79 +367,81 @@ elif menu == "City Information":
 
         # -------- BASIC INFO --------
         st.subheader("Basic Information")
-        st.table(pd.DataFrame({
-            "Attribute": [
-                "District", "ULB Category", "Population", "Area (sq.km)",
-                "Density (per sq.km)", "Est. Year", "CAP Status"
-            ],
-            "Value": [
-                row.get("District", "—"),
-                row.get("ULB Category", "—"),
-                format_indian_number(row.get("Population", 0)),
-                row.get("Area (sq.km)", "—"),
-                round(row.get("Population", 0)/row.get("Area (sq.km)", 1), 2) if row.get("Area (sq.km)", 0) else "—",
-                row.get("Est. Year", "—"),
-                row.get("CAP Status", "—"),
-            ]
-        }))
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("District", row["District"])
+        col2.metric("ULB Category", row["ULB Category"])
+        col3.metric("Population", format_indian_number(row["Population"]))
+        col4.metric("Area (sq.km)", row["Area (sq.km)"])
+
+        col5, col6, col7 = st.columns(3)
+        density = round(row["Population"]/row["Area (sq.km)"], 2) if row["Area (sq.km)"] else "—"
+        col5.metric("Density (/sq.km)", density)
+        col6.metric("Est. Year", row["Est. Year"])
+        col7.metric("CAP Status", row["CAP Status"])
+
+        st.divider()
 
         # -------- ENVIRONMENTAL INFO --------
-        st.subheader("Environmental Information")
-        st.table(pd.DataFrame({
-            "Indicator": [
-                "Total GHG Emissions (tCO2e)",
-                "Per Capita Emissions (tCO2e)",
-                "Renewable Energy (MWh/year)",
-                "Urban Green Area (ha)",
-                "Municipal Solid Waste (tons/year)",
-                "Waste Landfilled (%)",
-                "Waste Composted (%)",
-                "Wastewater Treated (m³/year)",
-            ],
-            "Value": [
-                format_indian_number(row.get("GHG Emissions", 0)),
-                round(row.get("GHG Emissions", 0)/row.get("Population", 1), 2) if row.get("Population", 0) else "—",
-                format_indian_number(row.get("Renewable Energy (MWh)", 0)),
-                format_indian_number(row.get("Urban Green Area (ha)", 0)),
-                format_indian_number(row.get("Municipal Solid Waste (tons)", 0)),
-                f"{row.get('Waste Landfilled (%)', 0)}%",
-                f"{row.get('Waste Composted (%)', 0)}%",
-                format_indian_number(row.get("Wastewater Treated (m3)", 0)),
-            ]
-        }))
+        with st.expander("Environmental Information", expanded=True):
+            c1, c2, c3 = st.columns(3)
+            c1.metric("GHG Emissions (tCO2e)", format_indian_number(row["GHG Emissions"]))
+            per_capita = round(row["GHG Emissions"]/row["Population"], 2) if row["Population"] else "—"
+            c2.metric("Per Capita Emissions", per_capita)
+            c3.metric("Renewable Energy (MWh/yr)", format_indian_number(row["Renewable Energy (MWh)"]))
+
+            c4, c5, c6 = st.columns(3)
+            c4.metric("Urban Green Area (ha)", format_indian_number(row["Urban Green Area (ha)"]))
+            c5.metric("Solid Waste (tons/yr)", format_indian_number(row["Municipal Solid Waste (tons)"]))
+            c6.metric("Wastewater Treated (m³/yr)", format_indian_number(row["Wastewater Treated (m3)"]))
+
+            # Waste Management Pie Chart
+            import plotly.express as px
+            waste_data = {
+                "Type": ["Landfilled", "Composted"],
+                "Percent": [row["Waste Landfilled (%)"], row["Waste Composted (%)"]]
+            }
+            fig_waste = px.pie(waste_data, names="Type", values="Percent", title="Waste Management Distribution")
+            st.plotly_chart(fig_waste, use_container_width=True)
+
+        st.divider()
 
         # -------- SOCIAL INFO --------
-        st.subheader("Social Information")
-        st.table(pd.DataFrame({
-            "Indicator": [
-                "Male Population", "Female Population", "Children (0–6 Male)", "Children (0–6 Female)",
-                "Overall Literacy (%)", "Male Literacy (%)", "Female Literacy (%)", "Migrant (%)", "Slum (%)"
-            ],
-            "Value": [
-                format_indian_number(row.get("Males", 0)),
-                format_indian_number(row.get("Females", 0)),
-                format_indian_number(row.get("Children Male", 0)),
-                format_indian_number(row.get("Children Female", 0)),
-                f"{row.get('Literacy (%)', 0)}%",
-                f"{row.get('Male Literacy (%)', 0)}%",
-                f"{row.get('Female Literacy (%)', 0)}%",
-                f"{row.get('Migrant (%)', 0)}%",
-                f"{row.get('Slum (%)', 0)}%"
-            ]
-        }))
+        with st.expander("Social Information", expanded=True):
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Males", format_indian_number(row["Males"]))
+            c2.metric("Females", format_indian_number(row["Females"]))
+            c3.metric("Children (0–6)", f"{format_indian_number(row['Children Male'])} ♂ | {format_indian_number(row['Children Female'])} ♀")
+
+            c4, c5, c6 = st.columns(3)
+            c4.metric("Literacy (%)", f"{row['Literacy (%)']}%")
+            c5.metric("Male Literacy (%)", f"{row['Male Literacy (%)']}%")
+            c6.metric("Female Literacy (%)", f"{row['Female Literacy (%)']}%")
+
+            c7, c8 = st.columns(2)
+            c7.metric("Migrant Population (%)", f"{row['Migrant (%)']}%")
+            c8.metric("Slum Population (%)", f"{row['Slum (%)']}%")
+
+            # Gender Ratio Chart
+            gender_data = {
+                "Gender": ["Male", "Female"],
+                "Population": [row["Males"], row["Females"]]
+            }
+            fig_gender = px.bar(gender_data, x="Gender", y="Population", title="Gender Distribution", text="Population")
+            st.plotly_chart(fig_gender, use_container_width=True)
+
+        st.divider()
 
         # -------- CONTACT INFO --------
-        st.subheader("Contact Information")
-        st.table(pd.DataFrame({
-            "Field": ["Department Exist", "Department Name", "Email", "Contact Number", "Website"],
-            "Details": [
-                row.get("Department Exist", "—"),
-                row.get("Department Name", "—"),
-                row.get("Email", "—"),
-                row.get("Contact Number", "—"),
-                row.get("Website", "—"),
-            ]
-        }))
+        with st.expander("Contact Information", expanded=True):
+            c1, c2 = st.columns(2)
+            c1.write(f"**Department Exist:** {row['Department Exist']}")
+            c2.write(f"**Department Name:** {row['Department Name']}")
+
+            c1, c2 = st.columns(2)
+            c1.write(f"**Email:** {row['Email']}")
+            c2.write(f"**Contact Number:** {row['Contact Number']}")
+
+            st.write(f"**Website:** {row['Website']}")
 
 
 # ---------------------------
