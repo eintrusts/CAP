@@ -195,8 +195,8 @@ for btn, name in [("Home", "Home"), ("City Information", "City Information"), ("
     if st.sidebar.button(btn):
         st.session_state.menu = name
 
-if st.session_state.authenticated and st.sidebar.button("CAP Preparation"):
-    st.session_state.menu = "CAP Preparation"
+if st.session_state.authenticated and st.sidebar.button("CAP Generation"):
+    st.session_state.menu = "CAP Generation"
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("EinTrust | © 2025")
@@ -393,7 +393,9 @@ elif menu == "CAP Generation":
     if not st.session_state.authenticated:
         admin_login()
     else:
-        st.markdown("""Collect detailed city-level activity data for generating a comprehensive GHG inventory""")
+        st.markdown("""
+        Collect detailed city-level activity data for generating a comprehensive GHG inventory
+        """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
