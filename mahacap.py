@@ -250,7 +250,7 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Professional SaaS Dark Theme + Active Menu Highlight)
+# Sidebar (Professional SaaS Dark Theme + Functional Buttons)
 # ---------------------------
 st.markdown("""
 <style>
@@ -262,7 +262,7 @@ st.markdown("""
 }
 
 /* Sidebar buttons */
-[data-testid="stSidebar"] .stButton button {
+[data-testid="stSidebar"] button {
     background-color: #37474F;
     color: #ECEFF1;
     width: 100%;
@@ -276,14 +276,14 @@ st.markdown("""
 }
 
 /* Button hover effect */
-[data-testid="stSidebar"] .stButton button:hover {
+[data-testid="stSidebar"] button:hover {
     background-color: #42A5F5;
     color: #FFFFFF;
     cursor: pointer;
 }
 
-/* Active button styling */
-[data-testid="stSidebar"] .stButton button.active {
+/* Active button */
+[data-testid="stSidebar"] button.active {
     background-color: #42A5F5;
     color: #FFFFFF;
     font-weight: 600;
@@ -314,24 +314,18 @@ st.sidebar.image(
 )
 
 # ---------------------------
-# Sidebar Menu Buttons with Active State
+# Sidebar Menu Buttons (Functional)
 # ---------------------------
 menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
 if st.session_state.authenticated:
     menu_items.append(("CAP Generation", "CAP Generation"))
 
-for btn_label, name in menu_items:
-    button_html = f"""
-    <div>
-        <button class="{'active' if st.session_state.menu == name else ''}">{btn_label}</button>
-    </div>
-    """
-    # Use markdown with HTML for active button effect
-    if st.sidebar.markdown(button_html, unsafe_allow_html=True):
-        st.session_state.menu = name
+for label, page_name in menu_items:
+    if st.sidebar.button(label):
+        st.session_state.menu = page_name
 
 # ---------------------------
-# Sidebar Footer / Copyright
+# Sidebar Footer
 # ---------------------------
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsafe_allow_html=True)
@@ -340,7 +334,6 @@ st.sidebar.markdown("<div class='sidebar-footer'>EinTrust | © 2025</div>", unsa
 # Current Menu
 # ---------------------------
 menu = st.session_state.menu
-
 
 # ---------------------------
 # Home Page: Maharashtra Dashboard (Professional SaaS Look)
