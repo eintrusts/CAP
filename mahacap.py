@@ -398,15 +398,8 @@ elif menu == "Admin":
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
-    st.header("CAP : Raw Data Collection for Comprehensive GHG Inventory")
+    st.header("CAP : Data Collection")
 
-    if not st.session_state.authenticated:
-        admin_login()
-    else:
-        st.markdown("""
-        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
-        GPC/C40/ICLEI guidelines. Only raw data is collected; emissions are calculated automatically.
-        """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
@@ -418,7 +411,7 @@ elif menu == "CAP Preparation":
             urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
             # --- Electricity & Energy ---
-            st.subheader("Electricity & Energy Use")
+            st.subheader("Energy Use")
             residential_electricity_mwh = st.number_input("Residential Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
             commercial_electricity_mwh = st.number_input("Commercial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
             industrial_electricity_mwh = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
@@ -523,7 +516,7 @@ elif menu == "CAP Preparation":
 # GHG Inventory Page
 # ---------------------------
 elif menu == "GHG Inventory":
-    st.header("City GHG Inventory Dashboard")
+    st.header("GHG Inventory")
 
     if not st.session_state.authenticated:
         admin_login()
