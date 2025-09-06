@@ -401,9 +401,6 @@ if menu == "Admin":
                         st.success(f"✅ {row['City Name']} deleted successfully!")
                         st.experimental_rerun()
 
-st.session_state.data = df
-df.to_csv(DATA_FILE, index=False)
-
 # ---------------------------
 # CAP Preparation Page
 # ---------------------------
