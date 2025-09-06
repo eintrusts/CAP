@@ -121,6 +121,25 @@ st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
 st.session_state.data = st.session_state.data[
     ~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)
 ]
+def reset_all_data():
+    keys_to_clear = [
+        "data",             # main meta data
+        "cap_data",         # CAP data
+        "last_updated",     # last updated timestamp
+        # Add any other session keys used by admin
+    ]
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+
+    # Optional: If you are using CSV/Excel storage, also clear files
+    try:
+        open(CAP_DATA_FILE, "w").close()  # clears CAP CSV file
+        open(META_DATA_FILE, "w").close() # clears meta CSV file
+    except:
+        pass
+
+    st.success("All admin and CAP data has been reset successfully!")
 
 # ---------------------------
 # Helper Functions
@@ -483,6 +502,9 @@ elif menu == "Admin":
             Population=lambda d: d["Population"].map(format_indian_number),
             GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
         ))
+st.subheader("Admin Controls")
+if st.button("Reset All Data"):
+    reset_all_data()
 
 # ---------------------------
 # CAP Preparation Page
@@ -607,6 +629,11 @@ elif menu == "CAP Generation":
                 st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
                 st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
                 st.experimental_rerun()
+
+st.subheader("Data Collection Controls")
+if st.button("Reset All Data"):
+    reset_all_data()
+
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
