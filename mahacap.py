@@ -268,7 +268,7 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
-# Home Page: Vulnerability Scores
+# Home Page: Maharashtra Dashboard
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
@@ -276,7 +276,9 @@ if menu == "Home":
 
     df = st.session_state.data.copy()
 
-    # --- CAP Status Summary ---
+    # =====================
+    # CAP Status Summary Cards
+    # =====================
     if not df.empty and "CAP Status" in df.columns:
         c1, c2, c3, c4 = st.columns(4)
         not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
@@ -284,75 +286,225 @@ if menu == "Home":
         completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
 
         cards = [
-            ("Total Cities", len(df)),
-            ("Not Started", not_started),
-            ("In Progress", in_progress),
-            ("Completed", completed)
+            ("Total Cities", len(df), "#4B8BF4"),
+            ("Not Started", not_started, "#FF6B6B"),
+            ("In Progress", in_progress, "#FFA500"),
+            ("Completed", completed, "#28A745")
         ]
-        for col, (title, val) in zip([c1, c2, c3, c4], cards):
-            col.markdown(f"<div class='stCard'><h4>{title}</h4><h2>{format_indian_number(val)}</h2></div>", unsafe_allow_html=True)
+        for col, (title, val, color) in zip([c1, c2, c3, c4], cards):
+            col.markdown(
+                f"""
+                <div style="background-color:{color};padding:15px;border-radius:10px;text-align:center;color:white;">
+                    <h4>{title}</h4>
+                    <h2>{format_indian_number(val)}</h2>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
-    # --- Environmental Vulnerability Score (EVS) ---
-    evs_cols = ["GHG Emissions", "Municipal Solid Waste (tons)", "Wastewater Treated (m3)"]
-    for col in evs_cols:
-        if col not in df.columns:
-            df[col] = 0
-        else:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    st.markdown("---")
 
-    max_vals_env = {col: df[col].max() or 1 for col in evs_cols}
-    df["EVS"] = (
-        df["GHG Emissions"]/max_vals_env["GHG Emissions"]*0.5 +
-        df["Municipal Solid Waste (tons)"]/max_vals_env["Municipal Solid Waste (tons)"]*0.25 +
-        df["Wastewater Treated (m3)"]/max_vals_env["Wastewater Treated (m3)"]*0.25
-    ) * 100
+    # =====================
+    # Maharashtra Summary Metrics
+    # =====================
+    if "Maharashtra" in df["City Name"].values:
+        maha_row = df[df["City Name"] == "Maharashtra"].iloc[0]
+        population = maha_row.get("Population", 0)
+        ghg_total = maha_row.get("GHG Emissions", 0)
+        cap_status = maha_row.get("CAP Status", "—")
+        cap_link = maha_row.get("CAP Link", "—")
 
-    # --- Social Vulnerability Score (SVS) ---
-    social_factors = {
-        "Population": 0.3,
-        "Households": 0.2,
-        "Urbanization Rate (%)": 0.2,
-        "Literacy Rate (%)": 0.15,
-        "Poverty Rate (%)": 0.15
-    }
+        est_ghg = round(population * (ghg_total/population if population else 0), 2)
+        vulnerability_score = maha_row.get("Vulnerability Score", 0)
 
-    for col in social_factors:
-        if col not in df.columns:
-            df[col] = 0
-        else:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        st.subheader("Maharashtra Overview")
 
-    max_vals_social = {col: df[col].max() or 1 for col in social_factors}
+        # Metrics row 1
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("CAP Status", cap_status)
+        col2.metric("CAP Link", cap_link)
+        col3.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
+        col4.metric("Estimated GHG by Population", format_indian_number(est_ghg))
 
-    df["SVS"] = (
-        (df["Population"]/max_vals_social["Population"])*0.3 +
-        (df["Households"]/max_vals_social["Households"])*0.2 +
-        (df["Urbanization Rate (%)"]/max_vals_social["Urbanization Rate (%)"])*0.2 +
-        (1 - df["Literacy Rate (%)"]/max_vals_social["Literacy Rate (%)"])*0.15 +
-        (df["Poverty Rate (%)"]/max_vals_social["Poverty Rate (%)"])*0.15
-    ) * 100
+        # Metrics row 2
+        col5, col6 = st.columns(2)
+        col5.metric("Vulnerability Assessment Score", round(vulnerability_score, 2))
+        col6.metric("Population", format_indian_number(population))
 
-    # --- Vulnerability Chart ---
-    import plotly.express as px
-    vuln_df = df[["City Name", "EVS", "SVS"]].melt(id_vars="City Name", var_name="Score Type", value_name="Score")
+        # =====================
+        # Environmental Metrics
+        # =====================
+        st.subheader("Environmental Metrics")
+        env_cols = ["Renewable Energy (MWh)", "Urban Green Area (ha)", "Municipal Solid Waste (tons)",
+                    "Waste Landfilled (%)", "Waste Composted (%)", "Wastewater Treated (m3)"]
+        col_groups = st.columns(3)
+        for i, col_name in enumerate(env_cols):
+            value = maha_row.get(col_name, 0)
+            if "%" in col_name:
+                value = f"{value}%"
+            else:
+                value = format_indian_number(value)
+            col_groups[i % 3].metric(col_name, value)
 
-    fig_vuln = px.bar(
-        vuln_df,
-        x="City Name",
-        y="Score",
-        color="Score Type",
-        barmode="group",
-        text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
-        title="City Vulnerability Scores (Environmental vs Social)"
-    )
-    fig_vuln.update_layout(
-        plot_bgcolor="#0f0f10",
-        paper_bgcolor="#0f0f10",
-        font_color="#E6E6E6",
-        xaxis_title=None,
-        yaxis_title="Vulnerability Score (0-100)"
-    )
-    st.plotly_chart(fig_vuln, use_container_width=True)
+        st.markdown("---")
+
+        # =====================
+        # Social Metrics
+        # =====================
+        st.subheader("Social Metrics")
+        males = maha_row.get("Males", 0)
+        females = maha_row.get("Females", 0)
+        total_pop = males + females
+
+        children_m = maha_row.get("Children Male", 0)
+        children_f = maha_row.get("Children Female", 0)
+        total_children = children_m + children_f
+
+        literacy_m = maha_row.get("Male Literacy (%)", 0)
+        literacy_f = maha_row.get("Female Literacy (%)", 0)
+        literacy_avg = round((literacy_m + literacy_f)/2, 2)
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Male Population", format_indian_number(males))
+        col2.metric("Female Population", format_indian_number(females))
+        col3.metric("Total Population", format_indian_number(total_pop))
+
+        col4, col5, col6 = st.columns(3)
+        col4.metric("Children (0-6 Male)", format_indian_number(children_m))
+        col5.metric("Children (0-6 Female)", format_indian_number(children_f))
+        col6.metric("Total Children (0-6)", format_indian_number(total_children))
+
+        col7, col8, col9 = st.columns(3)
+        col7.metric("Male Literacy (%)", f"{literacy_m}%")
+        col8.metric("Female Literacy (%)", f"{literacy_f}%")
+        col9.metric("Average Literacy (%)", f"{literacy_avg}%")
+
+        col10, col11 = st.columns(2)
+        col10.metric("Migrant Population (%)", f"{maha_row.get('Migrant (%)',0)}%")
+        col11.metric("Slum Population (%)", f"{maha_row.get('Slum (%)',0)}%")
+
+        col12, col13 = st.columns(2)
+        col12.metric("BPL Households (%)", f"{maha_row.get('BPL Households (%)',0)}%")
+        col13.metric("Urbanization Rate (%)", f"{maha_row.get('Urbanization Rate (%)',0)}%")
+
+        st.markdown("---")
+
+        # =====================
+        # Contact Information
+        # =====================
+        st.subheader("Contact Information")
+        col1, col2 = st.columns(2)
+        col1.metric("Department Exist", maha_row.get("Department Exist", "—"))
+        col2.metric("Department Name", maha_row.get("Department Name", "—"))
+
+        col3, col4 = st.columns(2)
+        col3.metric("Email", maha_row.get("Email", "—"))
+        col4.metric("Contact Number", maha_row.get("Contact Number", "—"))
+
+        st.metric("Website", maha_row.get("Website", "—"))
+
+        st.markdown("---")
+
+        # =====================
+        # Charts for GHG
+        # =====================
+        import plotly.express as px
+        # Total GHG Emissions Chart
+        ghg_chart_df = df[["City Name", "GHG Emissions"]].copy()
+        ghg_chart_df["GHG Emissions"] = pd.to_numeric(ghg_chart_df["GHG Emissions"], errors="coerce").fillna(0)
+        fig_ghg = px.bar(
+            ghg_chart_df,
+            x="City Name",
+            y="GHG Emissions",
+            text=ghg_chart_df["GHG Emissions"].apply(lambda x: f"{format_indian_number(x)}"),
+            title="City-wise Total GHG Emissions"
+        )
+        fig_ghg.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="#ffffff",
+            font_color="#000000",
+            xaxis_title=None,
+            yaxis_title="GHG Emissions (tCO2e)"
+        )
+        st.plotly_chart(fig_ghg, use_container_width=True)
+
+        # Estimated GHG by Population Chart
+        df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
+        df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
+        est_df = df[["City Name", "Estimated GHG"]].copy()
+        fig_est = px.bar(
+            est_df,
+            x="City Name",
+            y="Estimated GHG",
+            text=est_df["Estimated GHG"].apply(lambda x: f"{format_indian_number(round(x,0))}"),
+            title="Estimated GHG Emissions by Population"
+        )
+        fig_est.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="#ffffff",
+            font_color="#000000",
+            xaxis_title=None,
+            yaxis_title="Estimated GHG (tCO2e)"
+        )
+        st.plotly_chart(fig_est, use_container_width=True)
+
+        # =====================
+        # Vulnerability Scores Chart
+        # =====================
+        evs_cols = ["GHG Emissions", "Municipal Solid Waste (tons)", "Wastewater Treated (m3)"]
+        for col in evs_cols:
+            if col not in df.columns:
+                df[col] = 0
+            else:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+        max_vals_env = {col: df[col].max() or 1 for col in evs_cols}
+        df["EVS"] = (
+            df["GHG Emissions"]/max_vals_env["GHG Emissions"]*0.5 +
+            df["Municipal Solid Waste (tons)"]/max_vals_env["Municipal Solid Waste (tons)"]*0.25 +
+            df["Wastewater Treated (m3)"]/max_vals_env["Wastewater Treated (m3)"]*0.25
+        ) * 100
+
+        social_factors = {
+            "Population": 0.3,
+            "Households": 0.2,
+            "Urbanization Rate (%)": 0.2,
+            "Literacy Rate (%)": 0.15,
+            "Poverty Rate (%)": 0.15
+        }
+        for col in social_factors:
+            if col not in df.columns:
+                df[col] = 0
+            else:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+        max_vals_social = {col: df[col].max() or 1 for col in social_factors}
+
+        df["SVS"] = (
+            (df["Population"]/max_vals_social["Population"])*0.3 +
+            (df["Households"]/max_vals_social["Households"])*0.2 +
+            (df["Urbanization Rate (%)"]/max_vals_social["Urbanization Rate (%)"])*0.2 +
+            (1 - df["Literacy Rate (%)"]/max_vals_social["Literacy Rate (%)"])*0.15 +
+            (df["Poverty Rate (%)"]/max_vals_social["Poverty Rate (%)"])*0.15
+        ) * 100
+
+        vuln_df = df[["City Name", "EVS", "SVS"]].melt(id_vars="City Name", var_name="Score Type", value_name="Score")
+        fig_vuln = px.bar(
+            vuln_df,
+            x="City Name",
+            y="Score",
+            color="Score Type",
+            barmode="group",
+            text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
+            title="City Vulnerability Scores (Environmental vs Social)"
+        )
+        fig_vuln.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="#ffffff",
+            font_color="#000000",
+            xaxis_title=None,
+            yaxis_title="Vulnerability Score (0-100)"
+        )
+        st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
 # City Information Page
