@@ -374,8 +374,11 @@ elif menu == "Admin":
         admin_login()
     else:
         st.subheader("Add/Update City Data")
+
+        # --- Input Form ---
         with st.form("admin_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
+            population = st.number_input("Population (as per census 2011)", min_value=0, value=0, step=1000)
             cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
             ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, value=0.0, step=1.0)
             dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
@@ -388,6 +391,7 @@ elif menu == "Admin":
                 new_row = {
                     "City Name": city,
                     "District": cities_districts.get(city, "—"),
+                    "Population": population,
                     "CAP Status": cap_status,
                     "GHG Emissions": ghg_val,
                     "Environment Department Exist": dept_exist,
@@ -395,14 +399,41 @@ elif menu == "Admin":
                     "Head Name": head_name,
                     "Department Email": dept_email
                 }
-                df_meta = st.session_state.data
+                df_meta = st.session_state.data.copy()
                 if city in df_meta["City Name"].values:
                     df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
                 else:
                     df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
+
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
+
+        # --- Display Existing Entries in Minimalist Table ---
+        st.subheader("All City Entries")
+        df_meta = st.session_state.data.copy()
+        if not df_meta.empty:
+            df_display = df_meta.copy()
+            df_display.reset_index(drop=True, inplace=True)
+            
+            # Add Edit/Delete columns (buttons)
+            for i, row in df_display.iterrows():
+                cols = st.columns([2, 1, 1])
+                with cols[0]:
+                    st.text(f"{row['City Name']}")
+                with cols[1]:
+                    if st.button(f"Edit {i}", key=f"edit_{i}"):
+                        # Pre-fill form for editing
+                        st.session_state.data.loc[i, 'edit_mode'] = True
+                        st.session_state.edit_index = i
+                        st.experimental_rerun()
+                with cols[2]:
+                    if st.button(f"Delete {i}", key=f"del_{i}"):
+                        df_meta = st.session_state.data.drop(i).reset_index(drop=True)
+                        st.session_state.data = df_meta
+                        df_meta.to_csv(DATA_FILE, index=False)
+                        st.success(f"Entry for {row['City Name']} deleted.")
+                        st.experimental_rerun()
 
 # ---------------------------
 # CAP Preparation Page
