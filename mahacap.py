@@ -36,6 +36,10 @@ ADMIN_PASSWORD = "eintrust2025"
 # ---------------------------
 DATA_FILE = "cities_data.csv"
 CAP_DATA_FILE = "cap_raw_data.csv"
+# Ensure city names in session data match updated cities_districts keys
+st.session_state.data["City Name"] = st.session_state.data["City Name"].apply(
+    lambda x: x if x in cities_districts else cities_districts.get(x, x)
+)
 
 # ---------------------------
 # Cities & Districts
