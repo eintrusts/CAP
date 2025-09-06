@@ -358,7 +358,7 @@ if menu == "Home":
 # City Information Page
 # ---------------------------
 elif menu == "City Information":
-    st.header("📌 City Information")
+    st.header("City Information")
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
 
@@ -368,15 +368,18 @@ elif menu == "City Information":
         # -------- BASIC INFO --------
         st.subheader("Basic Information")
         st.table(pd.DataFrame({
-            "Attribute": ["District", "ULB Category", "Population", "Area (sq.km)", "Density (per sq.km)", "Est. Year", "CAP Status"],
+            "Attribute": [
+                "District", "ULB Category", "Population", "Area (sq.km)",
+                "Density (per sq.km)", "Est. Year", "CAP Status"
+            ],
             "Value": [
-                row["District"],
-                row["ULB Category"],
-                format_indian_number(row["Population"]),
-                row["Area (sq.km)"],
-                round(row["Population"]/row["Area (sq.km)"], 2) if row["Area (sq.km)"] else "—",
-                row["Est. Year"],
-                row["CAP Status"]
+                row.get("District", "—"),
+                row.get("ULB Category", "—"),
+                format_indian_number(row.get("Population", 0)),
+                row.get("Area (sq.km)", "—"),
+                round(row.get("Population", 0)/row.get("Area (sq.km)", 1), 2) if row.get("Area (sq.km)", 0) else "—",
+                row.get("Est. Year", "—"),
+                row.get("CAP Status", "—"),
             ]
         }))
 
@@ -394,14 +397,14 @@ elif menu == "City Information":
                 "Wastewater Treated (m³/year)",
             ],
             "Value": [
-                format_indian_number(row["GHG Emissions"]),
-                round(row["GHG Emissions"]/row["Population"], 2) if row["Population"] else "—",
-                format_indian_number(row["Renewable Energy (MWh)"]),
-                format_indian_number(row["Urban Green Area (ha)"]),
-                format_indian_number(row["Municipal Solid Waste (tons)"]),
-                f"{row['Waste Landfilled (%)']}%",
-                f"{row['Waste Composted (%)']}%",
-                format_indian_number(row["Wastewater Treated (m3)"]),
+                format_indian_number(row.get("GHG Emissions", 0)),
+                round(row.get("GHG Emissions", 0)/row.get("Population", 1), 2) if row.get("Population", 0) else "—",
+                format_indian_number(row.get("Renewable Energy (MWh)", 0)),
+                format_indian_number(row.get("Urban Green Area (ha)", 0)),
+                format_indian_number(row.get("Municipal Solid Waste (tons)", 0)),
+                f"{row.get('Waste Landfilled (%)', 0)}%",
+                f"{row.get('Waste Composted (%)', 0)}%",
+                format_indian_number(row.get("Wastewater Treated (m3)", 0)),
             ]
         }))
 
@@ -413,15 +416,15 @@ elif menu == "City Information":
                 "Overall Literacy (%)", "Male Literacy (%)", "Female Literacy (%)", "Migrant (%)", "Slum (%)"
             ],
             "Value": [
-                format_indian_number(row["Males"]),
-                format_indian_number(row["Females"]),
-                format_indian_number(row["Children Male"]),
-                format_indian_number(row["Children Female"]),
-                f"{row['Literacy (%)']}%",
-                f"{row['Male Literacy (%)']}%",
-                f"{row['Female Literacy (%)']}%",
-                f"{row['Migrant (%)']}%",
-                f"{row['Slum (%)']}%"
+                format_indian_number(row.get("Males", 0)),
+                format_indian_number(row.get("Females", 0)),
+                format_indian_number(row.get("Children Male", 0)),
+                format_indian_number(row.get("Children Female", 0)),
+                f"{row.get('Literacy (%)', 0)}%",
+                f"{row.get('Male Literacy (%)', 0)}%",
+                f"{row.get('Female Literacy (%)', 0)}%",
+                f"{row.get('Migrant (%)', 0)}%",
+                f"{row.get('Slum (%)', 0)}%"
             ]
         }))
 
@@ -430,11 +433,11 @@ elif menu == "City Information":
         st.table(pd.DataFrame({
             "Field": ["Department Exist", "Department Name", "Email", "Contact Number", "Website"],
             "Details": [
-                row["Department Exist"],
-                row["Department Name"],
-                row["Email"],
-                row["Contact Number"],
-                row["Website"],
+                row.get("Department Exist", "—"),
+                row.get("Department Name", "—"),
+                row.get("Email", "—"),
+                row.get("Contact Number", "—"),
+                row.get("Website", "—"),
             ]
         }))
 
@@ -497,32 +500,32 @@ elif menu == "Admin":
                 new_row = {
                     "City Name": city,
                     "District": cities_districts.get(city, "—"),
-                    "Population": population,
-                    "Area (sq.km)": area,
-                    "ULB Category": ulb_category,
-                    "CAP Status": cap_status,
-                    "Est. Year": est_year,
-                    "GHG Emissions": ghg_val,
-                    "Renewable Energy (MWh)": renewable_energy,
-                    "Urban Green Area (ha)": green_area,
-                    "Municipal Solid Waste (tons)": solid_waste,
-                    "Waste Landfilled (%)": waste_landfilled,
-                    "Waste Composted (%)": waste_composted,
-                    "Wastewater Treated (m3)": wastewater,
-                    "Males": males,
-                    "Females": females,
-                    "Children Male": children_m,
-                    "Children Female": children_f,
-                    "Literacy (%)": literacy,
-                    "Male Literacy (%)": literacy_m,
-                    "Female Literacy (%)": literacy_f,
-                    "Migrant (%)": migrant,
-                    "Slum (%)": slum,
-                    "Department Exist": dept_exist,
-                    "Department Name": dept_name,
-                    "Email": dept_email,
-                    "Contact Number": contact_number,
-                    "Website": official_website,
+                    "Population": population or 0,
+                    "Area (sq.km)": area or 0,
+                    "ULB Category": ulb_category or "—",
+                    "CAP Status": cap_status or "—",
+                    "Est. Year": est_year or "—",
+                    "GHG Emissions": ghg_val or 0,
+                    "Renewable Energy (MWh)": renewable_energy or 0,
+                    "Urban Green Area (ha)": green_area or 0,
+                    "Municipal Solid Waste (tons)": solid_waste or 0,
+                    "Waste Landfilled (%)": waste_landfilled or 0,
+                    "Waste Composted (%)": waste_composted or 0,
+                    "Wastewater Treated (m3)": wastewater or 0,
+                    "Males": males or 0,
+                    "Females": females or 0,
+                    "Children Male": children_m or 0,
+                    "Children Female": children_f or 0,
+                    "Literacy (%)": literacy or 0,
+                    "Male Literacy (%)": literacy_m or 0,
+                    "Female Literacy (%)": literacy_f or 0,
+                    "Migrant (%)": migrant or 0,
+                    "Slum (%)": slum or 0,
+                    "Department Exist": dept_exist or "—",
+                    "Department Name": dept_name or "—",
+                    "Email": dept_email or "—",
+                    "Contact Number": contact_number or "—",
+                    "Website": official_website or "—",
                 }
                 df_meta = st.session_state.data.copy()
                 if city in df_meta["City Name"].values:
