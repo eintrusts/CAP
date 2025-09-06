@@ -159,16 +159,28 @@ def safe_get(row, col, default="—"):
 # ---------------------------
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {background-color: #0f0f10; color: #E6E6E6;}
+/* App Background */
+[data-testid="stAppViewContainer"] {background-color: #0f1115; color: #E6E6E6;}
 [data-testid="stSidebar"] {background-color: #141518; color: #E6E6E6;}
-.stButton>button {background-color:#3E6BE6; color:#FFFFFF; border-radius:8px; height:40px;}
-.stButton>button:hover {background-color:#2e50b0;}
-[data-testid="stMetricValue"] {color:#3E6BE6; font-weight:700;}
-.stExpander>div>div>div>div {background-color:#141518; color:#E6E6E6;}
-input, textarea, select {background-color:#141518; color:#E6E6E6; border-color:#3E6BE6;}
+/* Buttons */
+.stButton>button {
+    background-color:#228B22; 
+    color:#FFFFFF; 
+    border-radius:8px; 
+    height:40px;
+}
+.stButton>button:hover {background-color:#196619;}
+/* Metric Values */
+[data-testid="stMetricValue"] {color:#228B22; font-weight:700;}
+/* Expander / Cards */
+.stExpander>div>div>div>div {background-color:#1A1C20; color:#E6E6E6; border-radius:8px;}
+/* Inputs */
+input, textarea, select {background-color:#1A1C20; color:#E6E6E6; border-color:#228B22;}
+/* Tables */
+table th {background-color:#228B22; color:white;}
+table td {background-color:#1A1C20; color:#E6E6E6;}
 </style>
 """, unsafe_allow_html=True)
-
 # ---------------------------
 # Admin Login
 # ---------------------------
