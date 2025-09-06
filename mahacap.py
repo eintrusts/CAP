@@ -272,6 +272,19 @@ if menu == "Home":
         fig_estimated.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig_estimated, use_container_width=True)
 
+import plotly.express as px
+
+fig = px.bar(
+    cities_data.sort_values("GHG Emissions", ascending=False),
+    x="City Name",
+    y="GHG Emissions",
+    text="GHG Emissions",
+    color_discrete_sequence=["#54c750"]
+)
+fig.update_layout(plot_bgcolor="#1e1e1e", paper_bgcolor="#1e1e1e", font_color="#f0f2f0")
+st.plotly_chart(fig, use_container_width=True)
+
+
 # ---------------------------
 # City Information
 # ---------------------------
