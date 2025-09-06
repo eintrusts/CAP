@@ -398,14 +398,14 @@ elif menu == "Admin":
 # CAP Preparation Page
 # ---------------------------
 elif menu == "CAP Preparation":
-    st.header("CAP : Raw Data Collection for Comprehensive GHG Inventory")
+    st.header("CAP : Data Collection")
 
     if not st.session_state.authenticated:
         admin_login()
     else:
         st.markdown("""
         Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
-        GPC/C40/ICLEI guidelines. Only raw data is collected; emissions are calculated automatically.
+        GPC/C40/ICLEI guidelines.
         """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
@@ -466,7 +466,7 @@ elif menu == "CAP Preparation":
             # --- Optional Files / Verification ---
             file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
 
-            submit_cap = st.form_submit_button("Submit Raw Data and Generate GHG Inventory")
+            submit_cap = st.form_submit_button("Generate GHG Inventory")
 
             if submit_cap:
                 # Save raw data into CAP dataframe
@@ -522,7 +522,7 @@ elif menu == "CAP Preparation":
 # GHG Inventory Page
 # ---------------------------
 elif menu == "GHG Inventory":
-    st.header("City GHG Inventory Dashboard")
+    st.header("GHG Inventory")
 
     if not st.session_state.authenticated:
         admin_login()
