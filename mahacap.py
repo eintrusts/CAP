@@ -1201,85 +1201,123 @@ if menu == "CAP Generation":
 # GHG Inventory Page
 # ---------------------------
 elif menu == "GHG Inventory":
-    st.header("City GHG Inventory")
+    st.header("City GHG Inventory Generation")
 
-    # --- Initialize CAP raw data safely ---
-    CAP_DATA_FILE = "cap_raw_data.csv"
-    if "cap_data" not in st.session_state:
-        try:
-            st.session_state.cap_data = pd.read_csv(CAP_DATA_FILE)
-        except FileNotFoundError:
-            st.session_state.cap_data = pd.DataFrame()
-
-    cap_df = st.session_state.cap_data.copy()
-
-    if cap_df.empty:
-        st.warning("No CAP raw data found. Please submit raw data in 'CAP Generation' first.")
+    if not st.session_state.authenticated:
+        admin_login()
     else:
-        st.success(f"Found raw data for {len(cap_df)} cities.")
+        # Load CAP raw data safely
+        CAP_DATA_FILE = "cap_raw_data.csv"
+        try:
+            cap_df = pd.read_csv(CAP_DATA_FILE)
+        except FileNotFoundError:
+            cap_df = pd.DataFrame()
 
-        # --- Select City to view / generate GHG Inventory ---
-        city_list = cap_df["City Name"].tolist()
-        selected_city = st.selectbox("Select City for GHG Inventory", city_list)
+        # Save in session state
+        st.session_state.cap_data = cap_df
 
-        city_data = cap_df[cap_df["City Name"] == selected_city].iloc[0]
+        # Check if CAP data exists
+        if cap_df.empty or "City Name" not in cap_df.columns:
+            st.warning("No CAP raw data found or 'City Name' column missing. Please submit raw data first in 'CAP Generation'.")
+        else:
+            # Only show cities with submitted data
+            city_list = cap_df["City Name"].astype(str).tolist()
+            selected_city = st.selectbox("Select City to Generate GHG Inventory", city_list)
 
-        st.subheader(f"Raw Data for {selected_city}")
-        st.dataframe(city_data)
+            if st.button("Generate GHG Inventory"):
+                city_data = cap_df[cap_df["City Name"] == selected_city].iloc[0]
 
-        # --- Generate GHG Inventory Button ---
-        if st.button("Generate GHG Inventory"):
-            st.info(f"Generating GHG Inventory for {selected_city}...")
+                st.subheader(f"GHG Inventory for {selected_city}")
 
-            ghg_inventory = {}
+                # --- 1. General City Info ---
+                st.markdown(f"""
+                **Population:** {city_data.get('Population', 'N/A')}  
+                **Area (km²):** {city_data.get('Area (km²)', 'N/A')}  
+                **Administrative Type:** {city_data.get('Administrative Type', 'N/A')}  
+                **Year of Inventory:** {city_data.get('Year of Inventory', 'N/A')}  
+                """)
 
-            # 1. Energy Sector
-            ghg_inventory["Residential Electricity (tCO2e)"] = city_data.get("Residential Electricity (MWh)",0) * 0.85
-            ghg_inventory["Commercial Electricity (tCO2e)"] = city_data.get("Commercial Electricity (MWh)",0) * 0.85
-            ghg_inventory["Industrial Electricity (tCO2e)"] = city_data.get("Industrial Electricity (MWh)",0) * 0.85
-            ghg_inventory["Streetlights & Public Buildings (tCO2e)"] = city_data.get("Streetlights Energy (MWh)",0) * 0.85
-            ghg_inventory["On-site Diesel Generators (tCO2e)"] = city_data.get("Industrial Diesel (tons)",0) * 2.68
-            ghg_inventory["On-site Gas Turbines (tCO2e)"] = city_data.get("Industrial CNG (tons)",0) * 2.75
-            ghg_inventory["Renewable Energy Produced (tCO2e avoided)"] = -city_data.get("Renewable Energy (MWh)",0) * 0.85  # negative as avoided
+                # --- 2. Energy Sector ---
+                st.subheader("Energy Sector")
+                st.markdown(f"""
+                **Electricity Consumption (kWh/year)**  
+                Residential: {city_data.get('Residential Electricity (MWh)', 0)*1000}  
+                Commercial: {city_data.get('Commercial Electricity (MWh)', 0)*1000}  
+                Industrial: {city_data.get('Industrial Electricity (MWh)', 0)*1000}  
+                Municipal Buildings/Streetlights: {city_data.get('Streetlights Energy (MWh)', 0)*1000}  
 
-            # 2. Transport Sector
-            vehicle_factors = {"Diesel":0.00027,"Petrol":0.00025,"CNG":0.00020,"LPG":0.00022,"Electric":0} 
-            ghg_inventory["Diesel Vehicles (tCO2e)"] = city_data.get("Diesel Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["Diesel"]
-            ghg_inventory["Petrol Vehicles (tCO2e)"] = city_data.get("Petrol Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["Petrol"]
-            ghg_inventory["CNG Vehicles (tCO2e)"] = city_data.get("CNG Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["CNG"]
-            ghg_inventory["LPG Vehicles (tCO2e)"] = city_data.get("LPG Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["LPG"]
-            ghg_inventory["Electric Vehicles (tCO2e)"] = 0  # Optional: grid factor
+                **Purchased Heat/Steam (GJ/year):** {city_data.get('Purchased Heat (GJ)', 'N/A')}  
+                **On-site Generation:** Diesel: {city_data.get('Diesel Generators (litres)', 'N/A')}  
+                Gas Turbines: {city_data.get('Gas Turbines Fuel', 'N/A')}  
+                **Renewable Energy Production (kWh/year):** {city_data.get('Renewable Energy (MWh)', 0)*1000}  
+                """)
 
-            # 3. Waste Sector
-            ghg_inventory["Waste Landfilled CH4 (tCO2e)"] = city_data.get("Municipal Solid Waste (tons)",0) * (city_data.get("Waste Landfilled (%)",0)/100) * 0.25
-            ghg_inventory["Waste Composted CH4 (tCO2e)"] = city_data.get("Municipal Solid Waste (tons)",0) * (city_data.get("Waste Composted (%)",0)/100) * 0.05
-            ghg_inventory["Wastewater Treatment (tCO2e)"] = city_data.get("Wastewater Treated (m3)",0) * 0.001  # placeholder factor
+                # --- 3. Transport Sector ---
+                st.subheader("Transport Sector")
+                st.markdown(f"""
+                **Vehicle Counts by Type**  
+                Diesel Vehicles: {city_data.get('Diesel Vehicles', 0)}  
+                Petrol Vehicles: {city_data.get('Petrol Vehicles', 0)}  
+                CNG Vehicles: {city_data.get('CNG Vehicles', 0)}  
+                LPG Vehicles: {city_data.get('LPG Vehicles', 0)}  
+                Electric Vehicles: {city_data.get('Electric Vehicles', 0)}  
 
-            # 4. Industrial Sector
-            ghg_inventory["Industrial Diesel (tCO2e)"] = city_data.get("Industrial Diesel (tons)",0) * 2.68
-            ghg_inventory["Industrial Petrol (tCO2e)"] = city_data.get("Industrial Petrol (tons)",0) * 2.31
-            ghg_inventory["Industrial CNG (tCO2e)"] = city_data.get("Industrial CNG (tons)",0) * 2.75
-            ghg_inventory["Industrial LPG (tCO2e)"] = city_data.get("Industrial LPG (tons)",0) * 2.98
-            ghg_inventory["Industrial Energy (tCO2e)"] = city_data.get("Industrial Energy (MWh)",0) * 0.85
+                **Average km per Vehicle per Year:** {city_data.get('Avg km/Vehicle', 0)} km  
 
-            # 5. Water & Sewage
-            ghg_inventory["Water Supply & Treatment (tCO2e)"] = city_data.get("Energy for Water (MWh)",0) * 0.85
+                **Public Transport Fuel/Electricity:** {city_data.get('Public Transport Energy', 'N/A')}  
+                **Freight & Logistics Fuel:** {city_data.get('Freight Fuel', 'N/A')}  
+                """)
 
-            # 6. City Infrastructure
-            ghg_inventory["Public Buildings Energy (tCO2e)"] = city_data.get("Public Buildings Energy (MWh)",0) * 0.85
+                # --- 4. Waste Sector ---
+                st.subheader("Waste Sector")
+                st.markdown(f"""
+                **Municipal Solid Waste Generated (tons/year):** {city_data.get('Municipal Solid Waste (tons)', 0)}  
+                Landfilled: {city_data.get('Waste Landfilled (%)', 0)}%  
+                Composted: {city_data.get('Waste Composted (%)', 0)}%  
+                **Landfill Methane Capture Rate:** {city_data.get('Landfill Methane Capture (%)', 'N/A')}  
+                **Wastewater Treated (m³/year):** {city_data.get('Wastewater Treated (m3)', 0)}  
+                Treatment Type: {city_data.get('Wastewater Treatment Type', 'N/A')}  
+                """)
 
-            # Convert to DataFrame
-            ghg_df = pd.DataFrame(list(ghg_inventory.items()), columns=["Source", "CO2e (tCO2e)"])
+                # --- 5. Industrial Sector ---
+                st.subheader("Industrial Sector")
+                st.markdown(f"""
+                **Industrial Fuel Consumption:**  
+                Diesel: {city_data.get('Industrial Diesel (tons)', 0)}  
+                Petrol: {city_data.get('Industrial Petrol (tons)', 0)}  
+                CNG: {city_data.get('Industrial CNG (tons)', 0)}  
+                LPG: {city_data.get('Industrial LPG (tons)', 0)}  
+                Electricity (MWh): {city_data.get('Industrial Energy (MWh)', 0)}  
 
-            st.subheader(f"GHG Inventory for {selected_city}")
-            st.dataframe(ghg_df)
+                **Industrial Process Emissions:** {city_data.get('Industrial Process Emissions', 'N/A')}  
+                **Fugitive Emissions:** {city_data.get('Fugitive Emissions', 'N/A')}  
+                """)
 
-            # Download CSV
-            ghg_df.to_csv(f"{selected_city}_GHG_inventory.csv", index=False)
-            st.success(f"GHG Inventory generated successfully!")
-            st.download_button(
-                label="Download GHG Inventory CSV",
-                data=open(f"{selected_city}_GHG_inventory.csv","rb").read(),
-                file_name=f"{selected_city}_GHG_inventory.csv",
-                mime="text/csv"
-            )
+                # --- 6. Agriculture & Land Use ---
+                st.subheader("Agriculture & Land Use")
+                st.markdown(f"""
+                Cropland Area: {city_data.get('Cropland Area', 'N/A')}  
+                Livestock: {city_data.get('Livestock', 'N/A')}  
+                Fertilizer Use (tons/year): {city_data.get('Fertilizer Use (tons)', 'N/A')}  
+                Afforestation/Deforestation (ha): {city_data.get('Land Use Change (ha)', 'N/A')}  
+                Soil Carbon Sequestration: {city_data.get('Soil Carbon Sequestration', 'N/A')}  
+                """)
+
+                # --- 7. City Infrastructure ---
+                st.subheader("City Infrastructure")
+                st.markdown(f"""
+                Street Lights: {city_data.get('Street Lights', 'N/A')}  
+                Municipal Vehicle Fleet Fuel: {city_data.get('Municipal Vehicles Fuel', 'N/A')}  
+                Water Pumping & Treatment Energy (MWh): {city_data.get('Energy for Water (MWh)', 0)}  
+                Cooling/Heating Municipal Buildings: {city_data.get('Cooling/Heating Energy', 'N/A')}  
+                """)
+
+                # --- 8. Optional Co-benefits ---
+                st.subheader("Optional Co-benefit Indicators")
+                st.markdown(f"""
+                Renewable Energy Share: {city_data.get('Renewable Energy Share (%)', 'N/A')}  
+                Air Pollution Reduction: {city_data.get('Air Pollution Reduction', 'N/A')}  
+                Water Usage Efficiency: {city_data.get('Water Usage Efficiency', 'N/A')}  
+                """)
+
+                st.success(f"GHG Inventory for {selected_city} generated successfully!")
