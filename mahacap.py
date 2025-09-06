@@ -316,12 +316,23 @@ elif menu == "City Information":
 # Admin Panel
 # ---------------------------
 if menu == "Admin":
+    st.header("🔑 Admin Login")
+
+    # If not logged in, show password field
     if not st.session_state.get("logged_in", False):
-        st.warning("Please log in as Admin to continue.")
+        password = st.text_input("Enter Admin Password", type="password")
+        if st.button("Login"):
+            if password == "admin123":   # <-- you can change this password
+                st.session_state.logged_in = True
+                st.success("✅ Login successful!")
+                st.experimental_rerun()
+            else:
+                st.error("❌ Incorrect password. Please try again.")
+
     else:
+        # If logged in, show admin controls
         st.header("Admin Panel – Manage City Data")
 
-        # Load stored data
         df = st.session_state.data
 
         if df.empty:
