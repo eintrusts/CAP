@@ -1198,154 +1198,88 @@ if menu == "CAP Generation":
                 
 
 # ---------------------------
-# GHG Inventory Page (Extended)
+# GHG Inventory Page
 # ---------------------------
-if st.session_state.menu == "GHG Inventory":
-    st.header("GHG Inventory Dashboard")
-    
+elif menu == "GHG Inventory":
+    st.header("City GHG Inventory")
+
+    # --- Initialize CAP raw data safely ---
+    CAP_DATA_FILE = "cap_raw_data.csv"
+    if "cap_data" not in st.session_state:
+        try:
+            st.session_state.cap_data = pd.read_csv(CAP_DATA_FILE)
+        except FileNotFoundError:
+            st.session_state.cap_data = pd.DataFrame()
+
+    cap_df = st.session_state.cap_data.copy()
+
     if cap_df.empty:
         st.warning("No CAP raw data found. Please submit raw data in 'CAP Generation' first.")
     else:
+        st.success(f"Found raw data for {len(cap_df)} cities.")
+
+        # --- Select City to view / generate GHG Inventory ---
         city_list = cap_df["City Name"].tolist()
-        selected_city = st.selectbox("Select City to View GHG Inventory", city_list)
+        selected_city = st.selectbox("Select City for GHG Inventory", city_list)
+
         city_data = cap_df[cap_df["City Name"] == selected_city].iloc[0]
 
-        st.markdown(f"### City Overview: {selected_city}, {city_data['State']}")
-        st.write(f"Population: {city_data['Population']}, Area: {city_data['Area (km²)']} km², Administrative Type: {city_data['Administrative Type']}, Inventory Year: {city_data['Year']}")
+        st.subheader(f"Raw Data for {selected_city}")
+        st.dataframe(city_data)
 
-        import ast
+        # --- Generate GHG Inventory Button ---
+        if st.button("Generate GHG Inventory"):
+            st.info(f"Generating GHG Inventory for {selected_city}...")
 
-        def parse_json_column(col):
-            if col in city_data:
-                try:
-                    return pd.DataFrame(ast.literal_eval(city_data[col]))
-                except:
-                    return pd.DataFrame()
-            return pd.DataFrame()
+            ghg_inventory = {}
 
-        # Parse submitted tables
-        vehicles_df = parse_json_column("Vehicles")
-        industrial_fuels_df = parse_json_column("Industrial Fuels")
-        renewable_df = parse_json_column("Renewable Energy")
-        onsite_gen_df = parse_json_column("On-site Generation")
-        waste_df = parse_json_column("Waste")
-        agriculture_df = parse_json_column("Agriculture")
-        infrastructure_df = parse_json_column("City Infrastructure")
-        scope3_df = parse_json_column("Scope 3")
+            # 1. Energy Sector
+            ghg_inventory["Residential Electricity (tCO2e)"] = city_data.get("Residential Electricity (MWh)",0) * 0.85
+            ghg_inventory["Commercial Electricity (tCO2e)"] = city_data.get("Commercial Electricity (MWh)",0) * 0.85
+            ghg_inventory["Industrial Electricity (tCO2e)"] = city_data.get("Industrial Electricity (MWh)",0) * 0.85
+            ghg_inventory["Streetlights & Public Buildings (tCO2e)"] = city_data.get("Streetlights Energy (MWh)",0) * 0.85
+            ghg_inventory["On-site Diesel Generators (tCO2e)"] = city_data.get("Industrial Diesel (tons)",0) * 2.68
+            ghg_inventory["On-site Gas Turbines (tCO2e)"] = city_data.get("Industrial CNG (tons)",0) * 2.75
+            ghg_inventory["Renewable Energy Produced (tCO2e avoided)"] = -city_data.get("Renewable Energy (MWh)",0) * 0.85  # negative as avoided
 
-        # ---------------------------
-        # 1. Energy Sector
-        # ---------------------------
-        st.subheader("1. Energy Sector")
-        municipal_mwh = city_data["Municipal Electricity (kWh)"] / 1000
-        residential_mwh = city_data["Residential Electricity (kWh)"] / 1000
-        commercial_mwh = city_data["Commercial Electricity (kWh)"] / 1000
-        industrial_mwh = city_data["Industrial Electricity (kWh)"] / 1000
-        EF_grid = 0.82
-        energy_emissions = (municipal_mwh + residential_mwh + commercial_mwh + industrial_mwh) * EF_grid
+            # 2. Transport Sector
+            vehicle_factors = {"Diesel":0.00027,"Petrol":0.00025,"CNG":0.00020,"LPG":0.00022,"Electric":0} 
+            ghg_inventory["Diesel Vehicles (tCO2e)"] = city_data.get("Diesel Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["Diesel"]
+            ghg_inventory["Petrol Vehicles (tCO2e)"] = city_data.get("Petrol Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["Petrol"]
+            ghg_inventory["CNG Vehicles (tCO2e)"] = city_data.get("CNG Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["CNG"]
+            ghg_inventory["LPG Vehicles (tCO2e)"] = city_data.get("LPG Vehicles",0) * city_data.get("Avg km/Vehicle",0) * vehicle_factors["LPG"]
+            ghg_inventory["Electric Vehicles (tCO2e)"] = 0  # Optional: grid factor
 
-        st.dataframe(pd.DataFrame({
-            "Sector": ["Municipal", "Residential", "Commercial", "Industrial"],
-            "Consumption (MWh)": [municipal_mwh, residential_mwh, commercial_mwh, industrial_mwh],
-            "Emissions (tCO2e)": [municipal_mwh*EF_grid, residential_mwh*EF_grid, commercial_mwh*EF_grid, industrial_mwh*EF_grid]
-        }))
+            # 3. Waste Sector
+            ghg_inventory["Waste Landfilled CH4 (tCO2e)"] = city_data.get("Municipal Solid Waste (tons)",0) * (city_data.get("Waste Landfilled (%)",0)/100) * 0.25
+            ghg_inventory["Waste Composted CH4 (tCO2e)"] = city_data.get("Municipal Solid Waste (tons)",0) * (city_data.get("Waste Composted (%)",0)/100) * 0.05
+            ghg_inventory["Wastewater Treatment (tCO2e)"] = city_data.get("Wastewater Treated (m3)",0) * 0.001  # placeholder factor
 
-        # ---------------------------
-        # 2. Transport Sector
-        # ---------------------------
-        st.subheader("2. Transport Sector")
-        transport_emissions = 0
-        if not vehicles_df.empty:
-            EF_map = {"Diesel": 2.68/1000, "Petrol": 2.31/1000, "CNG": 2.75/1000, "Electric": 0.82/1000}
-            vehicles_df["EF"] = vehicles_df["Fuel Type"].map(EF_map).fillna(0)
-            vehicles_df["Fuel Consumed (litres)"] = vehicles_df["Average km/year"] / 10 * vehicles_df["Number of Vehicles"]
-            vehicles_df["Emissions (tCO2e)"] = vehicles_df["Fuel Consumed (litres)"] * vehicles_df["EF"]
-            transport_emissions = vehicles_df["Emissions (tCO2e)"].sum()
-            st.dataframe(vehicles_df[["Vehicle Type","Fuel Type","Number of Vehicles","Average km/year","Emissions (tCO2e)"]])
+            # 4. Industrial Sector
+            ghg_inventory["Industrial Diesel (tCO2e)"] = city_data.get("Industrial Diesel (tons)",0) * 2.68
+            ghg_inventory["Industrial Petrol (tCO2e)"] = city_data.get("Industrial Petrol (tons)",0) * 2.31
+            ghg_inventory["Industrial CNG (tCO2e)"] = city_data.get("Industrial CNG (tons)",0) * 2.75
+            ghg_inventory["Industrial LPG (tCO2e)"] = city_data.get("Industrial LPG (tons)",0) * 2.98
+            ghg_inventory["Industrial Energy (tCO2e)"] = city_data.get("Industrial Energy (MWh)",0) * 0.85
 
-        # ---------------------------
-        # 3. Industrial Sector
-        # ---------------------------
-        st.subheader("3. Industrial Sector")
-        industrial_emissions = 0
-        if not industrial_fuels_df.empty:
-            EF_fuels = {"Diesel": 2.68/1000, "Petrol":2.31/1000,"LPG":1.51/1000,"Natural Gas":2.75/1000,"Coal":2.42/1000,"Biomass":0}
-            industrial_fuels_df["EF"] = industrial_fuels_df["Fuel Type"].map(EF_fuels).fillna(0)
-            industrial_fuels_df["Emissions (tCO2e)"] = industrial_fuels_df["Consumption (tons/year or litres/year)"] * industrial_fuels_df["EF"]
-            industrial_emissions = industrial_fuels_df["Emissions (tCO2e)"].sum()
-            st.dataframe(industrial_fuels_df[["Fuel Type","Sector","Consumption (tons/year or litres/year)","Emissions (tCO2e)"]])
+            # 5. Water & Sewage
+            ghg_inventory["Water Supply & Treatment (tCO2e)"] = city_data.get("Energy for Water (MWh)",0) * 0.85
 
-        # ---------------------------
-        # 4. Waste Sector
-        # ---------------------------
-        st.subheader("4. Waste Sector")
-        waste_emissions = 0
-        if not waste_df.empty:
-            # Methane from landfill: 1 ton MSW = 0.25 tCO2e (example)
-            waste_df["Landfill Emissions (tCO2e)"] = waste_df["Landfilled (tons/year)"] * 0.25
-            waste_df["Composting Emissions (tCO2e)"] = waste_df["Composted (tons/year)"] * 0.05
-            waste_df["Wastewater Emissions (tCO2e)"] = waste_df["Wastewater Treated (m3/year)"] * 0.0001
-            waste_emissions = waste_df[["Landfill Emissions (tCO2e)","Composting Emissions (tCO2e)","Wastewater Emissions (tCO2e)"]].sum().sum()
-            st.dataframe(waste_df)
+            # 6. City Infrastructure
+            ghg_inventory["Public Buildings Energy (tCO2e)"] = city_data.get("Public Buildings Energy (MWh)",0) * 0.85
 
-        # ---------------------------
-        # 5. Agriculture & Land Use
-        # ---------------------------
-        st.subheader("5. Agriculture & Land Use")
-        ag_emissions = 0
-        if not agriculture_df.empty:
-            # Livestock: 1 cow = 1 tCO2e/year, fertilizers 0.5 tCO2e/ton
-            agriculture_df["Livestock Emissions"] = agriculture_df["Number of Animals"] * 1
-            agriculture_df["Fertilizer Emissions"] = agriculture_df["Fertilizer Used (tons/year)"] * 0.5
-            ag_emissions = agriculture_df["Livestock Emissions"].sum() + agriculture_df["Fertilizer Emissions"].sum()
-            st.dataframe(agriculture_df)
+            # Convert to DataFrame
+            ghg_df = pd.DataFrame(list(ghg_inventory.items()), columns=["Source", "CO2e (tCO2e)"])
 
-        # ---------------------------
-        # 6. City Infrastructure
-        # ---------------------------
-        st.subheader("6. City Infrastructure")
-        infra_emissions = 0
-        if not infrastructure_df.empty:
-            EF_energy = 0.82/1000
-            infrastructure_df["Emissions (tCO2e)"] = infrastructure_df["Energy Used (kWh/year)"] * EF_energy
-            infra_emissions = infrastructure_df["Emissions (tCO2e)"].sum()
-            st.dataframe(infrastructure_df)
+            st.subheader(f"GHG Inventory for {selected_city}")
+            st.dataframe(ghg_df)
 
-        # ---------------------------
-        # 7. Scope 3 / Other Sectors
-        # ---------------------------
-        st.subheader("7. Other Sectors / Scope 3")
-        scope3_emissions = 0
-        if not scope3_df.empty:
-            EF_scope3 = 0.82/1000
-            scope3_df["Emissions (tCO2e)"] = scope3_df["Energy Used (kWh/year)"] * EF_scope3
-            scope3_emissions = scope3_df["Emissions (tCO2e)"].sum()
-            st.dataframe(scope3_df)
-
-        # ---------------------------
-        # 8. Renewable Energy & Offsets
-        # ---------------------------
-        st.subheader("8. Renewable Energy & On-site Generation Offsets")
-        renewable_emissions_saved = 0
-        if not renewable_df.empty:
-            renewable_df["Emissions Offset (tCO2e)"] = renewable_df["Production (kWh/year)"] * EF_grid / 1000
-            renewable_emissions_saved = renewable_df["Emissions Offset (tCO2e)"].sum()
-            st.dataframe(renewable_df)
-
-        # ---------------------------
-        # Summary Dashboard
-        # ---------------------------
-        st.subheader("9. GHG Inventory Summary")
-        total_emissions = energy_emissions + transport_emissions + industrial_emissions + waste_emissions + ag_emissions + infra_emissions + scope3_emissions - renewable_emissions_saved
-
-        summary_df = pd.DataFrame({
-            "Sector": ["Energy", "Transport", "Industrial", "Waste", "Agriculture & Land Use", "City Infrastructure", "Scope 3", "Renewable Offsets"],
-            "Emissions (tCO2e)": [energy_emissions, transport_emissions, industrial_emissions, waste_emissions, ag_emissions, infra_emissions, scope3_emissions, -renewable_emissions_saved]
-        })
-        st.dataframe(summary_df)
-
-        import plotly.express as px
-        fig = px.bar(summary_df, x="Sector", y="Emissions (tCO2e)", color="Sector", title="City GHG Inventory Summary")
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.success(f"**Total City GHG Emissions:** {total_emissions:.2f} tCO2e")
+            # Download CSV
+            ghg_df.to_csv(f"{selected_city}_GHG_inventory.csv", index=False)
+            st.success(f"GHG Inventory generated successfully!")
+            st.download_button(
+                label="Download GHG Inventory CSV",
+                data=open(f"{selected_city}_GHG_inventory.csv","rb").read(),
+                file_name=f"{selected_city}_GHG_inventory.csv",
+                mime="text/csv"
+            )
