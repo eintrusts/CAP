@@ -1467,29 +1467,33 @@ elif menu == "Actions / Goals":
         st.table(df)
 
     # --- Generate CAP Report ---
-        st.markdown("---")
-        st.markdown("### Generate Consolidated CAP Report")
-        if st.button("Generate CAP Report"):
-            import io
-            import pandas as pd
+st.markdown("### Generate Consolidated CAP Report")
+if st.button("Generate CAP Report", key="generate_cap_report"):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Save GHG Inventory
+        if "cap_data" in st.session_state:
+            st.session_state.cap_data.to_excel(writer, index=False, sheet_name="GHG Inventory")
+        else:
+            pd.DataFrame().to_excel(writer, index=False, sheet_name="GHG Inventory")
 
-            # Create Excel file in memory
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # City Info & GHG Inventory
-                cap_df.to_excel(writer, index=False, sheet_name="GHG Inventory")
-                
-                # Actions / Goals
-                for sector in sectors:
-                    df_goals = pd.DataFrame(goals[sector], columns=["Short Term (by 2030)", "Mid Term (by 2040)", "Long Term (by 2050)"])
-                    df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
-                writer.save()
-            
-            st.download_button(
-                label="Download CAP Report (Excel)",
-                data=output.getvalue(),
-                file_name=f"CAP_Report_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+        # Save sector-wise goals
+        for sector in sectors:
+            df_goals = pd.DataFrame({
+                "Short Term (2030)": example_goals[sector][0][:10],
+                "Mid Term (2040)": example_goals[sector][1][:10],
+                "Long Term (2050)": example_goals[sector][2][:10]
+            })
+            df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
+        
+        writer.save()
+    
+    st.download_button(
+        label="Download CAP Report (Excel)",
+        data=output.getvalue(),
+        file_name=f"CAP_Report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="download_cap_report"
+    )
 
-
+st.markdown("**Note:** This report includes City details, GHG inventory, and sector-wise Actions/Goals.")
