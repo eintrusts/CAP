@@ -1337,6 +1337,8 @@ elif menu == "Actions / Goals":
     st.header("City Climate Action Goals for Net Zero by 2050")
 
     import pandas as pd
+    import io
+    from datetime import datetime
 
     # Sector-wise goals for Indian cities
     sector_goals = {
@@ -1464,36 +1466,37 @@ elif menu == "Actions / Goals":
             "Mid-term (2040)": goals["Mid-term"],
             "Long-term (2050)": goals["Long-term"]
         })
-        st.table(df)
+        st.table(df, key=f"{sector}_table")
 
-    # --- Generate CAP Report ---
-         st.markdown("### Generate Consolidated CAP Report")
-        if st.button("Generate CAP Report", key="generate_cap_report"):
+    st.markdown("---")
+    st.markdown("### Generate Consolidated CAP Report")
+
+    if st.button("Generate CAP Report", key="generate_cap_report"):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             # Save GHG Inventory
-            if "cap_data" in st.session_state:
+            if "cap_data" in st.session_state and not st.session_state.cap_data.empty:
                 st.session_state.cap_data.to_excel(writer, index=False, sheet_name="GHG Inventory")
-                else:
-                    pd.DataFrame().to_excel(writer, index=False, sheet_name="GHG Inventory")
+            else:
+                pd.DataFrame().to_excel(writer, index=False, sheet_name="GHG Inventory")
 
-             # Save sector-wise goals
-                for sector in sectors:
+            # Save sector-wise goals
+            for sector, goals in sector_goals.items():
                 df_goals = pd.DataFrame({
-                        "Short Term (2030)": example_goals[sector][0][:10],
-                        "Mid Term (2040)": example_goals[sector][1][:10],
-                        "Long Term (2050)": example_goals[sector][2][:10]
-                    })
-                    df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
-        
-                writer.save()
-    
-            st.download_button(
-                label="Download CAP Report (Excel)",
-                data=output.getvalue(),
-                file_name=f"CAP_Report_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="download_cap_report"
-           )
+                    "Short-term (2030)": goals["Short-term"],
+                    "Mid-term (2040)": goals["Mid-term"],
+                    "Long-term (2050)": goals["Long-term"]
+                })
+                df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
 
-        st.markdown("**Note:** This report includes City details, GHG inventory, and sector-wise Actions/Goals.")
+            writer.save()
+
+        st.download_button(
+            label="Download CAP Report (Excel)",
+            data=output.getvalue(),
+            file_name=f"CAP_Report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_cap_report"
+        )
+
+    st.markdown("**Note:** This report includes City details, GHG inventory, and sector-wise Actions/Goals.")
