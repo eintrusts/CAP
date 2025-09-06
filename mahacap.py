@@ -6,8 +6,6 @@ import os
 import io
 from datetime import datetime
 import numpy as np
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
 import requests
 
 # PDF support
