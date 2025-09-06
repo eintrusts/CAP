@@ -400,7 +400,6 @@ elif menu == "Admin":
 elif menu == "CAP Preparation":
     st.header("CAP : Data Collection")
 
-
         with st.form("cap_raw_form", clear_on_submit=False):
             city = st.selectbox("Select City", list(cities_districts.keys()))
 
