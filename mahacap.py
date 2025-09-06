@@ -404,8 +404,8 @@ elif menu == "CAP Preparation":
         admin_login()
     else:
         st.markdown("""
-        Collect detailed city-level activity data for generating a comprehensive GHG inventory as per
-        GPC/C40/ICLEI guidelines. Only raw data is collected; emissions are calculated automatically.
+        Collect detailed city-level activity data to generate a comprehensive GHG inventory.
+        Data is collected as per GPC/C40/ICLEI guidelines. Emissions are calculated automatically.
         """)
 
         with st.form("cap_raw_form", clear_on_submit=False):
@@ -419,32 +419,55 @@ elif menu == "CAP Preparation":
 
             # --- Electricity & Energy ---
             st.subheader("Electricity & Energy Use")
-            residential_electricity_mwh = st.number_input("Residential Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
-            commercial_electricity_mwh = st.number_input("Commercial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
-            industrial_electricity_mwh = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, value=0, step=100)
-            streetlights_energy_mwh = st.number_input("Streetlights & Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
-
-            # --- Fuel Consumption (Transport + Industry) ---
-            st.subheader("Transport Activity")
-            vehicles_diesel = st.number_input("Number of Diesel Vehicles", min_value=0, value=0, step=10)
-            vehicles_petrol = st.number_input("Number of Petrol Vehicles", min_value=0, value=0, step=10)
-            vehicles_cng = st.number_input("Number of CNG Vehicles", min_value=0, value=0, step=10)
-            vehicles_lpg = st.number_input("Number of LPG Vehicles", min_value=0, value=0, step=10)
-            vehicles_electric = st.number_input("Number of Electric Vehicles", min_value=0, value=0, step=10)
-            avg_km_per_vehicle_year = st.number_input("Average km per Vehicle per Year", min_value=0, value=0, step=100)
-
-            st.subheader("Industry & Commercial Fuel Use")
-            industrial_fuel_diesel_tons = st.number_input("Industrial Diesel Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_fuel_petrol_tons = st.number_input("Industrial Petrol Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_fuel_cng_tons = st.number_input("Industrial CNG Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_fuel_lpg_tons = st.number_input("Industrial LPG Fuel (tons/year)", min_value=0, value=0, step=10)
-            industrial_energy_mwh = st.number_input("Industrial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
-
-            # --- Buildings & Commercial Activity ---
-            st.subheader("Buildings & Commercial")
-            residential_energy_mwh = st.number_input("Residential Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
-            commercial_energy_mwh = st.number_input("Commercial Energy Consumption (MWh/year)", min_value=0, value=0, step=100)
+            residential_electricity_mwh = st.number_input("Residential Electricity (MWh/year)", min_value=0, value=0, step=100)
+            commercial_electricity_mwh = st.number_input("Commercial Electricity (MWh/year)", min_value=0, value=0, step=100)
+            industrial_electricity_mwh = st.number_input("Industrial Electricity (MWh/year)", min_value=0, value=0, step=100)
+            streetlights_energy_mwh = st.number_input("Streetlights Energy (MWh/year)", min_value=0, value=0, step=100)
             public_buildings_energy_mwh = st.number_input("Public Buildings Energy (MWh/year)", min_value=0, value=0, step=100)
+            renewable_energy_mwh = st.number_input("Renewable Energy Produced in City (MWh/year)", min_value=0, value=0, step=10)
+
+            # --- Transport Table ---
+            st.subheader("Transport Fleet Data")
+            transport_data = st.experimental_data_editor(
+                pd.DataFrame({
+                    "Vehicle Type": ["Two-Wheeler", "Car/Taxi", "Bus", "Truck", "Auto-rickshaw", "Metro/Rail (if any)"],
+                    "Diesel Vehicles": [0]*6,
+                    "Petrol Vehicles": [0]*6,
+                    "CNG Vehicles": [0]*6,
+                    "LPG Vehicles": [0]*6,
+                    "Electric Vehicles": [0]*6,
+                    "Average km/year": [0]*6
+                }),
+                num_rows="fixed",
+            )
+
+            # --- Municipal Fleet Table ---
+            st.subheader("Municipal / Government Fleet")
+            municipal_data = st.experimental_data_editor(
+                pd.DataFrame({
+                    "Vehicle Type": ["Truck", "Bus", "Service Vehicles"],
+                    "Diesel Vehicles": [0]*3,
+                    "Petrol Vehicles": [0]*3,
+                    "CNG Vehicles": [0]*3,
+                    "Electric Vehicles": [0]*3,
+                    "Average km/year": [0]*3
+                }),
+                num_rows="fixed",
+            )
+
+            # --- Industries Table ---
+            st.subheader("Industrial & Commercial Fuel/Energy Use")
+            industry_data = st.experimental_data_editor(
+                pd.DataFrame({
+                    "Industry Name": ["Industry 1", "Industry 2", "Industry 3"],
+                    "Diesel (tons/year)": [0]*3,
+                    "Petrol (tons/year)": [0]*3,
+                    "CNG (tons/year)": [0]*3,
+                    "LPG (tons/year)": [0]*3,
+                    "Electricity (MWh/year)": [0]*3
+                }),
+                num_rows="fixed",
+            )
 
             # --- Waste ---
             st.subheader("Waste Management")
@@ -453,23 +476,22 @@ elif menu == "CAP Preparation":
             fraction_composted = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
             wastewater_volume_m3 = st.number_input("Wastewater Treated (m3/year)", min_value=0, value=0, step=1000)
 
-            # --- Water Supply & Sewage ---
+            # --- Water & Sewage ---
             st.subheader("Water & Sewage")
             water_supply_m3 = st.number_input("Total Water Supplied (m3/year)", min_value=0, value=0, step=1000)
-            energy_for_water_mwh = st.number_input("Energy Used for Water Supply & Treatment (MWh/year)", min_value=0, value=0, step=10)
+            energy_for_water_mwh = st.number_input("Energy for Water Supply & Treatment (MWh/year)", min_value=0, value=0, step=10)
 
             # --- Urban Green / Other ---
-            st.subheader("Urban Green / Other")
+            st.subheader("Urban Green / Offsets")
             urban_green_area_ha = st.number_input("Urban Green Area (hectares)", min_value=0, value=0, step=1)
-            renewable_energy_mwh = st.number_input("Renewable Energy Generated in City (MWh/year)", min_value=0, value=0, step=10)
 
-            # --- Optional Files / Verification ---
+            # --- Supporting Documents ---
             file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
 
             submit_cap = st.form_submit_button("Submit Raw Data and Generate GHG Inventory")
 
             if submit_cap:
-                # Save raw data into CAP dataframe
+                # Save raw data
                 raw_row = {
                     "City Name": city,
                     "Population": population,
@@ -479,20 +501,11 @@ elif menu == "CAP Preparation":
                     "Commercial Electricity (MWh)": commercial_electricity_mwh,
                     "Industrial Electricity (MWh)": industrial_electricity_mwh,
                     "Streetlights Energy (MWh)": streetlights_energy_mwh,
-                    "Diesel Vehicles": vehicles_diesel,
-                    "Petrol Vehicles": vehicles_petrol,
-                    "CNG Vehicles": vehicles_cng,
-                    "LPG Vehicles": vehicles_lpg,
-                    "Electric Vehicles": vehicles_electric,
-                    "Avg km/Vehicle": avg_km_per_vehicle_year,
-                    "Industrial Diesel (tons)": industrial_fuel_diesel_tons,
-                    "Industrial Petrol (tons)": industrial_fuel_petrol_tons,
-                    "Industrial CNG (tons)": industrial_fuel_cng_tons,
-                    "Industrial LPG (tons)": industrial_fuel_lpg_tons,
-                    "Industrial Energy (MWh)": industrial_energy_mwh,
-                    "Residential Energy (MWh)": residential_energy_mwh,
-                    "Commercial Energy (MWh)": commercial_energy_mwh,
                     "Public Buildings Energy (MWh)": public_buildings_energy_mwh,
+                    "Renewable Energy (MWh)": renewable_energy_mwh,
+                    "Transport Data": transport_data.to_dict(orient="records"),
+                    "Municipal Fleet Data": municipal_data.to_dict(orient="records"),
+                    "Industry Data": industry_data.to_dict(orient="records"),
                     "Municipal Solid Waste (tons)": municipal_solid_waste_tons,
                     "Waste Landfilled (%)": fraction_landfilled,
                     "Waste Composted (%)": fraction_composted,
@@ -500,7 +513,6 @@ elif menu == "CAP Preparation":
                     "Water Supplied (m3)": water_supply_m3,
                     "Energy for Water (MWh)": energy_for_water_mwh,
                     "Urban Green Area (ha)": urban_green_area_ha,
-                    "Renewable Energy (MWh)": renewable_energy_mwh,
                     "Submission Date": datetime.now()
                 }
 
@@ -516,8 +528,9 @@ elif menu == "CAP Preparation":
                 st.session_state.last_updated = datetime.now()
 
                 st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
-                st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
+                st.session_state.menu = "GHG Inventory"
                 st.experimental_rerun()
+
 
 # ---------------------------
 # GHG Inventory Page
@@ -535,57 +548,60 @@ elif menu == "GHG Inventory":
             city = st.selectbox("Select City to View GHG Inventory", list(df_cap["City Name"].unique()))
             city_row = df_cap[df_cap["City Name"] == city].iloc[0]
 
-            # --- Define Emission Factors (EF) ---
-            # IPCC / GPC approximate factors
-            EF_electricity = 0.82  # tCO2e/MWh (Indian grid avg.)
-            EF_diesel_vehicle = 2.68 / 1000  # tCO2e/km per vehicle
-            EF_petrol_vehicle = 2.31 / 1000
-            EF_cng_vehicle = 2.74 / 1000
-            EF_lpg_vehicle = 1.51 / 1000
-            EF_electric_vehicle = 0  # zero tailpipe, grid emissions included in electricity
-            EF_industrial_fuel = {
-                "Diesel": 2.68, "Petrol": 2.31, "CNG": 2.74, "LPG": 1.51  # tCO2e/ton
+            # --- Emission Factors ---
+            EF = {
+                "Electricity": 0.82,  # tCO2e/MWh
+                "Diesel_vehicle": 2.68/1000,  # tCO2e/km
+                "Petrol_vehicle": 2.31/1000,
+                "CNG_vehicle": 2.74/1000,
+                "LPG_vehicle": 1.51/1000,
+                "Electric_vehicle": 0,
+                "Diesel_fuel": 2.68, "Petrol_fuel": 2.31, "CNG_fuel": 2.74, "LPG_fuel": 1.51,
+                "Waste_Landfill": 1/10, "Waste_Compost": 0.1/10, "Wastewater": 0.25/1000,
+                "Water_Energy": 0.82
             }
-            EF_waste_landfill = 1.0 / 10  # tCO2e per ton (approx.)
-            EF_waste_compost = 0.1 / 10
-            EF_wastewater = 0.25 / 1000  # tCO2e per m3
-            EF_water_energy = 0.82  # tCO2e/MWh
 
-            # --- Calculate Sector Emissions ---
             emissions = {}
 
-            # Energy
-            emissions["Residential Energy"] = city_row.get("Residential Energy (MWh)",0) * EF_electricity
-            emissions["Commercial Energy"] = city_row.get("Commercial Energy (MWh)",0) * EF_electricity
-            emissions["Industrial Energy"] = city_row.get("Industrial Energy (MWh)",0) * EF_electricity
-            emissions["Streetlights & Public Buildings"] = city_row.get("Streetlights Energy (MWh)",0) * EF_electricity + city_row.get("Public Buildings Energy (MWh)",0)*EF_electricity
+            # --- Energy ---
+            emissions["Residential Energy"] = city_row.get("Residential Electricity (MWh)",0)*EF["Electricity"]
+            emissions["Commercial Energy"] = city_row.get("Commercial Electricity (MWh)",0)*EF["Electricity"]
+            emissions["Industrial Energy"] = city_row.get("Industrial Electricity (MWh)",0)*EF["Electricity"]
+            emissions["Streetlights & Public Buildings"] = city_row.get("Streetlights Energy (MWh)",0)*EF["Electricity"] + city_row.get("Public Buildings Energy (MWh)",0)*EF["Electricity"]
 
-            # Transport
-            emissions["Transport Diesel"] = city_row.get("Diesel Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_diesel_vehicle
-            emissions["Transport Petrol"] = city_row.get("Petrol Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_petrol_vehicle
-            emissions["Transport CNG"] = city_row.get("CNG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_cng_vehicle
-            emissions["Transport LPG"] = city_row.get("LPG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_lpg_vehicle
-            emissions["Transport Electric"] = city_row.get("Electric Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_electric_vehicle
+            # --- Transport ---
+            for row in city_row.get("Transport Data", []):
+                for fuel in ["Diesel","Petrol","CNG","LPG","Electric"]:
+                    key = f"Transport {row['Vehicle Type']} {fuel}"
+                    emissions[key] = row.get(f"{fuel} Vehicles",0)*row.get("Average km/year",0)*EF[f"{fuel}_vehicle"]
 
-            # Industry fuels
-            emissions["Industrial Diesel"] = city_row.get("Industrial Diesel (tons)",0) * EF_industrial_fuel["Diesel"]
-            emissions["Industrial Petrol"] = city_row.get("Industrial Petrol (tons)",0) * EF_industrial_fuel["Petrol"]
-            emissions["Industrial CNG"] = city_row.get("Industrial CNG (tons)",0) * EF_industrial_fuel["CNG"]
-            emissions["Industrial LPG"] = city_row.get("Industrial LPG (tons)",0) * EF_industrial_fuel["LPG"]
+            # --- Municipal Fleet ---
+            for row in city_row.get("Municipal Fleet Data", []):
+                for fuel in ["Diesel","Petrol","CNG","Electric"]:
+                    key = f"Municipal {row['Vehicle Type']} {fuel}"
+                    emissions[key] = row.get(f"{fuel} Vehicles",0)*row.get("Average km/year",0)*EF[f"{fuel}_vehicle"]
 
-            # Waste
+            # --- Industry ---
+            for row in city_row.get("Industry Data", []):
+                emissions[f"Industry {row['Industry Name']} Diesel"] = row.get("Diesel (tons/year)",0)*EF["Diesel_fuel"]
+                emissions[f"Industry {row['Industry Name']} Petrol"] = row.get("Petrol (tons/year)",0)*EF["Petrol_fuel"]
+                emissions[f"Industry {row['Industry Name']} CNG"] = row.get("CNG (tons/year)",0)*EF["CNG_fuel"]
+                emissions[f"Industry {row['Industry Name']} LPG"] = row.get("LPG (tons/year)",0)*EF["LPG_fuel"]
+                emissions[f"Industry {row['Industry Name']} Electricity"] = row.get("Electricity (MWh/year)",0)*EF["Electricity"]
+
+            # --- Waste ---
             waste_total = city_row.get("Municipal Solid Waste (tons)",0)
-            emissions["Waste Landfilled"] = waste_total * (city_row.get("Waste Landfilled (%)",0)/100) * EF_waste_landfill
-            emissions["Waste Composted"] = waste_total * (city_row.get("Waste Composted (%)",0)/100) * EF_waste_compost
-            emissions["Wastewater"] = city_row.get("Wastewater Treated (m3)",0) * EF_wastewater
+            emissions["Waste Landfilled"] = waste_total*(city_row.get("Waste Landfilled (%)",0)/100)*EF["Waste_Landfill"]
+            emissions["Waste Composted"] = waste_total*(city_row.get("Waste Composted (%)",0)/100)*EF["Waste_Compost"]
+            emissions["Wastewater"] = city_row.get("Wastewater Treated (m3)",0)*EF["Wastewater"]
 
-            # Water
-            emissions["Water Energy"] = city_row.get("Energy for Water (MWh)",0) * EF_water_energy
+            # --- Water ---
+            emissions["Water Energy"] = city_row.get("Energy for Water (MWh)",0)*EF["Water_Energy"]
 
-            # Urban Green / Renewable
-            emissions["Urban Green / Offsets"] = -1 * city_row.get("Renewable Energy (MWh)",0) * EF_electricity  # subtract grid emissions offset
+            # --- Urban Green / Renewable ---
+            emissions["Urban Green / Offsets"] = -1*city_row.get("Renewable Energy (MWh)",0)*EF["Electricity"]
 
-            # --- Display Metrics ---
+            # --- Display ---
             st.subheader(f"{city} — Sector-wise GHG Emissions (tCO2e)")
 
             emissions_df = pd.DataFrame({
@@ -593,15 +609,13 @@ elif menu == "GHG Inventory":
                 "Emissions (tCO2e)": list(emissions.values())
             })
 
-            # Total Emissions
             total_emissions = sum(emissions.values())
-            st.metric("Total City GHG Emissions (tCO2e)", format(total_emissions, ",.0f"))
+            st.metric("Total City GHG Emissions (tCO2e)", format(total_emissions,",.0f"))
 
             # Bar Chart
             fig_bar = px.bar(
                 emissions_df.sort_values("Emissions (tCO2e)", ascending=False),
-                x="Sector",
-                y="Emissions (tCO2e)",
+                x="Sector", y="Emissions (tCO2e)",
                 text=emissions_df["Emissions (tCO2e)"].apply(lambda x: format(int(x), ",")),
                 color_discrete_sequence=["#3E6BE6"]
             )
@@ -609,12 +623,7 @@ elif menu == "GHG Inventory":
             st.plotly_chart(fig_bar, use_container_width=True)
 
             # Pie Chart
-            fig_pie = px.pie(
-                emissions_df,
-                names="Sector",
-                values="Emissions (tCO2e)",
-                title="Sector-wise GHG Contribution",
-            )
+            fig_pie = px.pie(emissions_df, names="Sector", values="Emissions (tCO2e)", title="Sector-wise GHG Contribution")
             fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
             st.plotly_chart(fig_pie, use_container_width=True)
 
@@ -623,4 +632,3 @@ elif menu == "GHG Inventory":
             st.table(emissions_df.assign(**{
                 "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
             }))
-
