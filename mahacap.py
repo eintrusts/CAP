@@ -515,15 +515,15 @@ elif menu == "CAP Preparation":
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
                 st.session_state.last_updated = datetime.now()
 
-                st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
-                st.session_state.menu = "GHG Inventory"  # Redirect to GHG Inventory page
-st.success(f"Raw data for {city} submitted successfully! You can now view the GHG Inventory.")
+                st.success(f"Raw data for {city} submitted successfully!")
 
+                # Instead of experimental_rerun, just set menu to GHG Inventory
+                st.session_state.menu = "GHG Inventory"
 
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
-elif menu == "GHG Inventory":
+if menu == "GHG Inventory" or st.session_state.menu == "GHG Inventory":
     st.header("GHG Inventory")
 
     if not st.session_state.authenticated:
@@ -537,56 +537,40 @@ elif menu == "GHG Inventory":
             city_row = df_cap[df_cap["City Name"] == city].iloc[0]
 
             # --- Define Emission Factors (EF) ---
-            # IPCC / GPC approximate factors
-            EF_electricity = 0.82  # tCO2e/MWh (Indian grid avg.)
-            EF_diesel_vehicle = 2.68 / 1000  # tCO2e/km per vehicle
+            EF_electricity = 0.82  # tCO2e/MWh
+            EF_diesel_vehicle = 2.68 / 1000
             EF_petrol_vehicle = 2.31 / 1000
             EF_cng_vehicle = 2.74 / 1000
             EF_lpg_vehicle = 1.51 / 1000
-            EF_electric_vehicle = 0  # zero tailpipe, grid emissions included in electricity
-            EF_industrial_fuel = {
-                "Diesel": 2.68, "Petrol": 2.31, "CNG": 2.74, "LPG": 1.51  # tCO2e/ton
-            }
-            EF_waste_landfill = 1.0 / 10  # tCO2e per ton (approx.)
-            EF_waste_compost = 0.1 / 10
-            EF_wastewater = 0.25 / 1000  # tCO2e per m3
-            EF_water_energy = 0.82  # tCO2e/MWh
+            EF_electric_vehicle = 0
+            EF_industrial_fuel = {"Diesel":2.68,"Petrol":2.31,"CNG":2.74,"LPG":1.51}
+            EF_waste_landfill = 0.1
+            EF_waste_compost = 0.01
+            EF_wastewater = 0.00025
+            EF_water_energy = 0.82
 
             # --- Calculate Sector Emissions ---
             emissions = {}
-
-            # Energy
             emissions["Residential Energy"] = city_row.get("Residential Energy (MWh)",0) * EF_electricity
             emissions["Commercial Energy"] = city_row.get("Commercial Energy (MWh)",0) * EF_electricity
             emissions["Industrial Energy"] = city_row.get("Industrial Energy (MWh)",0) * EF_electricity
             emissions["Streetlights & Public Buildings"] = city_row.get("Streetlights Energy (MWh)",0) * EF_electricity + city_row.get("Public Buildings Energy (MWh)",0)*EF_electricity
-
-            # Transport
             emissions["Transport Diesel"] = city_row.get("Diesel Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_diesel_vehicle
             emissions["Transport Petrol"] = city_row.get("Petrol Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_petrol_vehicle
             emissions["Transport CNG"] = city_row.get("CNG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_cng_vehicle
             emissions["Transport LPG"] = city_row.get("LPG Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_lpg_vehicle
             emissions["Transport Electric"] = city_row.get("Electric Vehicles",0) * city_row.get("Avg km/Vehicle",0) * EF_electric_vehicle
-
-            # Industry fuels
             emissions["Industrial Diesel"] = city_row.get("Industrial Diesel (tons)",0) * EF_industrial_fuel["Diesel"]
             emissions["Industrial Petrol"] = city_row.get("Industrial Petrol (tons)",0) * EF_industrial_fuel["Petrol"]
             emissions["Industrial CNG"] = city_row.get("Industrial CNG (tons)",0) * EF_industrial_fuel["CNG"]
             emissions["Industrial LPG"] = city_row.get("Industrial LPG (tons)",0) * EF_industrial_fuel["LPG"]
-
-            # Waste
             waste_total = city_row.get("Municipal Solid Waste (tons)",0)
             emissions["Waste Landfilled"] = waste_total * (city_row.get("Waste Landfilled (%)",0)/100) * EF_waste_landfill
             emissions["Waste Composted"] = waste_total * (city_row.get("Waste Composted (%)",0)/100) * EF_waste_compost
             emissions["Wastewater"] = city_row.get("Wastewater Treated (m3)",0) * EF_wastewater
-
-            # Water
             emissions["Water Energy"] = city_row.get("Energy for Water (MWh)",0) * EF_water_energy
+            emissions["Urban Green / Offsets"] = -1 * city_row.get("Renewable Energy (MWh)",0) * EF_electricity
 
-            # Urban Green / Renewable
-            emissions["Urban Green / Offsets"] = -1 * city_row.get("Renewable Energy (MWh)",0) * EF_electricity  # subtract grid emissions offset
-
-            # --- Display Metrics ---
             st.subheader(f"{city} — Sector-wise GHG Emissions (tCO2e)")
 
             emissions_df = pd.DataFrame({
@@ -594,11 +578,9 @@ elif menu == "GHG Inventory":
                 "Emissions (tCO2e)": list(emissions.values())
             })
 
-            # Total Emissions
             total_emissions = sum(emissions.values())
             st.metric("Total City GHG Emissions (tCO2e)", format(total_emissions, ",.0f"))
 
-            # Bar Chart
             fig_bar = px.bar(
                 emissions_df.sort_values("Emissions (tCO2e)", ascending=False),
                 x="Sector",
@@ -609,7 +591,6 @@ elif menu == "GHG Inventory":
             fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
             st.plotly_chart(fig_bar, use_container_width=True)
 
-            # Pie Chart
             fig_pie = px.pie(
                 emissions_df,
                 names="Sector",
@@ -619,7 +600,6 @@ elif menu == "GHG Inventory":
             fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
             st.plotly_chart(fig_pie, use_container_width=True)
 
-            # Detailed Table
             st.write("### Detailed Emissions Table")
             st.table(emissions_df.assign(**{
                 "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
