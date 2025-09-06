@@ -512,10 +512,12 @@ elif menu == "Admin":
                 if location != "Maharashtra":
                     ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat"])
                     cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+                    cap_link = st.text_input("CAP Link (Optional)")
                     est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1)
                 else:
                     ulb_category = st.text_input("ULB Category", value="State")
-                    cap_status = st.text_input("CAP Status", value="—")
+                    cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
+                    cap_link = st.text_input("CAP Link (Optional)")
                     est_year = st.number_input("Year of Establishment", min_value=1800, max_value=2100, step=1)
                 
                 population = st.number_input("Population", min_value=0, step=1000)
@@ -567,6 +569,7 @@ elif menu == "Admin":
                     "Area (sq.km)": area,
                     "ULB Category": ulb_category,
                     "CAP Status": cap_status,
+                    "CAP Link": cap_link,
                     "Est. Year": est_year,
                     "GHG Emissions": ghg_val,
                     "Renewable Energy (MWh)": renewable_energy,
