@@ -1322,10 +1322,148 @@ elif menu == "GHG Inventory":
 
                 st.success(f"GHG Inventory for {selected_city} generated successfully!")
 
-                # --- Bottom Actions Button ---
-                st.markdown("---")
-                if st.button("View Actions / Goals for Net Zero by 2050"):
-                st.session_state.menu = "Actions / Goals"
-                st.experimental_rerun()
+                # --- Action Button to Goals Page ---
+        st.markdown("---")
+        st.markdown("### Next Step")
+        if st.button("View Actions / Goals to Achieve Net-Zero by 2050"):
+            st.session_state.menu = "Actions / Goals"
+            st.experimental_rerun()
+
+
+# ---------------------------
+# Actions / Goals Page (Table View)
+# ---------------------------
+elif menu == "Actions / Goals":
+    st.header("City Climate Action Goals for Net Zero by 2050")
+
+    import pandas as pd
+
+    # Sector-wise goals for Indian cities
+    sector_goals = {
+        "Energy": {
+            "Short-term": [
+                "Increase rooftop solar adoption in residential buildings",
+                "Upgrade municipal street lighting to LED",
+                "Retrofit public buildings for energy efficiency",
+                "Promote solar water heating in households",
+                "Implement energy audits in industrial units",
+                "Encourage net-metering for rooftop solar",
+                "Promote solar PV in commercial buildings",
+                "Replace diesel generators with grid electricity",
+                "Introduce smart electricity meters",
+                "Develop city-level renewable energy action plan"
+            ],
+            "Mid-term": [
+                "Increase renewable share in city electricity to 50%",
+                "Transition municipal heating to low-carbon sources",
+                "Mandate net-zero energy standards for new buildings",
+                "Electrify municipal vehicle fleets",
+                "Promote community solar parks",
+                "Deploy large-scale solar + battery systems in industries",
+                "Introduce district heating/cooling with renewable energy",
+                "Upgrade grid infrastructure for smart city management",
+                "Support renewable energy for commercial clusters",
+                "Encourage large-scale biomass energy projects"
+            ],
+            "Long-term": [
+                "Achieve 100% renewable electricity in city",
+                "Phase out fossil fuel use in municipal energy supply",
+                "Achieve net-zero energy status in all public buildings",
+                "Fully electrify industrial and commercial operations",
+                "Deploy city-wide microgrids with renewable integration",
+                "Support local energy storage & battery projects",
+                "Achieve net-zero for district heating/cooling",
+                "Implement smart city-wide energy management",
+                "Support zero-carbon energy in all industrial parks",
+                "Promote city-wide energy efficiency culture"
+            ]
+        },
+        "Transport": {
+            "Short-term": [
+                "Expand public bus fleet with CNG/Electric buses",
+                "Promote e-2/3-wheelers through subsidies",
+                "Develop dedicated bicycle lanes",
+                "Enhance pedestrian walkways",
+                "Implement carpooling initiatives",
+                "Introduce EV charging stations in public areas",
+                "Phase out old diesel vehicles gradually",
+                "Implement congestion management in city centers",
+                "Upgrade metro/light rail infrastructure",
+                "Promote last-mile connectivity using EVs"
+            ],
+            "Mid-term": [
+                "Electrify 50% of city transport fleet",
+                "Develop integrated multi-modal transport system",
+                "Expand metro and light rail lines",
+                "Implement urban freight consolidation hubs",
+                "Promote shared EV mobility programs",
+                "Increase non-motorized transport share",
+                "Introduce low-emission zones",
+                "Encourage electric buses for inter-city routes",
+                "Deploy smart traffic management systems",
+                "Offer incentives for EV taxis and delivery fleets"
+            ],
+            "Long-term": [
+                "100% electric or zero-emission public fleet",
+                "Phase out fossil-fueled private vehicles",
+                "Achieve 80% modal share for public transport",
+                "Develop fully integrated EV charging network",
+                "Promote autonomous electric buses for efficiency",
+                "Ensure net-zero freight transport emissions",
+                "Expand pedestrian-only zones in city centers",
+                "Implement city-wide EV infrastructure monitoring",
+                "Support hydrogen-based heavy transport if feasible",
+                "Achieve complete low-carbon mobility for city residents"
+            ]
+        },
+        "Waste": {
+            "Short-term": [
+                "Segregate municipal solid waste at source",
+                "Increase composting and biogas generation",
+                "Capture landfill methane for energy use",
+                "Promote recycling of plastics, paper, metals",
+                "Upgrade wastewater treatment to secondary level",
+                "Reduce open dumping of waste",
+                "Engage citizens in community waste management",
+                "Reduce single-use plastics in municipal operations",
+                "Implement waste audits for commercial establishments",
+                "Introduce energy recovery from sewage sludge"
+            ],
+            "Mid-term": [
+                "Achieve 70% recycling rate city-wide",
+                "Implement energy recovery from organic waste at scale",
+                "Upgrade wastewater treatment to tertiary level",
+                "Capture 80% methane from landfills",
+                "Promote circular economy for construction waste",
+                "Encourage industrial waste minimization",
+                "Use waste-derived fuels in industries",
+                "Promote city-wide composting programs",
+                "Reduce plastic consumption to minimal levels",
+                "Ensure sludge management with energy co-benefits"
+            ],
+            "Long-term": [
+                "Zero-waste city initiatives implemented",
+                "100% landfill methane capture",
+                "All wastewater treated to tertiary standards",
+                "Maximized recycling for all solid waste streams",
+                "Circular economy fully integrated in industrial zones",
+                "Energy recovery from all organic waste",
+                "Phased elimination of non-recyclable plastics",
+                "Advanced waste-to-energy solutions operational",
+                "City-wide citizen engagement for sustainable waste",
+                "Net-zero GHG emissions from waste sector"
+            ]
+        }
+    }
+
+    # Display table per sector
+    for sector, goals in sector_goals.items():
+        st.subheader(f"{sector} Sector Goals")
+        df = pd.DataFrame({
+            "Short-term (2030)": goals["Short-term"],
+            "Mid-term (2040)": goals["Mid-term"],
+            "Long-term (2050)": goals["Long-term"]
+        })
+        st.table(df)
 
 
