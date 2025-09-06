@@ -1331,19 +1331,25 @@ elif menu == "GHG Inventory":
 
 
 # ---------------------------
-# Actions / Goals Page (Table View)
+# Actions / Goals Page (Professional)
 # ---------------------------
 elif menu == "Actions / Goals":
     st.header("City Climate Action Goals for Net Zero by 2050")
+    st.markdown("""
+    This page summarizes **sector-wise short, mid, and long-term goals** for achieving net-zero emissions by 2050.
+    You can **download a consolidated CAP report** including City details, GHG inventory, and sectoral goals.
+    """)
 
-    import pandas as pd
     import io
+    import pandas as pd
     from datetime import datetime
 
-    # Sector-wise goals for Indian cities
+    # ---------------------------
+    # Sector-wise goals
+    # ---------------------------
     sector_goals = {
         "Energy": {
-            "Short-term": [
+            "Short-term (2030)": [
                 "Increase rooftop solar adoption in residential buildings",
                 "Upgrade municipal street lighting to LED",
                 "Retrofit public buildings for energy efficiency",
@@ -1355,7 +1361,7 @@ elif menu == "Actions / Goals":
                 "Introduce smart electricity meters",
                 "Develop city-level renewable energy action plan"
             ],
-            "Mid-term": [
+            "Mid-term (2040)": [
                 "Increase renewable share in city electricity to 50%",
                 "Transition municipal heating to low-carbon sources",
                 "Mandate net-zero energy standards for new buildings",
@@ -1367,7 +1373,7 @@ elif menu == "Actions / Goals":
                 "Support renewable energy for commercial clusters",
                 "Encourage large-scale biomass energy projects"
             ],
-            "Long-term": [
+            "Long-term (2050)": [
                 "Achieve 100% renewable electricity in city",
                 "Phase out fossil fuel use in municipal energy supply",
                 "Achieve net-zero energy status in all public buildings",
@@ -1381,7 +1387,7 @@ elif menu == "Actions / Goals":
             ]
         },
         "Transport": {
-            "Short-term": [
+            "Short-term (2030)": [
                 "Expand public bus fleet with CNG/Electric buses",
                 "Promote e-2/3-wheelers through subsidies",
                 "Develop dedicated bicycle lanes",
@@ -1393,7 +1399,7 @@ elif menu == "Actions / Goals":
                 "Upgrade metro/light rail infrastructure",
                 "Promote last-mile connectivity using EVs"
             ],
-            "Mid-term": [
+            "Mid-term (2040)": [
                 "Electrify 50% of city transport fleet",
                 "Develop integrated multi-modal transport system",
                 "Expand metro and light rail lines",
@@ -1405,7 +1411,7 @@ elif menu == "Actions / Goals":
                 "Deploy smart traffic management systems",
                 "Offer incentives for EV taxis and delivery fleets"
             ],
-            "Long-term": [
+            "Long-term (2050)": [
                 "100% electric or zero-emission public fleet",
                 "Phase out fossil-fueled private vehicles",
                 "Achieve 80% modal share for public transport",
@@ -1419,7 +1425,7 @@ elif menu == "Actions / Goals":
             ]
         },
         "Waste": {
-            "Short-term": [
+            "Short-term (2030)": [
                 "Segregate municipal solid waste at source",
                 "Increase composting and biogas generation",
                 "Capture landfill methane for energy use",
@@ -1431,7 +1437,7 @@ elif menu == "Actions / Goals":
                 "Implement waste audits for commercial establishments",
                 "Introduce energy recovery from sewage sludge"
             ],
-            "Mid-term": [
+            "Mid-term (2040)": [
                 "Achieve 70% recycling rate city-wide",
                 "Implement energy recovery from organic waste at scale",
                 "Upgrade wastewater treatment to tertiary level",
@@ -1443,7 +1449,7 @@ elif menu == "Actions / Goals":
                 "Reduce plastic consumption to minimal levels",
                 "Ensure sludge management with energy co-benefits"
             ],
-            "Long-term": [
+            "Long-term (2050)": [
                 "Zero-waste city initiatives implemented",
                 "100% landfill methane capture",
                 "All wastewater treated to tertiary standards",
@@ -1458,20 +1464,20 @@ elif menu == "Actions / Goals":
         }
     }
 
-    # Display table per sector
+    # ---------------------------
+    # Display sector-wise tables
+    # ---------------------------
     for sector, goals in sector_goals.items():
         st.subheader(f"{sector} Sector Goals")
-        df = pd.DataFrame({
-            "Short-term (2030)": pd.Series(goals["Short-term"]),
-            "Mid-term (2040)": pd.Series(goals["Mid-term"]),
-            "Long-term (2050)": pd.Series(goals["Long-term"])
-        })
-        st.dataframe(df, height=400, width=900, use_container_width=True, key=f"{sector}_table")
+        df = pd.DataFrame(goals)
+        st.table(df)
 
-    st.markdown("---")
+    # ---------------------------
+    # Generate CAP Report Button
+    # ---------------------------
     st.markdown("### Generate Consolidated CAP Report")
 
-    if st.button("Generate CAP Report", key="generate_cap_report"):
+    if st.button("Generate CAP Report", key="download_cap_report"):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             # Save GHG Inventory
@@ -1482,19 +1488,17 @@ elif menu == "Actions / Goals":
 
             # Save sector-wise goals
             for sector, goals in sector_goals.items():
-                df_goals = pd.DataFrame({
-                    "Short-term (2030)": pd.Series(goals["Short-term"]),
-                    "Mid-term (2040)": pd.Series(goals["Mid-term"]),
-                    "Long-term (2050)": pd.Series(goals["Long-term"])
-                })
+                df_goals = pd.DataFrame(goals)
                 df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
+
+            writer.save()
 
         st.download_button(
             label="Download CAP Report (Excel)",
             data=output.getvalue(),
             file_name=f"CAP_Report_{datetime.now().strftime('%Y%m%d')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_cap_report"
+            key="download_cap_report_btn"
         )
 
     st.markdown("**Note:** This report includes City details, GHG inventory, and sector-wise Actions/Goals.")
