@@ -604,3 +604,138 @@ if menu == "GHG Inventory" or st.session_state.menu == "GHG Inventory":
             st.table(emissions_df.assign(**{
                 "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
             }))
+
+# ---------------------------
+# Suggested Actions Button
+# ---------------------------
+if st.button("View Suggested Actions to Achieve Net Zero by 2050"):
+    st.header("Suggested Actions to Achieve Net Zero by 2050")
+    st.markdown("""
+    The following sector-wise actions are recommended based on the GHG inventory of the selected city.  
+    Actions are categorized into **Short-term (by 2030)**, **Mid-term (by 2040)**, and **Long-term (by 2050)** goals.
+    """)
+
+    # ---------------------------
+    # Define Sector-wise Actions
+    # ---------------------------
+    actions_data = {
+        "Residential Energy": {
+            "Short-term (2030)": [
+                "1. Promote rooftop solar adoption", "2. Implement energy-efficient appliances program",
+                "3. Launch LED replacement scheme", "4. Conduct residential energy audits",
+                "5. Implement smart metering", "6. Subsidize home insulation", "7. Promote rooftop rainwater harvesting",
+                "8. Public awareness campaigns on energy saving", "9. Encourage behavioural change programs", "10. Set local EE building codes"
+            ],
+            "Mid-term (2040)": [
+                "1. Net-zero-ready residential buildings", "2. 50% homes on renewable energy",
+                "3. Advanced energy storage adoption", "4. Incentivize electric heating", "5. Retrofit existing buildings",
+                "6. Demand-response energy programs", "7. Local microgrid development", "8. Smart home automation for efficiency",
+                "9. Integrate EV charging infrastructure in homes", "10. Phase out fossil-fuel heating systems"
+            ],
+            "Long-term (2050)": [
+                "1. 100% residential renewable energy", "2. Fully decarbonized buildings", "3. Zero-carbon appliance standards",
+                "4. Smart energy-positive homes", "5. Advanced energy storage integration", "6. Building-integrated PV widespread",
+                "7. Circular economy in building materials", "8. Smart urban energy networks", "9. Complete phase-out of fossil fuels in homes",
+                "10. Fully automated residential energy management"
+            ]
+        },
+        "Commercial Energy": {
+            "Short-term (2030)": [
+                "1. Conduct commercial energy audits", "2. Retrofit lighting to LEDs", "3. Implement smart thermostats",
+                "4. Incentivize rooftop solar on commercial buildings", "5. Promote energy-efficient HVAC systems",
+                "6. Implement green lease agreements", "7. Awareness campaigns for businesses", "8. Encourage energy reporting",
+                "9. Subsidize building envelope improvements", "10. Introduce energy efficiency labeling"
+            ],
+            "Mid-term (2040)": [
+                "1. Net-zero-ready commercial buildings", "2. 50% energy from renewables", "3. Smart energy management systems",
+                "4. Advanced HVAC retrofits", "5. Integration with district energy networks", "6. Energy performance benchmarking",
+                "7. EV charging for commercial fleets", "8. Incentivize building retrofits", "9. Automated energy analytics", "10. Waste heat recovery systems"
+            ],
+            "Long-term (2050)": [
+                "1. Fully decarbonized commercial sector", "2. 100% renewable energy consumption", "3. Energy-positive buildings",
+                "4. Zero-carbon HVAC and lighting", "5. Full integration with smart grid", "6. Circular energy use practices",
+                "7. AI-driven energy optimization", "8. Complete electrification of commercial processes", "9. Sustainable materials adoption", "10. Continuous monitoring & optimization"
+            ]
+        },
+        "Industrial Energy": {
+            "Short-term (2030)": [
+                "1. Conduct industrial energy audits", "2. Upgrade to high-efficiency motors", "3. Implement process optimization",
+                "4. Waste heat recovery", "5. Switch to cleaner fuels", "6. Introduce energy management systems", "7. Employee training on energy efficiency",
+                "8. Monitor & report energy use", "9. Install sub-metering", "10. Promote circular economy practices"
+            ],
+            "Mid-term (2040)": [
+                "1. Electrify industrial processes", "2. Deploy large-scale onsite renewables", "3. Carbon capture pilot projects",
+                "4. Industrial microgrids", "5. Smart automation for energy efficiency", "6. Sustainable material sourcing",
+                "7. Advanced process optimization", "8. Digital twins for energy monitoring", "9. Integrate with district energy networks", "10. Minimize industrial waste generation"
+            ],
+            "Long-term (2050)": [
+                "1. Fully decarbonized industry", "2. 100% renewable energy use", "3. Advanced carbon capture and utilization",
+                "4. Zero-waste manufacturing", "5. Circular production models", "6. AI-driven process optimization",
+                "7. Energy-positive industrial complexes", "8. Electrification of all processes", "9. Industry-wide net-zero compliance", "10. Continuous emissions monitoring"
+            ]
+        },
+        "Transport": {
+            "Short-term (2030)": [
+                "1. Promote public transport", "2. Implement EV incentives", "3. Introduce low-emission zones", "4. Fuel efficiency standards for vehicles",
+                "5. Bicycle infrastructure development", "6. Awareness campaigns on modal shift", "7. Promote carpooling", "8. EV charging infrastructure expansion",
+                "9. Efficient logistics planning", "10. Promote hybrid vehicles"
+            ],
+            "Mid-term (2040)": [
+                "1. 50% EV adoption in urban fleet", "2. Advanced public transport electrification", "3. Hydrogen fuel pilot projects",
+                "4. Smart traffic management systems", "5. Freight electrification", "6. Integration with MaaS (Mobility as a Service)",
+                "7. Promote EV buses", "8. Phase-out of diesel taxis", "9. Implement low-carbon transport corridors", "10. Urban logistics optimization"
+            ],
+            "Long-term (2050)": [
+                "1. Fully electrified transport sector", "2. Zero-emission public transport", "3. Hydrogen for heavy transport", "4. Smart integrated mobility networks",
+                "5. Autonomous EV deployment", "6. Phase-out of fossil fuel vehicles", "7. Net-zero freight systems", "8. Mobility hubs with renewables",
+                "9. Advanced battery and hydrogen infrastructure", "10. Smart demand-responsive transport"
+            ]
+        },
+        "Waste": {
+            "Short-term (2030)": [
+                "1. Segregate waste at source", "2. Promote composting", "3. Reduce landfill dependency", "4. Awareness campaigns on recycling",
+                "5. Introduce waste collection efficiency improvements", "6. Industrial waste audits", "7. Promote waste-to-energy pilots",
+                "8. Encourage circular economy", "9. Implement recycling incentives", "10. Monitor methane emissions"
+            ],
+            "Mid-term (2040)": [
+                "1. 50% reduction in landfill waste", "2. Expand composting programs", "3. Optimize waste-to-energy plants",
+                "4. Industrial waste minimization", "5. Smart waste collection", "6. Advanced recycling technology adoption",
+                "7. Implement circular material loops", "8. Continuous methane monitoring", "9. Promote biogas utilization", "10. Phase-out of non-recyclables"
+            ],
+            "Long-term (2050)": [
+                "1. Zero waste to landfill", "2. Full circular economy integration", "3. Net-zero emissions from waste sector",
+                "4. Advanced material recovery", "5. Complete biogas adoption", "6. Methane capture optimization",
+                "7. Smart waste management systems", "8. Decentralized composting and recycling", "9. Waste sector electrification", "10. Continuous monitoring & optimization"
+            ]
+        },
+        "Water & Sewage": {
+            "Short-term (2030)": [
+                "1. Optimize water pumping energy", "2. Improve wastewater treatment efficiency", "3. Promote water conservation", "4. Leak detection and repair",
+                "5. Awareness campaigns on water saving", "6. Incentivize rainwater harvesting", "7. Install energy-efficient pumps", "8. Use renewable energy in water treatment",
+                "9. Reduce sewer losses", "10. Monitor energy consumption"
+            ],
+            "Mid-term (2040)": [
+                "1. Electrify water treatment plants", "2. Implement smart water networks", "3. Increase reuse of treated wastewater",
+                "4. Solar-powered pumping stations", "5. Advanced monitoring & automation", "6. Optimize chemical usage",
+                "7. Reduce non-revenue water", "8. Integrate water-energy nexus programs", "9. Smart metering for consumers", "10. Promote decentralized water systems"
+            ],
+            "Long-term (2050)": [
+                "1. Net-zero energy water & sewage systems", "2. 100% renewable energy powered plants", "3. Circular water use",
+                "4. Smart water-energy integration", "5. Zero-discharge systems", "6. AI-driven optimization", "7. Decentralized treatment adoption",
+                "8. Full electrification of processes", "9. Energy-positive wastewater treatment", "10. Continuous monitoring & optimization"
+            ]
+        }
+    }
+
+    # ---------------------------
+    # Convert to DataFrame for Display
+    # ---------------------------
+    for sector, goals in actions_data.items():
+        st.subheader(sector)
+        df_actions = pd.DataFrame({
+            "Short-term (2030)": goals["Short-term (2030)"],
+            "Mid-term (2040)": goals["Mid-term (2040)"],
+            "Long-term (2050)": goals["Long-term (2050)"]
+        })
+        st.table(df_actions)
+
