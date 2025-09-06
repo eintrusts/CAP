@@ -215,6 +215,25 @@ if menu == "Home":
         fig2.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
         st.plotly_chart(fig2, use_container_width=True)
 
+# ---------------- Estimated GHG Emissions Chart ----------------
+    if not df.empty and "Population" in df.columns:
+        df["Population"] = pd.to_numeric(df["Population"], errors="coerce").fillna(0)
+
+        # Use an assumed emission factor (tCO2e per person/year)
+        EMISSION_FACTOR = 2.5
+        df["Estimated GHG Emissions"] = df["Population"] * EMISSION_FACTOR
+
+        fig3 = px.bar(
+            df.sort_values("Estimated GHG Emissions", ascending=False),
+            x="City Name",
+            y="Estimated GHG Emissions",
+            title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
+            text="Estimated GHG Emissions",
+            color_discrete_sequence=["#E67E22"]
+        )
+        fig3.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
+        st.plotly_chart(fig3, use_container_width=True)
+
 # ---------------------------
 # City Dashboard
 # ---------------------------
