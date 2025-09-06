@@ -435,11 +435,11 @@ menu = st.session_state.menu
 
 
 # ---------------------------
-# Home Page: Maharashtra Dashboard (Professional SaaS Look)
+# Home Page: Maharashtra Dashboard (Dark SaaS Professional Look)
 # ---------------------------
 if menu == "Home":
-    st.header("Maharashtra's Net Zero Journey")
-    st.markdown("Climate Action Plan Dashboard")
+    st.markdown("<h2 style='color:#ECEFF1; margin-bottom:5px;'>Maharashtra's Net Zero Journey</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#B0BEC5;'>Climate Action Plan Dashboard</p>", unsafe_allow_html=True)
 
     df = st.session_state.data.copy()
 
@@ -471,8 +471,11 @@ if menu == "Home":
                     padding: 20px;
                     border-radius: 12px;
                     text-align: center;
-                    color: white;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    color: #ECEFF1;
+                    font-size:16px;
+                    font-weight:600;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                    min-height:90px;
                 ">
                     <h5>{title}</h5>
                     <h2>{format_indian_number(val)}</h2>
@@ -480,7 +483,7 @@ if menu == "Home":
                 """, unsafe_allow_html=True
             )
 
-    st.markdown("---")
+    st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
     # =====================
     # Maharashtra Summary Metrics
@@ -492,28 +495,30 @@ if menu == "Home":
         cap_status = maha_row.get("CAP Status", "—")
         cap_link = maha_row.get("CAP Link", "—")
         vulnerability_score = maha_row.get("Vulnerability Score", 0)
-
         est_ghg = round(population * (ghg_total/population if population else 0), 2)
 
         st.subheader("Maharashtra Overview")
 
-        # Metrics row 1
+        # Metrics Row 1
         col1, col2, col3, col4 = st.columns(4)
         metrics = [
-            ("CAP Status", cap_status),
-            ("CAP Link", cap_link),
-            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total)),
-            ("Estimated GHG by Population", format_indian_number(est_ghg))
+            ("CAP Status", cap_status, "#42A5F5"),
+            ("CAP Link", cap_link, "#37474F"),
+            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total), "#37474F"),
+            ("Estimated GHG by Population", format_indian_number(est_ghg), "#37474F")
         ]
-        for col, (title, val) in zip([col1, col2, col3, col4], metrics):
+        for col, (title, val, color) in zip([col1, col2, col3, col4], metrics):
             col.markdown(
                 f"""
                 <div style="
-                    background-color:#f5f5f5;
-                    padding:15px;
+                    background-color:{color};
+                    padding:18px;
                     border-radius:10px;
                     text-align:center;
-                    border:1px solid #ddd;
+                    color:#ECEFF1;
+                    font-size:16px;
+                    font-weight:500;
+                    min-height:90px;
                 ">
                     <h5>{title}</h5>
                     <h3>{val}</h3>
@@ -521,12 +526,12 @@ if menu == "Home":
                 """, unsafe_allow_html=True
             )
 
-        # Metrics row 2
+        # Metrics Row 2
         col5, col6 = st.columns(2)
         col5.metric("Vulnerability Assessment Score", round(vulnerability_score, 2))
         col6.metric("Population", format_indian_number(population))
 
-        st.markdown("---")
+        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # =====================
         # Environmental Metrics
@@ -540,7 +545,7 @@ if menu == "Home":
             display_val = f"{value}%" if "%" in col_name else format_indian_number(value)
             col_groups[i % 3].metric(col_name, display_val)
 
-        st.markdown("---")
+        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # =====================
         # Social Metrics
@@ -549,11 +554,9 @@ if menu == "Home":
         males = maha_row.get("Males", 0)
         females = maha_row.get("Females", 0)
         total_pop = males + females
-
         children_m = maha_row.get("Children Male", 0)
         children_f = maha_row.get("Children Female", 0)
         total_children = children_m + children_f
-
         literacy_m = maha_row.get("Male Literacy (%)", 0)
         literacy_f = maha_row.get("Female Literacy (%)", 0)
         literacy_avg = round((literacy_m + literacy_f)/2, 2)
@@ -581,7 +584,7 @@ if menu == "Home":
         col12.metric("BPL Households (%)", f"{maha_row.get('BPL Households (%)',0)}%")
         col13.metric("Urbanization Rate (%)", f"{maha_row.get('Urbanization Rate (%)',0)}%")
 
-        st.markdown("---")
+        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # =====================
         # Contact Information
@@ -590,24 +593,21 @@ if menu == "Home":
         col1, col2 = st.columns(2)
         col1.metric("Department Exist", maha_row.get("Department Exist", "—"))
         col2.metric("Department Name", maha_row.get("Department Name", "—"))
-
         col3, col4 = st.columns(2)
         col3.metric("Email", maha_row.get("Email", "—"))
         col4.metric("Contact Number", maha_row.get("Contact Number", "—"))
-
         st.metric("Website", maha_row.get("Website", "—"))
 
-        st.markdown("---")
+        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # =====================
-        # Charts with Hover Tooltips & Rounded Bars
+        # Charts with Dark Theme
         # =====================
         import plotly.express as px
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
         df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
 
-        # Total GHG Chart
         fig_ghg = px.bar(
             df,
             x="City Name",
@@ -615,12 +615,17 @@ if menu == "Home":
             text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
             title="City-wise Total GHG Emissions",
             color="GHG Emissions",
-            color_continuous_scale="Blues"
+            color_continuous_scale=px.colors.sequential.Blues
         )
-        fig_ghg.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
+        fig_ghg.update_layout(
+            plot_bgcolor="#1E1E2F",
+            paper_bgcolor="#1E1E2F",
+            font_color="#ECEFF1",
+            xaxis_title=None,
+            yaxis_title="tCO2e"
+        )
         st.plotly_chart(fig_ghg, use_container_width=True)
 
-        # Estimated GHG by Population Chart
         fig_est = px.bar(
             df,
             x="City Name",
@@ -628,12 +633,18 @@ if menu == "Home":
             text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
             title="Estimated GHG Emissions by Population",
             color="Estimated GHG",
-            color_continuous_scale="Oranges"
+            color_continuous_scale=px.colors.sequential.Oranges
         )
-        fig_est.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
+        fig_est.update_layout(
+            plot_bgcolor="#1E1E2F",
+            paper_bgcolor="#1E1E2F",
+            font_color="#ECEFF1",
+            xaxis_title=None,
+            yaxis_title="tCO2e"
+        )
         st.plotly_chart(fig_est, use_container_width=True)
 
-        # Vulnerability Scores Chart
+        # Vulnerability Scores
         evs_cols = ["GHG Emissions", "Municipal Solid Waste (tons)", "Wastewater Treated (m3)"]
         for col in evs_cols:
             if col not in df.columns:
@@ -679,13 +690,14 @@ if menu == "Home":
         )
         fig_vuln.update_traces(textposition="outside", hovertemplate="%{y:.1f}")
         fig_vuln.update_layout(
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="#ffffff",
-            font_color="#000000",
+            plot_bgcolor="#1E1E2F",
+            paper_bgcolor="#1E1E2F",
+            font_color="#ECEFF1",
             xaxis_title=None,
             yaxis_title="Vulnerability Score (0-100)"
         )
         st.plotly_chart(fig_vuln, use_container_width=True)
+
 
 # ---------------------------
 # City Information Page (Dark SaaS with Hover & Shadow)
