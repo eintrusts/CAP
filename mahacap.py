@@ -268,13 +268,52 @@ st.sidebar.markdown("EinTrust | © 2025")
 menu = st.session_state.menu
 
 # ---------------------------
-# Home Page: Maharashtra Dashboard
+# Home Page: Maharashtra Dashboard (Professional SaaS Look)
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
 
     df = st.session_state.data.copy()
+
+    # =====================
+    # CAP Status Summary Cards with Gradient
+    # =====================
+    if not df.empty and "CAP Status" in df.columns:
+        c1, c2, c3, c4 = st.columns(4)
+        status_counts = {
+            "Total Cities": len(df),
+            "Not Started": df[df["CAP Status"].str.lower() == "not started"].shape[0],
+            "In Progress": df[df["CAP Status"].str.lower() == "in progress"].shape[0],
+            "Completed": df[df["CAP Status"].str.lower() == "completed"].shape[0]
+        }
+
+        card_colors = {
+            "Total Cities": ["#4B8BF4", "#2C6BE0"],
+            "Not Started": ["#FF6B6B", "#FF3B3B"],
+            "In Progress": ["#FFA500", "#FF8C00"],
+            "Completed": ["#28A745", "#1E7E34"]
+        }
+
+        for col, (title, val) in zip([c1, c2, c3, c4], status_counts.items()):
+            color1, color2 = card_colors[title]
+            col.markdown(
+                f"""
+                <div style="
+                    background: linear-gradient(135deg, {color1}, {color2});
+                    padding: 20px;
+                    border-radius: 12px;
+                    text-align: center;
+                    color: white;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                ">
+                    <h5>{title}</h5>
+                    <h2>{format_indian_number(val)}</h2>
+                </div>
+                """, unsafe_allow_html=True
+            )
+
+    st.markdown("---")
 
     # =====================
     # Maharashtra Summary Metrics
@@ -285,23 +324,42 @@ if menu == "Home":
         ghg_total = maha_row.get("GHG Emissions", 0)
         cap_status = maha_row.get("CAP Status", "—")
         cap_link = maha_row.get("CAP Link", "—")
+        vulnerability_score = maha_row.get("Vulnerability Score", 0)
 
         est_ghg = round(population * (ghg_total/population if population else 0), 2)
-        vulnerability_score = maha_row.get("Vulnerability Score", 0)
 
         st.subheader("Maharashtra Overview")
 
         # Metrics row 1
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("CAP Status", cap_status)
-        col2.metric("CAP Link", cap_link)
-        col3.metric("GHG Emissions (tCO2e)", format_indian_number(ghg_total))
-        col4.metric("Estimated GHG by Population", format_indian_number(est_ghg))
+        metrics = [
+            ("CAP Status", cap_status),
+            ("CAP Link", cap_link),
+            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total)),
+            ("Estimated GHG by Population", format_indian_number(est_ghg))
+        ]
+        for col, (title, val) in zip([col1, col2, col3, col4], metrics):
+            col.markdown(
+                f"""
+                <div style="
+                    background-color:#f5f5f5;
+                    padding:15px;
+                    border-radius:10px;
+                    text-align:center;
+                    border:1px solid #ddd;
+                ">
+                    <h5>{title}</h5>
+                    <h3>{val}</h3>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
         # Metrics row 2
         col5, col6 = st.columns(2)
         col5.metric("Vulnerability Assessment Score", round(vulnerability_score, 2))
         col6.metric("Population", format_indian_number(population))
+
+        st.markdown("---")
 
         # =====================
         # Environmental Metrics
@@ -312,11 +370,8 @@ if menu == "Home":
         col_groups = st.columns(3)
         for i, col_name in enumerate(env_cols):
             value = maha_row.get(col_name, 0)
-            if "%" in col_name:
-                value = f"{value}%"
-            else:
-                value = format_indian_number(value)
-            col_groups[i % 3].metric(col_name, value)
+            display_val = f"{value}%" if "%" in col_name else format_indian_number(value)
+            col_groups[i % 3].metric(col_name, display_val)
 
         st.markdown("---")
 
@@ -376,88 +431,46 @@ if menu == "Home":
         st.metric("Website", maha_row.get("Website", "—"))
 
         st.markdown("---")
-    
-    # =====================
-    # CAP Status Summary Cards
-    # =====================
-    if not df.empty and "CAP Status" in df.columns:
-        c1, c2, c3, c4 = st.columns(4)
-        not_started = df[df["CAP Status"].str.lower() == "not started"].shape[0]
-        in_progress = df[df["CAP Status"].str.lower() == "in progress"].shape[0]
-        completed = df[df["CAP Status"].str.lower() == "completed"].shape[0]
-
-        cards = [
-            ("Total Cities", len(df), "#4B8BF4"),
-            ("Not Started", not_started, "#FF6B6B"),
-            ("In Progress", in_progress, "#FFA500"),
-            ("Completed", completed, "#28A745")
-        ]
-        for col, (title, val, color) in zip([c1, c2, c3, c4], cards):
-            col.markdown(
-                f"""
-                <div style="background-color:{color};padding:15px;border-radius:10px;text-align:center;color:white;">
-                    <h4>{title}</h4>
-                    <h2>{format_indian_number(val)}</h2>
-                </div>
-                """, unsafe_allow_html=True
-            )
-
-    st.markdown("---")
-
 
         # =====================
-        # Charts for GHG
+        # Charts with Hover Tooltips & Rounded Bars
         # =====================
         import plotly.express as px
-        # Total GHG Emissions Chart
-        ghg_chart_df = df[["City Name", "GHG Emissions"]].copy()
-        ghg_chart_df["GHG Emissions"] = pd.to_numeric(ghg_chart_df["GHG Emissions"], errors="coerce").fillna(0)
+        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
+        df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
+        df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
+
+        # Total GHG Chart
         fig_ghg = px.bar(
-            ghg_chart_df,
+            df,
             x="City Name",
             y="GHG Emissions",
-            text=ghg_chart_df["GHG Emissions"].apply(lambda x: f"{format_indian_number(x)}"),
-            title="City-wise Total GHG Emissions"
+            text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
+            title="City-wise Total GHG Emissions",
+            color="GHG Emissions",
+            color_continuous_scale="Blues"
         )
-        fig_ghg.update_layout(
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="#ffffff",
-            font_color="#000000",
-            xaxis_title=None,
-            yaxis_title="GHG Emissions (tCO2e)"
-        )
+        fig_ghg.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
         st.plotly_chart(fig_ghg, use_container_width=True)
 
         # Estimated GHG by Population Chart
-        df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
-        df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
-        est_df = df[["City Name", "Estimated GHG"]].copy()
         fig_est = px.bar(
-            est_df,
+            df,
             x="City Name",
             y="Estimated GHG",
-            text=est_df["Estimated GHG"].apply(lambda x: f"{format_indian_number(round(x,0))}"),
-            title="Estimated GHG Emissions by Population"
+            text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
+            title="Estimated GHG Emissions by Population",
+            color="Estimated GHG",
+            color_continuous_scale="Oranges"
         )
-        fig_est.update_layout(
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="#ffffff",
-            font_color="#000000",
-            xaxis_title=None,
-            yaxis_title="Estimated GHG (tCO2e)"
-        )
+        fig_est.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
         st.plotly_chart(fig_est, use_container_width=True)
 
-        # =====================
         # Vulnerability Scores Chart
-        # =====================
         evs_cols = ["GHG Emissions", "Municipal Solid Waste (tons)", "Wastewater Treated (m3)"]
         for col in evs_cols:
             if col not in df.columns:
                 df[col] = 0
-            else:
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
         max_vals_env = {col: df[col].max() or 1 for col in evs_cols}
         df["EVS"] = (
             df["GHG Emissions"]/max_vals_env["GHG Emissions"]*0.5 +
@@ -477,9 +490,7 @@ if menu == "Home":
                 df[col] = 0
             else:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
         max_vals_social = {col: df[col].max() or 1 for col in social_factors}
-
         df["SVS"] = (
             (df["Population"]/max_vals_social["Population"])*0.3 +
             (df["Households"]/max_vals_social["Households"])*0.2 +
@@ -496,8 +507,10 @@ if menu == "Home":
             color="Score Type",
             barmode="group",
             text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
-            title="City Vulnerability Scores (Environmental vs Social)"
+            title="City Vulnerability Scores (Environmental vs Social)",
+            color_discrete_map={"EVS":"#1f77b4","SVS":"#ff7f0e"}
         )
+        fig_vuln.update_traces(textposition="outside", hovertemplate="%{y:.1f}")
         fig_vuln.update_layout(
             plot_bgcolor="#ffffff",
             paper_bgcolor="#ffffff",
