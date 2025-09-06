@@ -971,6 +971,10 @@ elif menu == "Admin":
                 st.success(f"{city} data updated successfully!")
                 
 
+# ---------------------------
+# CAP Generation Page
+# ---------------------------
+
 if menu == "CAP Generation":
     st.header("CAP Generation : Comprehensive Data Collection")
 
@@ -979,7 +983,7 @@ if menu == "CAP Generation":
     else:
         st.markdown("""
         Collect detailed city-level raw data for generating a comprehensive GHG inventory.
-        You can dynamically add multiple entries for fuels, vehicles, industries, waste streams, water treatment, agriculture, and city infrastructure.
+        Each sector below can be expanded to enter multiple data points.
         """)
 
         with st.form("cap_comprehensive_form", clear_on_submit=False):
@@ -987,146 +991,133 @@ if menu == "CAP Generation":
             # -------------------
             # 1. General City Info
             # -------------------
-            st.subheader("1. General City Info")
-            city = st.selectbox("City Name", list(cities_districts.keys()))
-            state = st.text_input("State")
-            population = st.number_input("Population", min_value=0, value=0, step=1000)
-            area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
-            admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"])
-            inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=datetime.now().year)
+            with st.expander("1. General City Info", expanded=True):
+                city = st.selectbox("City Name", list(cities_districts.keys()))
+                state = st.text_input("State")
+                population = st.number_input("Population", min_value=0, value=0, step=1000)
+                area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
+                admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"])
+                inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=datetime.now().year)
 
             # -------------------
             # 2. Energy Sector
             # -------------------
-            st.subheader("2. Energy Sector")
-            if "energy_fuels" not in st.session_state:
-                st.session_state.energy_fuels = [{"name": "Diesel", "unit": "L/year", "value": 0}]
-            for i, fuel in enumerate(st.session_state.energy_fuels):
-                col1, col2, col3 = st.columns([3,2,1])
-                fuel["name"] = col1.text_input(f"Fuel Name {i+1}", value=fuel["name"], key=f"fuel_name_{i}")
-                fuel["unit"] = col2.text_input(f"Unit {i+1}", value=fuel["unit"], key=f"fuel_unit_{i}")
-                fuel["value"] = col3.number_input(f"Value {i+1}", min_value=0, value=fuel["value"], key=f"fuel_val_{i}")
-            if st.button("Add Fuel"):
-                st.session_state.energy_fuels.append({"name": "", "unit": "", "value": 0})
+            with st.expander("2. Energy Sector"):
+                # Electricity & Heat Consumption
+                st.subheader("Electricity & Heat Consumption (kWh/year or GJ/year)")
+                municipal_electricity = st.number_input("Municipal Buildings", min_value=0, value=0, step=100)
+                residential_electricity = st.number_input("Residential", min_value=0, value=0, step=100)
+                commercial_electricity = st.number_input("Commercial", min_value=0, value=0, step=100)
+                industrial_electricity = st.number_input("Industrial", min_value=0, value=0, step=100)
+                purchased_heat_gj = st.number_input("Purchased Heat/Steam (GJ/year)", min_value=0, value=0, step=10)
 
-            # Renewable Energy
-            st.markdown("**Renewable Energy Sources**")
-            if "renewables" not in st.session_state:
-                st.session_state.renewables = [{"name":"Solar", "value":0, "unit":"kWh/year"}]
-            for i, source in enumerate(st.session_state.renewables):
-                col1, col2, col3 = st.columns([3,2,1])
-                source["name"] = col1.text_input(f"Renewable Name {i+1}", value=source["name"], key=f"ren_name_{i}")
-                source["unit"] = col2.text_input(f"Unit {i+1}", value=source["unit"], key=f"ren_unit_{i}")
-                source["value"] = col3.number_input(f"Value {i+1}", min_value=0, value=source["value"], key=f"ren_val_{i}")
-            if st.button("Add Renewable Energy Source"):
-                st.session_state.renewables.append({"name":"", "value":0, "unit":"kWh/year"})
+                # On-site generation
+                st.subheader("On-site Generation")
+                diesel_gen_mwh = st.number_input("Diesel Generators (MWh/year)", min_value=0, value=0, step=10)
+                gas_turbine_mwh = st.number_input("Gas Turbines (MWh/year)", min_value=0, value=0, step=10)
+
+                # Renewable Energy Production
+                st.subheader("Renewable Energy Production")
+                solar_mwh = st.number_input("Solar Rooftops (MWh/year)", min_value=0, value=0, step=10)
+                wind_mwh = st.number_input("Wind Energy (MWh/year)", min_value=0, value=0, step=10)
+                biomass_mwh = st.number_input("Biomass (MWh/year)", min_value=0, value=0, step=10)
+
+                # Stationary Fuel Combustion
+                st.subheader("Stationary Fuel Combustion (municipal, industrial, residential, commercial)")
+                diesel_l = st.number_input("Diesel (L/year)", min_value=0, value=0, step=10)
+                petrol_l = st.number_input("Petrol (L/year)", min_value=0, value=0, step=10)
+                lpg_l = st.number_input("LPG (L/year)", min_value=0, value=0, step=10)
+                natural_gas_m3 = st.number_input("Natural Gas (m3/year)", min_value=0, value=0, step=10)
+                coal_t = st.number_input("Coal (tons/year)", min_value=0, value=0, step=1)
 
             # -------------------
             # 3. Transport Sector
             # -------------------
-            st.subheader("3. Transport Sector")
-            if "vehicles" not in st.session_state:
-                st.session_state.vehicles = [{"type":"Car","fuel":"Petrol","number":0,"km_per_year":0}]
-            for i, v in enumerate(st.session_state.vehicles):
-                col1, col2, col3, col4 = st.columns([2,2,1,1])
-                v["type"] = col1.text_input(f"Vehicle Type {i+1}", value=v["type"], key=f"veh_type_{i}")
-                v["fuel"] = col2.text_input(f"Fuel Type {i+1}", value=v["fuel"], key=f"veh_fuel_{i}")
-                v["number"] = col3.number_input(f"Number {i+1}", min_value=0, value=v["number"], key=f"veh_num_{i}")
-                v["km_per_year"] = col4.number_input(f"Km/Year {i+1}", min_value=0, value=v["km_per_year"], key=f"veh_km_{i}")
-            if st.button("Add Vehicle Type"):
-                st.session_state.vehicles.append({"type":"","fuel":"","number":0,"km_per_year":0})
+            with st.expander("3. Transport Sector"):
+                st.subheader("Public & Private Transport")
+                cars = st.number_input("Cars", min_value=0, value=0, step=10)
+                buses = st.number_input("Buses", min_value=0, value=0, step=5)
+                trucks = st.number_input("Trucks", min_value=0, value=0, step=5)
+                two_wheelers = st.number_input("2/3-Wheelers", min_value=0, value=0, step=10)
+
+                avg_km_cars = st.number_input("Average km traveled by Cars per Year", min_value=0, value=0, step=100)
+                avg_km_buses = st.number_input("Average km traveled by Buses per Year", min_value=0, value=0, step=100)
+                avg_km_trucks = st.number_input("Average km traveled by Trucks per Year", min_value=0, value=0, step=100)
+                avg_km_2w = st.number_input("Average km traveled by 2/3-Wheelers per Year", min_value=0, value=0, step=100)
+
+                st.subheader("Freight & Logistics")
+                freight_distance_km = st.number_input("Goods Vehicles Distance Traveled (km/year)", min_value=0, value=0, step=100)
+                freight_fuel_diesel_l = st.number_input("Diesel Fuel for Freight (L/year)", min_value=0, value=0, step=10)
+                freight_fuel_cng_m3 = st.number_input("CNG Fuel for Freight (m3/year)", min_value=0, value=0, step=10)
+                freight_fuel_electric_mwh = st.number_input("Electricity for Freight (MWh/year)", min_value=0, value=0, step=10)
 
             # -------------------
-            # 4. Industrial Sector
+            # 4. Waste Sector
             # -------------------
-            st.subheader("4. Industrial Sector")
-            if "industries" not in st.session_state:
-                st.session_state.industries = [{"name":"Industry 1","fuel":"Electricity","value":0,"unit":"kWh/year"}]
-            for i, ind in enumerate(st.session_state.industries):
-                col1, col2, col3, col4 = st.columns([3,2,1,1])
-                ind["name"] = col1.text_input(f"Industry Name {i+1}", value=ind["name"], key=f"ind_name_{i}")
-                ind["fuel"] = col2.text_input(f"Fuel Type {i+1}", value=ind["fuel"], key=f"ind_fuel_{i}")
-                ind["unit"] = col3.text_input(f"Unit {i+1}", value=ind["unit"], key=f"ind_unit_{i}")
-                ind["value"] = col4.number_input(f"Value {i+1}", min_value=0, value=ind["value"], key=f"ind_val_{i}")
-            if st.button("Add Industrial Process"):
-                st.session_state.industries.append({"name":"","fuel":"","value":0,"unit":"kWh/year"})
+            with st.expander("4. Waste Sector"):
+                st.subheader("Solid Waste")
+                msw_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, value=0, step=10)
+                landfill_frac = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, value=0.0)
+                recycling_frac = st.number_input("Fraction Recycled (%)", min_value=0.0, max_value=100.0, value=0.0)
+                compost_frac = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0)
+                incineration_frac = st.number_input("Fraction Incinerated (%)", min_value=0.0, max_value=100.0, value=0.0)
+                landfill_methane_capture = st.number_input("Landfill Methane Capture Rate (%)", min_value=0.0, max_value=100.0, value=0.0)
+
+                st.subheader("Wastewater")
+                sewage_m3 = st.number_input("Sewage Generated (m³/year)", min_value=0, value=0, step=1000)
+                treatment_type = st.selectbox("Treatment Type", ["Primary", "Secondary", "Tertiary"])
+                sludge_tons = st.number_input("Sludge Generated (tons/year)", min_value=0, value=0, step=10)
+                energy_wastewater_kwh = st.number_input("Energy Use in Treatment (kWh/year)", min_value=0, value=0, step=10)
 
             # -------------------
-            # 5. Waste Sector
+            # 5. Industrial Sector
             # -------------------
-            st.subheader("5. Waste Sector")
-            if "waste_streams" not in st.session_state:
-                st.session_state.waste_streams = [{"type":"Municipal Solid Waste","amount":0,"unit":"tons/year"}]
-            for i, w in enumerate(st.session_state.waste_streams):
-                col1, col2, col3 = st.columns([3,2,1])
-                w["type"] = col1.text_input(f"Waste Type {i+1}", value=w["type"], key=f"waste_type_{i}")
-                w["amount"] = col2.number_input(f"Amount {i+1}", min_value=0, value=w["amount"], key=f"waste_amt_{i}")
-                w["unit"] = col3.text_input(f"Unit {i+1}", value=w["unit"], key=f"waste_unit_{i}")
-            if st.button("Add Waste Stream"):
-                st.session_state.waste_streams.append({"type":"","amount":0,"unit":"tons/year"})
+            with st.expander("5. Industrial Sector"):
+                coal_ind = st.number_input("Coal Consumption (tons/year)", min_value=0, value=0, step=1)
+                gas_ind = st.number_input("Natural Gas Consumption (m3/year)", min_value=0, value=0, step=10)
+                electricity_ind = st.number_input("Electricity Consumption (kWh/year)", min_value=0, value=0, step=100)
+                biomass_ind = st.number_input("Biomass (tons/year)", min_value=0, value=0, step=1)
+                st.text_area("Industrial Process Emissions (cement, chemical, metal)", value="", height=80)
+                st.text_area("Fugitive Emissions (refrigeration, industrial processes)", value="", height=80)
 
             # -------------------
-            # 6. Water & Sewage
+            # 6. Agriculture & Land Use
             # -------------------
-            st.subheader("6. Water & Sewage")
-            if "water_treatment" not in st.session_state:
-                st.session_state.water_treatment = [{"type":"Water Supply","energy_kwh":0}]
-            for i, w in enumerate(st.session_state.water_treatment):
-                col1, col2 = st.columns([3,2])
-                w["type"] = col1.text_input(f"Treatment Type {i+1}", value=w["type"], key=f"water_type_{i}")
-                w["energy_kwh"] = col2.number_input(f"Energy Used (kWh/year) {i+1}", min_value=0, value=w["energy_kwh"], key=f"water_energy_{i}")
-            if st.button("Add Water/Sewage Treatment"):
-                st.session_state.water_treatment.append({"type":"","energy_kwh":0})
+            with st.expander("6. Agriculture & Land Use"):
+                cropland_ha = st.number_input("Cropland (ha)", min_value=0, value=0, step=1)
+                livestock_count = st.number_input("Livestock (number of animals)", min_value=0, value=0, step=1)
+                manure_management = st.text_input("Manure Management Type", value="")
+                fertilizer_tons = st.number_input("Fertilizer Use (tons/year)", min_value=0, value=0, step=1)
+                afforestation_ha = st.number_input("Afforestation (ha)", min_value=0, value=0, step=1)
+                deforestation_ha = st.number_input("Deforestation (ha)", min_value=0, value=0, step=1)
+                soil_carbon_sequestration = st.number_input("Soil Carbon Sequestration (optional, tons/year)", min_value=0, value=0, step=1)
 
             # -------------------
-            # 7. Agriculture & Land Use
+            # 7. City Infrastructure
             # -------------------
-            st.subheader("7. Agriculture & Land Use")
-            if "agriculture" not in st.session_state:
-                st.session_state.agriculture = [{"type":"Livestock","quantity":0,"unit":"animals"}]
-            for i, a in enumerate(st.session_state.agriculture):
-                col1, col2, col3 = st.columns([3,2,1])
-                a["type"] = col1.text_input(f"Agriculture Type {i+1}", value=a["type"], key=f"agri_type_{i}")
-                a["quantity"] = col2.number_input(f"Quantity {i+1}", min_value=0, value=a["quantity"], key=f"agri_qty_{i}")
-                a["unit"] = col3.text_input(f"Unit {i+1}", value=a["unit"], key=f"agri_unit_{i}")
-            if st.button("Add Agriculture/Land Use"):
-                st.session_state.agriculture.append({"type":"","quantity":0,"unit":"units"})
+            with st.expander("7. City Infrastructure"):
+                street_lights_count = st.number_input("Number of Street Lights", min_value=0, value=0, step=10)
+                street_lights_energy = st.number_input("Street Lights Energy (kWh/year)", min_value=0, value=0, step=10)
+                municipal_fleet_fuel = st.text_input("Municipal Vehicle Fleet Fuel & Consumption")
+                water_pumping_energy = st.number_input("Water Pumping & Treatment Energy (kWh/year)", min_value=0, value=0, step=10)
+                cooling_heating_energy = st.number_input("Cooling/Heating in Municipal Buildings (kWh/year)", min_value=0, value=0, step=10)
 
             # -------------------
-            # 8. City Infrastructure
+            # 8. Optional Co-Benefit Indicators
             # -------------------
-            st.subheader("8. City Infrastructure")
-            if "infrastructure" not in st.session_state:
-                st.session_state.infrastructure = [{"type":"Street Lights","quantity":0,"energy_kwh":0}]
-            for i, inf in enumerate(st.session_state.infrastructure):
-                col1, col2, col3 = st.columns([3,1,2])
-                inf["type"] = col1.text_input(f"Infrastructure Type {i+1}", value=inf["type"], key=f"inf_type_{i}")
-                inf["quantity"] = col2.number_input(f"Quantity {i+1}", min_value=0, value=inf["quantity"], key=f"inf_qty_{i}")
-                inf["energy_kwh"] = col3.number_input(f"Energy Used (kWh/year) {i+1}", min_value=0, value=inf["energy_kwh"], key=f"inf_energy_{i}")
-            if st.button("Add Infrastructure Item"):
-                st.session_state.infrastructure.append({"type":"","quantity":0,"energy_kwh":0})
+            with st.expander("8. Optional Co-Benefit Indicators"):
+                air_pollution_reduction = st.number_input("Air Pollution Reduction (%)", min_value=0.0, max_value=100.0, value=0.0)
+                renewable_energy_share = st.number_input("Renewable Energy Share (%)", min_value=0.0, max_value=100.0, value=0.0)
+                water_usage = st.number_input("Water Usage (m³/year)", min_value=0, value=0, step=100)
 
             # -------------------
-            # Optional file upload
+            # File upload
             # -------------------
             file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf","xlsx","csv"])
 
             # -------------------
-            # Real-time Summary Table
+            # Submit button
             # -------------------
-            st.subheader("Summary of Entered Data (Preview)")
-            summary_data = {
-                "Energy Fuels": st.session_state.energy_fuels,
-                "Renewables": st.session_state.renewables,
-                "Vehicles": st.session_state.vehicles,
-                "Industries": st.session_state.industries,
-                "Waste Streams": st.session_state.waste_streams,
-                "Water Treatment": st.session_state.water_treatment,
-                "Agriculture": st.session_state.agriculture,
-                "Infrastructure": st.session_state.infrastructure
-            }
-            st.json(summary_data)
-
             submit_cap = st.form_submit_button("Generate GHG Inventory")
 
             if submit_cap:
@@ -1137,25 +1128,75 @@ if menu == "CAP Generation":
                     "Area_km2": area_km2,
                     "Admin_Type": admin_type,
                     "Inventory_Year": inventory_year,
-                    "Energy_Fuels": st.session_state.energy_fuels,
-                    "Renewables": st.session_state.renewables,
-                    "Vehicles": st.session_state.vehicles,
-                    "Industries": st.session_state.industries,
-                    "Waste_Streams": st.session_state.waste_streams,
-                    "Water_Treatment": st.session_state.water_treatment,
-                    "Agriculture": st.session_state.agriculture,
-                    "Infrastructure": st.session_state.infrastructure,
+                    "Municipal_Electricity": municipal_electricity,
+                    "Residential_Electricity": residential_electricity,
+                    "Commercial_Electricity": commercial_electricity,
+                    "Industrial_Electricity": industrial_electricity,
+                    "Purchased_Heat_GJ": purchased_heat_gj,
+                    "Diesel_Gen_MWh": diesel_gen_mwh,
+                    "Gas_Turbine_MWh": gas_turbine_mwh,
+                    "Solar_MWh": solar_mwh,
+                    "Wind_MWh": wind_mwh,
+                    "Biomass_MWh": biomass_mwh,
+                    "Diesel_L": diesel_l,
+                    "Petrol_L": petrol_l,
+                    "LPG_L": lpg_l,
+                    "Natural_Gas_m3": natural_gas_m3,
+                    "Coal_t": coal_t,
+                    "Cars": cars,
+                    "Buses": buses,
+                    "Trucks": trucks,
+                    "Two_Wheelers": two_wheelers,
+                    "Avg_Km_Cars": avg_km_cars,
+                    "Avg_Km_Buses": avg_km_buses,
+                    "Avg_Km_Trucks": avg_km_trucks,
+                    "Avg_Km_2W": avg_km_2w,
+                    "Freight_Distance_km": freight_distance_km,
+                    "Freight_Fuel_Diesel_L": freight_fuel_diesel_l,
+                    "Freight_Fuel_CNG_m3": freight_fuel_cng_m3,
+                    "Freight_Fuel_Electric_MWh": freight_fuel_electric_mwh,
+                    "MSW_tons": msw_tons,
+                    "Landfill_Frac": landfill_frac,
+                    "Recycling_Frac": recycling_frac,
+                    "Compost_Frac": compost_frac,
+                    "Incineration_Frac": incineration_frac,
+                    "Landfill_Methane_Capture": landfill_methane_capture,
+                    "Sewage_m3": sewage_m3,
+                    "Treatment_Type": treatment_type,
+                    "Sludge_tons": sludge_tons,
+                    "Energy_Wastewater_kWh": energy_wastewater_kwh,
+                    "Coal_Ind_t": coal_ind,
+                    "Gas_Ind_m3": gas_ind,
+                    "Electricity_Ind_kWh": electricity_ind,
+                    "Biomass_Ind_t": biomass_ind,
+                    "Cropland_ha": cropland_ha,
+                    "Livestock_Count": livestock_count,
+                    "Manure_Management": manure_management,
+                    "Fertilizer_tons": fertilizer_tons,
+                    "Afforestation_ha": afforestation_ha,
+                    "Deforestation_ha": deforestation_ha,
+                    "Soil_Carbon_Sequestration": soil_carbon_sequestration,
+                    "Street_Lights_Count": street_lights_count,
+                    "Street_Lights_Energy": street_lights_energy,
+                    "Municipal_Fleet_Fuel": municipal_fleet_fuel,
+                    "Water_Pumping_Energy": water_pumping_energy,
+                    "Cooling_Heating_Energy": cooling_heating_energy,
+                    "Air_Pollution_Reduction": air_pollution_reduction,
+                    "Renewable_Energy_Share": renewable_energy_share,
+                    "Water_Usage": water_usage,
                     "File": file_upload.name if file_upload else None,
                     "Submission_Date": datetime.now()
                 }
+
                 df_cap = st.session_state.get("cap_data", pd.DataFrame())
                 df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
-                st.session_state.last_updated = datetime.now()
+
                 st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
                 st.session_state.menu = "GHG Inventory"
                 st.experimental_rerun()
+                
 
 # ---------------------------
 # GHG Inventory Page
