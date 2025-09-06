@@ -145,6 +145,22 @@ def safe_get(row, col, default="—"):
     except:
         return default
 
+# Indian Number Format
+
+def format_indian_number(num):
+    try:
+        num = int(num)
+        s = str(num)[::-1]
+        lst = []
+        lst.append(s[:3])
+        s = s[3:]
+        while s:
+            lst.append(s[:2])
+            s = s[2:]
+        return ','.join(lst)[::-1]
+    except:
+        return str(num)
+
 # ---------------------------
 # Dark / Professional CSS
 # ---------------------------
@@ -272,6 +288,24 @@ if menu == "Home":
             yaxis_title="Estimated GHG Emissions (tCO2e)"
         )
         st.plotly_chart(fig_estimated, use_container_width=True)
+
+fig_reported = px.bar(
+    df.sort_values("GHG Emissions", ascending=False),
+    x="City Name",
+    y="GHG Emissions",
+    title="City-level Reported GHG Emissions (tCO2e)",
+    text=df["GHG Emissions"].apply(format_indian_number),
+    color_discrete_sequence=["#3E6BE6"]
+)
+
+fig_estimated = px.bar(
+    df.sort_values("Estimated GHG Emissions", ascending=False),
+    x="City Name",
+    y="Estimated GHG Emissions",
+    title=f"Estimated GHG Emissions (tCO2e) — based on {EMISSION_FACTOR} tCO2e/person",
+    text=df["Estimated GHG Emissions"].apply(format_indian_number),
+    color_discrete_sequence=["#E67E22"]
+)
 # ---------------------------
 # City Dashboard
 # ---------------------------
@@ -394,6 +428,11 @@ elif menu == "Admin":
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
+
+st.table(df_meta.assign(
+    Population=lambda d: d["Population"].map(format_indian_number),
+    GHG_Emissions=lambda d: d["GHG Emissions"].map(format_indian_number)
+))
 
 # ---------------------------
 # CAP Preparation Page
