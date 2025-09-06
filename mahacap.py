@@ -633,10 +633,11 @@ elif menu == "GHG Inventory":
                 "Emissions (tCO2e)": lambda d: d["Emissions (tCO2e)"].map(lambda x: format(int(x), ","))
             }))
 
-            # Action Button
+            # --- Action Button ---
             if st.button("View Sector-wise Net Zero Actions"):
+                if "selected_city" not in st.session_state:
+                    st.session_state.selected_city = city
                 st.session_state.menu = "Actions"
-                st.session_state.selected_city = city
                 st.experimental_rerun()
 
 
