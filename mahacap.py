@@ -1462,11 +1462,11 @@ elif menu == "Actions / Goals":
     for sector, goals in sector_goals.items():
         st.subheader(f"{sector} Sector Goals")
         df = pd.DataFrame({
-            "Short-term (2030)": goals["Short-term"],
-            "Mid-term (2040)": goals["Mid-term"],
-            "Long-term (2050)": goals["Long-term"]
+            "Short-term (2030)": pd.Series(goals["Short-term"]),
+            "Mid-term (2040)": pd.Series(goals["Mid-term"]),
+            "Long-term (2050)": pd.Series(goals["Long-term"])
         })
-        st.table(df, key=f"{sector}_table")
+        st.dataframe(df, height=400, width=900, use_container_width=True, key=f"{sector}_table")
 
     st.markdown("---")
     st.markdown("### Generate Consolidated CAP Report")
@@ -1483,13 +1483,11 @@ elif menu == "Actions / Goals":
             # Save sector-wise goals
             for sector, goals in sector_goals.items():
                 df_goals = pd.DataFrame({
-                    "Short-term (2030)": goals["Short-term"],
-                    "Mid-term (2040)": goals["Mid-term"],
-                    "Long-term (2050)": goals["Long-term"]
+                    "Short-term (2030)": pd.Series(goals["Short-term"]),
+                    "Mid-term (2040)": pd.Series(goals["Mid-term"]),
+                    "Long-term (2050)": pd.Series(goals["Long-term"])
                 })
                 df_goals.to_excel(writer, index=False, sheet_name=f"{sector} Goals")
-
-            writer.save()
 
         st.download_button(
             label="Download CAP Report (Excel)",
