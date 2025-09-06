@@ -407,20 +407,18 @@ elif menu == "City Information":
             st.write("### Emissions by Sector")
             st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: format_indian_number(round(v)))))
 
+            # --- CSV Download ---
+            st.subheader("Download GHG Inventory (CSV)")
+            csv_data = chart_df.to_csv(index=False)
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name=f"{city}_GHG_Inventory.csv",
+                mime="text/csv"
+            )
+
     last_mod = st.session_state.last_updated or datetime.fromtimestamp(os.path.getmtime(CAP_DATA_FILE))
     st.markdown(f"*Last Updated: {last_mod.strftime('%B %Y')}*")
-
-    # --- CSV Download ---
-if sectors:
-    st.subheader("Download GHG Inventory (CSV)")
-    csv_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions (tCO2e)": list(sectors.values())})
-    csv = csv_df.to_csv(index=False)
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name=f"{city}_GHG_Inventory.csv",
-        mime="text/csv"
-    )
 
 # ---------------------------
 # Admin Panel
