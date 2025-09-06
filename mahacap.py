@@ -359,10 +359,63 @@ elif menu == "City Information":
             fig_pie.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
             st.plotly_chart(fig_pie, use_container_width=True)
 
-            fig_bar = px.bar(chart_df, x="Sector", y="Emissions", text=chart_df["Emissions"].apply(lambda x: format_indian_number(round(x))),
-                             title="Sector Emissions (tCO2e)", color_discrete_sequence=["#3E6BE6"])
-            fig_bar.update_layout(plot_bgcolor="#0f0f10", paper_bgcolor="#0f0f10", font_color="#E6E6E6")
-            st.plotly_chart(fig_bar, use_container_width=True)
+            # --- Ensure numeric values ---
+sector_cols = [c for c in cap_row.index if c.endswith(" Emissions (tCO2e)")]
+sectors = {}
+for c in sector_cols:
+    val = cap_row.get(c, 0)
+    try:
+        val = float(val)
+    except:
+        val = 0
+    sectors[c.replace(" Emissions (tCO2e)", "")] = max(val, 0)
+
+if sectors:
+    chart_df = pd.DataFrame({"Sector": list(sectors.keys()), "Emissions": list(sectors.values())})
+
+    # --- Fill NaN and ensure numeric ---
+    chart_df["Emissions"] = pd.to_numeric(chart_df["Emissions"], errors="coerce").fillna(0)
+
+    # --- Bar Chart ---
+    fig_bar = px.bar(
+        chart_df.sort_values("Emissions", ascending=False),
+        x="Sector",
+        y="Emissions",
+        text=chart_df["Emissions"].apply(lambda x: format_indian_number(round(x))),
+        color="Sector",
+        color_discrete_sequence=["#3E6BE6", "#54c750", "#F5A623", "#E67E22", "#2D9CDB", "#9B51E0"]
+    )
+    fig_bar.update_layout(
+        title="Sector Emissions (tCO2e)",
+        plot_bgcolor="#141518",
+        paper_bgcolor="#141518",
+        font_color="#E6E6E6",
+        xaxis_title=None,
+        yaxis_title=None,
+        uniformtext_minsize=8,
+        uniformtext_mode="hide",
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    # --- Pie Chart ---
+    fig_pie = px.pie(
+        chart_df,
+        names="Sector",
+        values="Emissions",
+        title="Sector-wise GHG Contribution",
+        color_discrete_sequence=["#3E6BE6", "#54c750", "#F5A623", "#E67E22", "#2D9CDB", "#9B51E0"]
+    )
+    fig_pie.update_layout(
+        plot_bgcolor="#141518",
+        paper_bgcolor="#141518",
+        font_color="#E6E6E6"
+    )
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+    # --- Table ---
+    st.write("### Emissions by Sector")
+    st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: format_indian_number(round(v)))))
+
 
             st.write("### Emissions by Sector")
             st.table(chart_df.assign(Emissions=lambda d: d["Emissions"].map(lambda v: format_indian_number(round(v)))))
