@@ -443,33 +443,28 @@ menu = st.session_state.menu
 
 
 # ---------------------------
-# Home Page: Maharashtra Dashboard (Professional SaaS Look)
+# Home Page: Maharashtra Dashboard
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
-
     df = st.session_state.data.copy()
 
-    # ---------- Helper Functions ----------
-    def render_card(col, label, value, bg_color="#34495E", value_color="#2E7D32", bold=True):
-        bold_tag = "<b>" if bold else ""
-        end_bold = "</b>" if bold else ""
+    # ---------- Card Rendering Function ----------
+    def render_card(col, label, value, inputed_value=True, bg_color="#34495E"):
+        value_html = f"<b style='color:#2E7D32; font-size:16px;'>{value}</b>" if inputed_value else f"{value}"
         card_html = f"""
-        <div style='background-color:{bg_color}; color:{value_color}; padding:14px 10px; border-radius:10px;
+        <div style='background-color:{bg_color}; color:#ECEFF1; padding:14px 10px; border-radius:10px; 
                     font-size:15px; text-align:center; min-height:70px; margin-bottom:10px;
                     box-shadow: 0 4px 6px rgba(0,0,0,0.4); transition: transform 0.2s, box-shadow 0.2s;'
-            onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
-            onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';">
-            {bold_tag}{label}{end_bold}<br>{value}
+             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
+             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';">
+            {label}<br>{value_html}
         </div>"""
         col.markdown(card_html, unsafe_allow_html=True)
 
-    def format_metric(val, is_percentage=False):
-        return f"{val}%" if is_percentage else format_indian_number(val)
-
-    # ---------- CAP Status Summary ----------
     if not df.empty and "CAP Status" in df.columns:
+        # ---------- CAP Status Summary Cards ----------
         status_counts = {
             "Total Cities": len(df),
             "Not Started": df[df["CAP Status"].str.lower() == "not started"].shape[0],
@@ -482,85 +477,92 @@ if menu == "Home":
             "In Progress": ["#FFA500", "#FF8C00"],
             "Completed": ["#28A745", "#1E7E34"]
         }
-        for col, (title, val) in zip(st.columns(4), status_counts.items()):
-            color1, color2 = card_colors[title]
-            col.markdown(
-                f"<div style='background:linear-gradient(135deg,{color1},{color2}); padding:20px; border-radius:12px; text-align:center; color:white; box-shadow:0 4px 8px rgba(0,0,0,0.1);'><h5>{title}</h5><h2>{format_indian_number(val)}</h2></div>",
-                unsafe_allow_html=True
-            )
+        cols = st.columns(4)
+        for col_, (title, val) in zip(cols, status_counts.items()):
+            c1, c2 = card_colors[title]
+            col_.markdown(f"""
+                <div style="background: linear-gradient(135deg, {c1}, {c2}); padding:20px; border-radius:12px; text-align:center; color:white; box-shadow:0 4px 8px rgba(0,0,0,0.1);">
+                    <h5>{title}</h5>
+                    <h2>{format_indian_number(val)}</h2>
+                </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # ---------- Maharashtra Overview ----------
     if "Maharashtra" in df["City Name"].values:
         maha = df[df["City Name"]=="Maharashtra"].iloc[0]
-        population = maha.get("Population", 0)
-        ghg_total = maha.get("GHG Emissions", 0)
+        population = maha.get("Population",0)
+        ghg_total = maha.get("GHG Emissions",0)
         cap_status = maha.get("CAP Status","—")
         cap_link = maha.get("CAP Link","—")
         vulnerability_score = maha.get("Vulnerability Score",0)
-        est_ghg = round(population * (ghg_total/population if population else 0),0)
+        est_ghg = round(population * (ghg_total/population if population else 0),2)
 
-        # Cards for CAP, CAP Link, GHG
-        col1, col2, col3, col4 = st.columns(4)
-        render_card(col1, "CAP Status", cap_status,
-                    bg_color="#28A745" if cap_status.lower()=="completed" else "#FFA726" if cap_status.lower()=="in progress" else "#EF5350",
-                    value_color="#FFFFFF")
-        col2.markdown(f"<a href='{cap_link}' target='_blank'><button style='padding:10px 15px;border-radius:8px;border:none;background-color:#42A5F5;color:white;font-weight:bold;'>Open CAP</button></a>" if cap_link!="—" else "<div style='padding:14px;text-align:center;color:#ECEFF1;'>—</div>", unsafe_allow_html=True)
-        render_card(col3, "GHG Emissions (tCO2e)", format_indian_number(ghg_total))
-        render_card(col4, "Estimated GHG by Population", format_indian_number(est_ghg))
-
-        # Cards for Population and Vulnerability
-        col5, col6 = st.columns(2)
-        render_card(col5, "Vulnerability Assessment Score", f"{vulnerability_score}")
-        render_card(col6, "Population", format_indian_number(population))
+        # ---------- Overview Metrics ----------
+        overview_metrics = [
+            ("CAP Status", cap_status, True, {"completed":"#66BB6A","in progress":"#FFA726","not started":"#EF5350"}.get(cap_status.lower(),"#34495E")),
+            ("CAP Link", cap_link, False, "#34495E"),
+            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total), True),
+            ("Estimated GHG by Population", format_indian_number(est_ghg), True),
+            ("Vulnerability Score", vulnerability_score, True),
+            ("Population", format_indian_number(population), True)
+        ]
+        st.subheader("Maharashtra Overview")
+        for i in range(0,len(overview_metrics),3):
+            cols = st.columns(3)
+            for j,(label,val,inputed,*bg) in enumerate(overview_metrics[i:i+3]):
+                render_card(cols[j], label, val, inputed_value=inputed, bg_color=bg[0] if bg else "#34495E")
 
         st.markdown("---")
 
         # ---------- Environmental Metrics ----------
         env_metrics = [
-            ("Renewable Energy (MWh)", maha.get("Renewable Energy (MWh)",0), False),
-            ("Urban Green Area (ha)", maha.get("Urban Green Area (ha)",0), False),
-            ("Municipal Solid Waste (tons)", maha.get("Municipal Solid Waste (tons)",0), False),
+            ("Renewable Energy (MWh)", maha.get("Renewable Energy (MWh)",0), True),
+            ("Urban Green Area (ha)", maha.get("Urban Green Area (ha)",0), True),
+            ("Municipal Solid Waste (tons)", maha.get("Municipal Solid Waste (tons)",0), True),
             ("Waste Landfilled (%)", maha.get("Waste Landfilled (%)",0), True),
             ("Waste Composted (%)", maha.get("Waste Composted (%)",0), True),
-            ("Wastewater Treated (m3)", maha.get("Wastewater Treated (m3)",0), False)
+            ("Wastewater Treated (m3)", maha.get("Wastewater Treated (m3)",0), True)
         ]
         st.subheader("Environmental Metrics")
         for i in range(0,len(env_metrics),3):
-            for col,label_val in zip(st.columns(3), env_metrics[i:i+3]):
-                label,val,is_pct = label_val
-                render_card(col,label,format_metric(val,is_pct))
+            cols = st.columns(3)
+            for j,(label,val,inputed) in enumerate(env_metrics[i:i+3]):
+                render_card(cols[j], label, format_indian_number(val) if isinstance(val,int) else val, inputed_value=True)
 
         st.markdown("---")
 
         # ---------- Social Metrics ----------
-        males,females = maha.get("Males",0), maha.get("Females",0)
-        total_pop = males+females
-        children_m, children_f = maha.get("Children Male",0), maha.get("Children Female",0)
-        total_children = children_m + children_f
-        literacy_m,literacy_f = maha.get("Male Literacy (%)",0), maha.get("Female Literacy (%)",0)
-        literacy_avg = round((literacy_m+literacy_f)/2,1)
         social_metrics = [
-            ("Male Population", males, False),
-            ("Female Population", females, False),
-            ("Total Population", total_pop, False),
-            ("Children (0-6 Male)", children_m, False),
-            ("Children (0-6 Female)", children_f, False),
-            ("Total Children (0-6)", total_children, False),
-            ("Male Literacy (%)", literacy_m, True),
-            ("Female Literacy (%)", literacy_f, True),
-            ("Average Literacy (%)", literacy_avg, True),
-            ("Migrant Population (%)", maha.get("Migrant (%)",0), True),
+            ("Male Population", maha.get("Males",0), True),
+            ("Female Population", maha.get("Females",0), True),
+            ("Total Population", maha.get("Males",0)+maha.get("Females",0), True),
+            ("Children (0–6 Male)", maha.get("Children Male",0), True),
+            ("Children (0–6 Female)", maha.get("Children Female",0), True),
+            ("Total Children", maha.get("Children Male",0)+maha.get("Children Female",0), True),
+            ("Male Literacy (%)", maha.get("Male Literacy (%)",0), True),
+            ("Female Literacy (%)", maha.get("Female Literacy (%)",0), True),
+            ("Average Literacy (%)", round((maha.get("Male Literacy (%)",0)+maha.get("Female Literacy (%)",0))/2,2), True),
             ("Slum Population (%)", maha.get("Slum (%)",0), True),
-            ("BPL Households (%)", maha.get("BPL Households (%)",0), True),
-            ("Urbanization Rate (%)", maha.get("Urbanization Rate (%)",0), True)
+            ("Migrant Population (%)", maha.get("Migrant (%)",0), True),
+            ("BPL Households (%)", maha.get("BPL Households (%)",0), True)
         ]
         st.subheader("Social Metrics")
         for i in range(0,len(social_metrics),3):
-            for col,label_val in zip(st.columns(3), social_metrics[i:i+3]):
-                label,val,is_pct = label_val
-                render_card(col,label,format_metric(val,is_pct))
+            cols = st.columns(3)
+            for j,(label,val,inputed) in enumerate(social_metrics[i:i+3]):
+                render_card(cols[j], label, format_indian_number(val) if isinstance(val,int) else val, inputed_value=True)
+
+        st.markdown("---")
+
+        # ---------- CAP Link ----------
+        if cap_link != "—":
+            st.markdown(f"""
+                <div style='background-color:#34495E; color:#42A5F5; padding:12px; border-radius:10px; font-size:14px; text-align:center;
+                            margin-top:6px; box-shadow:0 4px 6px rgba(0,0,0,0.4); transition: transform 0.2s, box-shadow 0.2s;'
+                     onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
+                     onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';">
+                    <a href='{cap_link}' target='_blank' style='color:#42A5F5; text-decoration:underline;'>View CAP Document</a>
+                </div>""", unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -570,52 +572,51 @@ if menu == "Home":
         df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
         df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
 
-        # Total GHG
-        fig_ghg = px.bar(df,x="City Name",y="GHG Emissions",
-                         text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
-                         title="City-wise Total GHG Emissions",
-                         color="GHG Emissions", color_continuous_scale="Blues")
+        # Total GHG Chart
+        fig_ghg = px.bar(df, x="City Name", y="GHG Emissions", text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
+                         title="City-wise Total GHG Emissions", color="GHG Emissions", color_continuous_scale="Blues")
         fig_ghg.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
-        st.plotly_chart(fig_ghg,use_container_width=True)
+        st.plotly_chart(fig_ghg, use_container_width=True)
 
-        # Estimated GHG
-        fig_est = px.bar(df,x="City Name",y="Estimated GHG",
-                         text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
-                         title="Estimated GHG Emissions by Population",
-                         color="Estimated GHG", color_continuous_scale="Oranges")
+        # Estimated GHG by Population Chart
+        fig_est = px.bar(df, x="City Name", y="Estimated GHG", text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
+                         title="Estimated GHG Emissions by Population", color="Estimated GHG", color_continuous_scale="Oranges")
         fig_est.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
-        st.plotly_chart(fig_est,use_container_width=True)
+        st.plotly_chart(fig_est, use_container_width=True)
 
-        # Vulnerability Chart
+        # Vulnerability Scores Chart
         evs_cols = ["GHG Emissions","Municipal Solid Waste (tons)","Wastewater Treated (m3)"]
-        for col_name in evs_cols: df[col_name]=df.get(col_name,0)
-        max_vals_env = {col: df[col].max() or 1 for col in evs_cols}
-        df["EVS"] = (df["GHG Emissions"]/max_vals_env["GHG Emissions"]*0.5+
-                     df["Municipal Solid Waste (tons)"]/max_vals_env["Municipal Solid Waste (tons)"]*0.25+
-                     df["Wastewater Treated (m3)"]/max_vals_env["Wastewater Treated (m3)"]*0.25)*100
+        for col_ in evs_cols:
+            if col_ not in df: df[col_] = 0
+        max_vals_env = {col_: df[col_].max() or 1 for col_ in evs_cols}
+        df["EVS"] = (df["GHG Emissions"]/max_vals_env["GHG Emissions"]*0.5 +
+                     df["Municipal Solid Waste (tons)"]/max_vals_env["Municipal Solid Waste (tons)"]*0.25 +
+                     df["Wastewater Treated (m3)"]/max_vals_env["Wastewater Treated (m3)"]*0.25) * 100
+
         social_factors = {"Population":0.3,"Households":0.2,"Urbanization Rate (%)":0.2,"Literacy Rate (%)":0.15,"Poverty Rate (%)":0.15}
-        for col_name in social_factors:
-            if col_name not in df.columns: df[col_name]=0
-            else: df[col_name]=pd.to_numeric(df[col_name],errors="coerce").fillna(0)
-        max_vals_social = {col: df[col].max() or 1 for col in social_factors}
-        df["SVS"] = ((df["Population"]/max_vals_social["Population"])*0.3+
-                     (df["Households"]/max_vals_social["Households"])*0.2+
-                     (df["Urbanization Rate (%)"]/max_vals_social["Urbanization Rate (%)"])*0.2+
-                     (1-df["Literacy Rate (%)"]/max_vals_social["Literacy Rate (%)"])*0.15+
+        for col_ in social_factors:
+            if col_ not in df: df[col_] = 0
+            else: df[col_] = pd.to_numeric(df[col_], errors="coerce").fillna(0)
+        max_vals_social = {col_: df[col_].max() or 1 for col_ in social_factors}
+        df["SVS"] = ((df["Population"]/max_vals_social["Population"])*0.3 +
+                     (df["Households"]/max_vals_social["Households"])*0.2 +
+                     (df["Urbanization Rate (%)"]/max_vals_social["Urbanization Rate (%)"])*0.2 +
+                     (1-df["Literacy Rate (%)"]/max_vals_social["Literacy Rate (%)"])*0.15 +
                      (df["Poverty Rate (%)"]/max_vals_social["Poverty Rate (%)"])*0.15)*100
-        vuln_df = df[["City Name","EVS","SVS"]].melt(id_vars="City Name",var_name="Score Type",value_name="Score")
-        fig_vuln = px.bar(vuln_df,x="City Name",y="Score",color="Score Type",barmode="group",
-                          text=vuln_df["Score"].apply(lambda x:f"{round(x,1)}"),
+
+        vuln_df = df[["City Name","EVS","SVS"]].melt(id_vars="City Name", var_name="Score Type", value_name="Score")
+        fig_vuln = px.bar(vuln_df, x="City Name", y="Score", color="Score Type", barmode="group",
+                          text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
                           title="City Vulnerability Scores (Environmental vs Social)",
                           color_discrete_map={"EVS":"#1f77b4","SVS":"#ff7f0e"})
-        fig_vuln.update_traces(textposition="outside",hovertemplate="%{y:.1f}")
-        fig_vuln.update_layout(plot_bgcolor="#ECEFF1",paper_bgcolor="#ECEFF1",font_color="#000000",
-                               xaxis_title=None,yaxis_title="Vulnerability Score (0-100)")
-        st.plotly_chart(fig_vuln,use_container_width=True)
+        fig_vuln.update_traces(textposition="outside", hovertemplate="%{y:.1f}")
+        fig_vuln.update_layout(plot_bgcolor="#F0F2F6", paper_bgcolor="#F0F2F6", font_color="#000000",
+                               xaxis_title=None, yaxis_title="Vulnerability Score (0-100)")
+        st.plotly_chart(fig_vuln, use_container_width=True)
 
         
 # ---------------------------
-# City Information Page (Shortened)
+# City Information Page
 # ---------------------------
 elif menu == "City Information":
     st.markdown("<h2 style='margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
