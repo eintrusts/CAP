@@ -37,8 +37,27 @@ for key, default in [("authenticated", False), ("menu", "Home"), ("last_updated"
     if key not in st.session_state: st.session_state[key] = default
 
 # ---------------------------
-# Load CSV Helper
+# Helper
 # ---------------------------
+def load_cap_data(file_path="cap_raw_data.csv"):
+    import os, pandas as pd
+    if os.path.exists(file_path):
+        try:
+            df = pd.read_csv(file_path)
+            if "City Name" not in df.columns:
+                st.warning("CAP data found but missing 'City Name' column. Please submit proper raw data first in 'CAP Generation'.")
+                return pd.DataFrame()
+            return df
+        except:
+            st.warning("Error reading CAP data. Please check the file format.")
+            return pd.DataFrame()
+    else:
+        st.info("No CAP raw data found. Please submit raw data first in 'CAP Generation'.")
+        return pd.DataFrame()
+
+# Load into session_state
+st.session_state.cap_data = load_cap_data()
+
 import os, pandas as pd
 def load_csv(file_path, default_cols):
     return pd.read_csv(file_path) if os.path.exists(file_path) else pd.DataFrame(columns=default_cols)
