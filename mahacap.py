@@ -708,7 +708,7 @@ elif menu == "City Information":
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- Card Rendering Function ----------
-        def render_card(col, label, value, bg_color="#34495E", value_color="#FFEB3B"):
+        def render_card(col, label, value, bg_color="#34495E", value_color="#4CAF50"):
             """Render a card with label and bold input value"""
             card_html = f"""
             <div style='
@@ -731,7 +731,7 @@ elif menu == "City Information":
             """
             col.markdown(card_html, unsafe_allow_html=True)
 
-        # ---------- Indian Number Format Function ----------
+        # ---------- Indian Number Format ----------
         def format_indian_number(num):
             try:
                 return "{:,}".format(int(round(num))).replace(",", ",")
@@ -778,7 +778,7 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                <a href='{cap_link}' target='_blank' style='color:#FFEB3B; text-decoration:underline;'><b>View CAP Document</b></a>
+                <a href='{cap_link}' target='_blank' style='color:#4CAF50; text-decoration:underline;'><b>View CAP Document</b></a>
             </div>
             """
             st.markdown(link_html, unsafe_allow_html=True)
@@ -796,6 +796,12 @@ elif menu == "City Information":
         waste_landfilled = row.get("Waste Landfilled (%)", 0)
         waste_composted = row.get("Waste Composted (%)", 0)
 
+        # Assign colors
+        def value_color(label):
+            if label in ["Total GHG Emissions (tCO₂e)", "Per Capita GHG Emissions (tCO₂e/person)", "Waste Landfilled (%)", "Slum Population (%)"]:
+                return "#E53935"  # Crimson Red
+            return "#4CAF50"      # Forest Green
+
         env_metrics = [
             ("Total GHG Emissions (tCO₂e)", format_indian_number(ghg_total)),
             ("Per Capita GHG Emissions (tCO₂e/person)", format_indian_number(per_capita_ghg)),
@@ -810,7 +816,7 @@ elif menu == "City Information":
         for i in range(0, len(env_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, env_metrics[i:i+3]):
-                render_card(col, label, value)
+                render_card(col, label, value, value_color=value_color(label))
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
@@ -844,7 +850,7 @@ elif menu == "City Information":
         for i in range(0, len(social_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, social_metrics[i:i+3]):
-                render_card(col, label, value)
+                render_card(col, label, value, value_color=value_color(label))
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
@@ -862,6 +868,7 @@ elif menu == "City Information":
             cols = st.columns(2)
             for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
                 render_card(col, label, value)
+
                 
 
 # ---------------------------
