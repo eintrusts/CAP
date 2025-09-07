@@ -707,15 +707,17 @@ elif menu == "City Information":
         row = df_meta[df_meta["City Name"] == city].iloc[0]
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
-        # ---------- Card Rendering Function with Shadow & Hover ----------
-        def render_card(col, label, value, value_color="#66BB6A"):
+        # ---------- Card Rendering Function ----------
+        def render_card(col, label, value, value_color="#2E7D32", bold=True, bg_color="#34495E"):
+            bold_tag = "<b>" if bold else ""
+            end_bold = "</b>" if bold else ""
             card_html = f"""
             <div style='
-                background-color:#34495E;
-                color:#ECEFF1;
+                background-color:{bg_color};
+                color:{value_color};
                 padding:14px 10px;
                 border-radius:10px;
-                font-size:15px;
+                font-size:16px;
                 text-align:center;
                 min-height:70px;
                 margin-bottom:10px;
@@ -725,30 +727,16 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                <span>{label}</span><br>
-                <span style='color:{value_color}; font-weight:bold; font-size:17px;'>{value}</span>
+                {bold_tag}{label}{end_bold}<br>{value}
             </div>
             """
             col.markdown(card_html, unsafe_allow_html=True)
-
-        # ---------- Number Formatting ----------
-        def format_indian_number(num):
-            try:
-                num = int(round(float(num)))
-                s = str(num)
-                if len(s) <= 3:
-                    return s
-                else:
-                    # Indian format: last 3 digits + comma every 2 digits
-                    return s[-3:].rjust(3,'0') if len(s)==3 else s[:-3][::-1].replace(r'(\d{2})(?=\d)', r'\1,')[::-1] + ',' + s[-3:]
-            except:
-                return num
 
         # ---------- BASIC INFORMATION ----------
         st.markdown("<h4>Basic Information</h4>", unsafe_allow_html=True)
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
-        density = round(population / area) if area else "—"
+        density = round(population / area) if area else 0
         cap_status = row.get("CAP Status", "—")
         cap_link = row.get("CAP Link", "")
 
@@ -758,7 +746,7 @@ elif menu == "City Information":
             ("Population", format_indian_number(population)),
             ("Area (sq.km)", format_indian_number(area)),
             ("Density (/sq.km)", format_indian_number(density)),
-            ("Est. Year", row.get("Est. Year", "—")),
+            ("Est. Year", int(row.get("Est. Year", 0))),
             ("CAP Status", cap_status)
         ]
 
@@ -767,7 +755,6 @@ elif menu == "City Information":
             for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
                 render_card(col, label, value)
 
-        # Display CAP Link as clickable
         if cap_link:
             link_html = f"""
             <div style='
@@ -793,7 +780,7 @@ elif menu == "City Information":
 
         # ---------- ENVIRONMENTAL INFORMATION ----------
         st.markdown("<h4>Environmental Information</h4>", unsafe_allow_html=True)
-        ghg_total = row.get("GHG Emissions", 0)  # metric tons CO2e
+        ghg_total = row.get("GHG Emissions (tCO2e)", 0)
         per_capita_ghg = round(ghg_total / population) if population else 0
         renewable_energy = row.get("Renewable Energy (MWh)", 0)
         urban_green = row.get("Urban Green Area (ha)", 0)
@@ -830,7 +817,7 @@ elif menu == "City Information":
         total_children = children_m + children_f
         literacy_m = row.get("Male Literacy (%)",0)
         literacy_f = row.get("Female Literacy (%)",0)
-        literacy_total = round((literacy_m + literacy_f)/2) if literacy_m+literacy_f else 0
+        literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2,2))
 
         social_metrics = [
             ("Male Population", format_indian_number(males)),
