@@ -156,6 +156,51 @@ def safe_get(row, col, default="—"):
     except:
         return default
 
+import streamlit as st
+import pandas as pd
+import numpy as np
+import locale
+import plotly.graph_objects as go
+
+# ---------------------------
+# Global Number Formatting (Indian style, no decimals)
+# ---------------------------
+
+# Set locale for Indian grouping
+locale.setlocale(locale.LC_ALL, 'en_IN.UTF-8')
+
+def format_number(num):
+    """Format numbers in Indian style without decimals"""
+    try:
+        return locale.format_string("%d", int(round(num)), grouping=True)
+    except:
+        return str(num)
+
+# Make Pandas use Indian formatting globally
+pd.options.display.float_format = lambda x: locale.format_string("%d", int(round(x)), grouping=True)
+
+# Patch Streamlit to auto-format numbers in st.metric and st.write
+st._old_metric = st.metric
+def metric_with_format(label, value, delta=None, **kwargs):
+    value = format_number(value) if isinstance(value, (int, float)) else value
+    if delta is not None and isinstance(delta, (int, float)):
+        delta = format_number(delta)
+    return st._old_metric(label, value, delta, **kwargs)
+st.metric = metric_with_format
+
+st._old_write = st.write
+def write_with_format(*args, **kwargs):
+    formatted = [format_number(a) if isinstance(a, (int, float)) else a for a in args]
+    return st._old_write(*formatted, **kwargs)
+st.write = write_with_format
+
+# Patch Plotly to use commas in charts automatically
+def format_plotly(fig):
+    fig.update_xaxes(tickformat=",")
+    fig.update_yaxes(tickformat=",")
+    return fig
+
+
 # ---------------------------
 # Dark / Professional SaaS CSS
 # ---------------------------
