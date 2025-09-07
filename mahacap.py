@@ -179,6 +179,26 @@ def format_dataframe_for_export(df):
             df[col] = df[col].apply(lambda x: format_number(x) if pd.notnull(x) else x)
     return df
 
+def format_number(num):
+    """Format number in Indian style (1,00,000) without decimals"""
+    try:
+        num = int(round(num))
+        s = str(num)
+        r = s[-3:]
+        s = s[:-3]
+        while len(s) > 2:
+            r = s[-2:] + "," + r
+            s = s[:-2]
+        if s:
+            r = s + "," + r
+        return r
+    except:
+        return str(num)
+
+# ✅ Alias for backward compatibility
+format_indian_number = format_number
+
+
 
 # ---------------------------
 # Dark / Professional SaaS CSS
