@@ -127,59 +127,28 @@ def reset_all_data():
 # ---------------------------
 # Helper Functions
 # ---------------------------
-def format_indian_number(num):
-    try:
-        num = int(num)
-        s = str(num)[::-1]
-        lst = []
-        lst.append(s[:3])
-        s = s[3:]
-        while s:
-            lst.append(s[:2])
-            s = s[2:]
-        return ','.join(lst)[::-1]
-    except:
-        return str(num)
-
-def format_population(num):
-    try:
-        if pd.isna(num) or num == "":
-            return "—"
-        return format_indian_number(num)
-    except:
-        return str(num)
-
-def safe_get(row, col, default="—"):
-    try:
-        val = row.get(col, default)
-        return default if pd.isna(val) else val
-    except:
-        return default
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-import locale
-import plotly.graph_objects as go
-
-# ---------------------------
-# Global Number Formatting (Indian style, no decimals)
-# ---------------------------
-
-# Set locale for Indian grouping
-locale.setlocale(locale.LC_ALL, 'en_IN.UTF-8')
-
 def format_number(num):
-    """Format numbers in Indian style without decimals"""
+    """Format number in Indian style (1,00,000) without decimals"""
     try:
-        return locale.format_string("%d", int(round(num)), grouping=True)
+        num = int(round(num))
+        s = str(num)
+        # First group (last 3 digits)
+        r = s[-3:]
+        s = s[:-3]
+        # Add commas every 2 digits
+        while len(s) > 2:
+            r = s[-2:] + "," + r
+            s = s[:-2]
+        if s:
+            r = s + "," + r
+        return r
     except:
         return str(num)
 
-# Make Pandas use Indian formatting globally
-pd.options.display.float_format = lambda x: locale.format_string("%d", int(round(x)), grouping=True)
+# --- Pandas: Apply formatting globally ---
+pd.options.display.float_format = lambda x: format_number(x)
 
-# Patch Streamlit to auto-format numbers in st.metric and st.write
+# --- Streamlit: Patch metric() ---
 st._old_metric = st.metric
 def metric_with_format(label, value, delta=None, **kwargs):
     value = format_number(value) if isinstance(value, (int, float)) else value
@@ -188,17 +157,27 @@ def metric_with_format(label, value, delta=None, **kwargs):
     return st._old_metric(label, value, delta, **kwargs)
 st.metric = metric_with_format
 
+# --- Streamlit: Patch write() ---
 st._old_write = st.write
 def write_with_format(*args, **kwargs):
     formatted = [format_number(a) if isinstance(a, (int, float)) else a for a in args]
     return st._old_write(*formatted, **kwargs)
 st.write = write_with_format
 
-# Patch Plotly to use commas in charts automatically
+# --- Plotly: auto Indian commas ---
 def format_plotly(fig):
     fig.update_xaxes(tickformat=",")
     fig.update_yaxes(tickformat=",")
     return fig
+
+# --- Excel/PDF: Formatter helper ---
+def format_dataframe_for_export(df):
+    """Convert all numeric values in DataFrame to Indian format (strings)"""
+    df = df.copy()
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            df[col] = df[col].apply(lambda x: format_number(x) if pd.notnull(x) else x)
+    return df
 
 
 # ---------------------------
