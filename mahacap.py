@@ -696,10 +696,10 @@ if menu == "Home":
         st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page
+# City Information Page (Professional with Indian Number Format)
 # ---------------------------
 elif menu == "City Information":
-    st.markdown("<h2 style='color:#ECEFF1; margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
 
@@ -708,15 +708,16 @@ elif menu == "City Information":
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- Card Rendering Function ----------
-        def render_card(col, label, value, bg_color="#34495E", value_color="#4CAF50"):
-            """Render a card with label and bold input value"""
+        def render_card(col, label, value, value_color="#2E7D32", bold=True, font_size=18, bg_color="#34495E"):
+            bold_tag = "<b>" if bold else ""
+            end_bold = "</b>" if bold else ""
             card_html = f"""
             <div style='
                 background-color:{bg_color};
-                color:#ECEFF1;
+                color:{value_color};
                 padding:14px 10px;
                 border-radius:10px;
-                font-size:15px;
+                font-size:{font_size}px;
                 text-align:center;
                 min-height:70px;
                 margin-bottom:10px;
@@ -726,23 +727,16 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                {label}<br><b style='color:{value_color};'>{value}</b>
+                {bold_tag}{label}{end_bold}<br>{value}
             </div>
             """
             col.markdown(card_html, unsafe_allow_html=True)
 
-        # ---------- Indian Number Format ----------
-        def format_indian_number(num):
-            try:
-                return "{:,}".format(int(round(num))).replace(",", ",")
-            except:
-                return str(num)
-
         # ---------- BASIC INFORMATION ----------
-        st.markdown("<h4 style='color:#ECEFF1;'>Basic Information</h4>", unsafe_allow_html=True)
-        population = row.get("Population", 0)
-        area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
-        density = int(round(population / area)) if area else "—"
+        st.markdown("<h4>Basic Information</h4>", unsafe_allow_html=True)
+        population = int(row.get("Population", 0))
+        area = int(row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0)))
+        density = int(population / area) if area else "—"
         cap_status = row.get("CAP Status", "—")
         cap_link = row.get("CAP Link", "")
 
@@ -752,7 +746,7 @@ elif menu == "City Information":
             ("Population", format_indian_number(population)),
             ("Area (sq.km)", format_indian_number(area)),
             ("Density (/sq.km)", format_indian_number(density) if density != "—" else "—"),
-            ("Est. Year", int(row.get("Est. Year", 0)) if row.get("Est. Year") else "—"),
+            ("Est. Year", int(row.get("Est. Year", "—")) if row.get("Est. Year") else "—"),
             ("CAP Status", cap_status)
         ]
 
@@ -761,24 +755,20 @@ elif menu == "City Information":
             for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
                 render_card(col, label, value)
 
-        # CAP Link
+        # CAP Link as clickable
         if cap_link:
             link_html = f"""
             <div style='
                 background-color:#2C3E50;
-                color:#ECEFF1;
+                color:#42A5F5;
                 padding:12px;
                 border-radius:10px;
                 font-size:14px;
                 text-align:center;
                 margin-top:6px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-                transition: transform 0.2s, box-shadow 0.2s;
-            '
-            onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
-            onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
-            >
-                <a href='{cap_link}' target='_blank' style='color:#4CAF50; text-decoration:underline;'><b>View CAP Document</b></a>
+            '>
+                <a href='{cap_link}' target='_blank' style='color:#42A5F5; text-decoration:underline;'>View CAP Document</a>
             </div>
             """
             st.markdown(link_html, unsafe_allow_html=True)
@@ -786,25 +776,19 @@ elif menu == "City Information":
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- ENVIRONMENTAL INFORMATION ----------
-        st.markdown("<h4 style='color:#ECEFF1;'>Environmental Information</h4>", unsafe_allow_html=True)
-        ghg_total = row.get("GHG Emissions", 0)
-        per_capita_ghg = int(round(ghg_total / population)) if population else 0
-        renewable_energy = row.get("Renewable Energy (MWh)", 0)
-        urban_green = row.get("Urban Green Area (ha)", 0)
-        solid_waste = row.get("Municipal Solid Waste (tons)", 0)
-        wastewater = row.get("Wastewater Treated (m3)", 0)
-        waste_landfilled = row.get("Waste Landfilled (%)", 0)
-        waste_composted = row.get("Waste Composted (%)", 0)
-
-        # Assign colors
-        def value_color(label):
-            if label in ["Total GHG Emissions (tCO₂e)", "Per Capita GHG Emissions (tCO₂e/person)", "Waste Landfilled (%)", "Slum Population (%)"]:
-                return "#E53935"  # Crimson Red
-            return "#4CAF50"      # Forest Green
+        st.markdown("<h4>Environmental Information</h4>", unsafe_allow_html=True)
+        ghg_total = int(row.get("GHG Emissions", 0))
+        per_capita_ghg = int(ghg_total / population) if population else 0
+        renewable_energy = int(row.get("Renewable Energy (MWh)", 0))
+        urban_green = int(row.get("Urban Green Area (ha)", 0))
+        solid_waste = int(row.get("Municipal Solid Waste (tons)", 0))
+        wastewater = int(row.get("Wastewater Treated (m3)", 0))
+        waste_landfilled = int(row.get("Waste Landfilled (%)", 0))
+        waste_composted = int(row.get("Waste Composted (%)", 0))
 
         env_metrics = [
-            ("Total GHG Emissions (tCO₂e)", format_indian_number(ghg_total)),
-            ("Per Capita GHG Emissions (tCO₂e/person)", format_indian_number(per_capita_ghg)),
+            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total)),
+            ("Per Capita Emissions (tCO2e)", format_indian_number(per_capita_ghg)),
             ("Renewable Energy (MWh)", format_indian_number(renewable_energy)),
             ("Urban Green Area (ha)", format_indian_number(urban_green)),
             ("Solid Waste (tons)", format_indian_number(solid_waste)),
@@ -816,21 +800,21 @@ elif menu == "City Information":
         for i in range(0, len(env_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, env_metrics[i:i+3]):
-                render_card(col, label, value, value_color=value_color(label))
+                render_card(col, label, value)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- SOCIAL INFORMATION ----------
-        st.markdown("<h4 style='color:#ECEFF1;'>Social Information</h4>", unsafe_allow_html=True)
-        males = row.get("Males", 0)
-        females = row.get("Females", 0)
+        st.markdown("<h4>Social Information</h4>", unsafe_allow_html=True)
+        males = int(row.get("Males", 0))
+        females = int(row.get("Females", 0))
         total_pop = males + females
-        children_m = row.get("Children Male", 0)
-        children_f = row.get("Children Female", 0)
+        children_m = int(row.get("Children Male",0))
+        children_f = int(row.get("Children Female",0))
         total_children = children_m + children_f
-        literacy_m = row.get("Male Literacy (%)", 0)
-        literacy_f = row.get("Female Literacy (%)", 0)
-        literacy_total = int(round((literacy_m + literacy_f)/2))
+        literacy_m = int(row.get("Male Literacy (%)",0))
+        literacy_f = int(row.get("Female Literacy (%)",0))
+        literacy_total = round((literacy_m + literacy_f)/2,0)
 
         social_metrics = [
             ("Male Population", format_indian_number(males)),
@@ -850,12 +834,12 @@ elif menu == "City Information":
         for i in range(0, len(social_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, social_metrics[i:i+3]):
-                render_card(col, label, value, value_color=value_color(label))
+                render_card(col, label, value)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- CONTACT INFORMATION ----------
-        st.markdown("<h4 style='color:#ECEFF1;'>Contact Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4>Contact Information</h4>", unsafe_allow_html=True)
         contact_metrics = [
             ("Department Exist", row.get("Department Exist","—")),
             ("Department Name", row.get("Department Name","—")),
@@ -868,7 +852,6 @@ elif menu == "City Information":
             cols = st.columns(2)
             for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
                 render_card(col, label, value)
-
                 
 
 # ---------------------------
