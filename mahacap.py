@@ -1109,7 +1109,16 @@ elif menu == "GHG Inventory":
     if not st.session_state.get("authenticated", False):
         admin_login()
     else:
+        # ---------------------------
+        # Back button to CAP Generation
+        # ---------------------------
+        if st.button("⬅ Back to CAP Generation"):
+            st.session_state.menu = "CAP Generation"
+            st.experimental_rerun()
+
+        # ---------------------------
         # Load CAP raw data safely
+        # ---------------------------
         CAP_DATA_FILE = "cap_raw_data.csv"
         try:
             cap_df = pd.read_csv(CAP_DATA_FILE)
@@ -1119,125 +1128,125 @@ elif menu == "GHG Inventory":
         # Save in session state
         st.session_state.cap_data = cap_df
 
+        # ---------------------------
         # Check if CAP data exists
+        # ---------------------------
         if cap_df.empty or "City" not in cap_df.columns:
-            st.warning("No CAP raw data found or 'City' column missing. Please submit raw data first in 'CAP Generation'.")
+            st.warning(
+                "No CAP raw data found or 'City' column missing. Please submit raw data first in 'CAP Generation'."
+            )
         else:
-            # --- Back button to CAP Generation ---
-            if st.button("⬅ Back to CAP Generation"):
-                st.session_state.menu = "CAP Generation"
-                st.experimental_rerun()
-
-            # Select city
+            # ---------------------------
+            # Select City
+            # ---------------------------
             city_list = cap_df["City"].astype(str).tolist()
             selected_city = st.selectbox("Select City to Generate GHG Inventory", city_list)
-            city_data = cap_df[cap_df["City"] == selected_city].iloc[0]
 
-            st.subheader(f"GHG Inventory for {selected_city}")
+            # Ensure a city is selected
+            if selected_city:
+                city_data = cap_df[cap_df["City"] == selected_city].iloc[0]
 
-            # --- 1. General City Info ---
-            st.markdown(f"""
-            **Population:** {city_data.get('Population', 'N/A')}  
-            **Area (km²):** {city_data.get('Area_km2', 'N/A')}  
-            **Administrative Type:** {city_data.get('Admin_Type', 'N/A')}  
-            **Year of Inventory:** {city_data.get('Inventory_Year', 'N/A')}  
-            **State:** {city_data.get('State', 'N/A')}  
-            """)
+                st.subheader(f"GHG Inventory for {selected_city}")
 
-            # --- 2. Energy Sector ---
-            st.subheader("Energy Sector")
-            st.markdown(f"""
-            **Electricity Consumption (kWh/year)**  
-            Residential: {city_data.get('Residential_Electricity', 0)}  
-            Commercial: {city_data.get('Commercial_Electricity', 0)}  
-            Industrial: {city_data.get('Industrial_Electricity', 0)}  
-            Municipal Buildings/Streetlights: {city_data.get('Municipal_Electricity', 0)}  
+                # --- 1. General City Info ---
+                st.markdown(f"""
+                **Population:** {city_data.get('Population', 'N/A')}  
+                **Area (km²):** {city_data.get('Area_km2', 'N/A')}  
+                **Administrative Type:** {city_data.get('Admin_Type', 'N/A')}  
+                **Year of Inventory:** {city_data.get('Inventory_Year', 'N/A')}  
+                """)
 
-            **Purchased Heat/Steam (GJ/year):** {city_data.get('Purchased_Heat_GJ', 'N/A')}  
-            **On-site Generation:** Diesel: {city_data.get('Diesel_Gen_MWh', 'N/A')}, Gas Turbines: {city_data.get('Gas_Turbine_MWh', 'N/A')}  
-            **Renewable Energy Production (MWh/year):** Solar: {city_data.get('Solar_MWh', 0)}, Wind: {city_data.get('Wind_MWh', 0)}, Biomass: {city_data.get('Biomass_MWh', 0)}  
+                # --- 2. Energy Sector ---
+                st.subheader("Energy Sector")
+                st.markdown(f"""
+                **Electricity Consumption (kWh/year)**  
+                Residential: {city_data.get('Residential_Electricity', 0)}  
+                Commercial: {city_data.get('Commercial_Electricity', 0)}  
+                Industrial: {city_data.get('Industrial_Electricity', 0)}  
+                Municipal Buildings/Streetlights: {city_data.get('Municipal_Electricity', 0)}  
 
-            **Stationary Fuel Combustion:** Diesel: {city_data.get('Diesel_L', 0)}, Petrol: {city_data.get('Petrol_L', 0)}, LPG: {city_data.get('LPG_L', 0)}, Natural Gas: {city_data.get('Natural_Gas_m3', 0)}, Coal: {city_data.get('Coal_t', 0)}
-            """)
+                **Purchased Heat/Steam (GJ/year):** {city_data.get('Purchased_Heat_GJ', 'N/A')}  
+                **On-site Generation:** Diesel: {city_data.get('Diesel_Gen_MWh', 'N/A')}  
+                Gas Turbines: {city_data.get('Gas_Turbine_MWh', 'N/A')}  
+                **Renewable Energy Production (kWh/year):** {city_data.get('Solar_MWh', 0) + city_data.get('Wind_MWh', 0) + city_data.get('Biomass_MWh', 0)}  
+                **Stationary Fuel Combustion**: Diesel {city_data.get('Diesel_L', 0)}, Petrol {city_data.get('Petrol_L', 0)}, LPG {city_data.get('LPG_L', 0)}, Natural Gas {city_data.get('Natural_Gas_m3', 0)}, Coal {city_data.get('Coal_t', 0)}
+                """)
 
-            # --- 3. Transport Sector ---
-            st.subheader("Transport Sector")
-            st.markdown(f"""
-            **Vehicle Counts by Type**  
-            Cars: {city_data.get('Cars', 0)}, Buses: {city_data.get('Buses', 0)}, Trucks: {city_data.get('Trucks', 0)}, 2/3-Wheelers: {city_data.get('Two_Wheelers', 0)}  
+                # --- 3. Transport Sector ---
+                st.subheader("Transport Sector")
+                st.markdown(f"""
+                **Vehicle Counts by Type**  
+                Cars: {city_data.get('Cars', 0)}  
+                Buses: {city_data.get('Buses', 0)}  
+                Trucks: {city_data.get('Trucks', 0)}  
+                2/3-Wheelers: {city_data.get('Two_Wheelers', 0)}  
 
-            **Average km per Vehicle per Year:** Cars: {city_data.get('Avg_Km_Cars', 0)}, Buses: {city_data.get('Avg_Km_Buses', 0)}, Trucks: {city_data.get('Avg_Km_Trucks', 0)}, 2/3-Wheelers: {city_data.get('Avg_Km_2W', 0)}  
+                **Average km per Vehicle per Year:** Cars: {city_data.get('Avg_Km_Cars', 0)}, Buses: {city_data.get('Avg_Km_Buses', 0)}, Trucks: {city_data.get('Avg_Km_Trucks', 0)}, 2/3-Wheelers: {city_data.get('Avg_Km_2W', 0)}  
 
-            **Freight & Logistics Fuel/Electricity:** Diesel: {city_data.get('Freight_Fuel_Diesel_L', 0)}, CNG: {city_data.get('Freight_Fuel_CNG_m3', 0)}, Electricity: {city_data.get('Freight_Fuel_Electric_MWh', 0)}  
-            Distance Traveled (km/year): {city_data.get('Freight_Distance_km', 0)}
-            """)
+                **Freight & Logistics Fuel/Electricity:** Diesel: {city_data.get('Freight_Fuel_Diesel_L', 0)}, CNG: {city_data.get('Freight_Fuel_CNG_m3', 0)}, Electricity: {city_data.get('Freight_Fuel_Electric_MWh', 0)}, Distance Traveled (km/year): {city_data.get('Freight_Distance_km', 0)}
+                """)
 
-            # --- 4. Waste Sector ---
-            st.subheader("Waste Sector")
-            st.markdown(f"""
-            **Municipal Solid Waste Generated (tons/year):** {city_data.get('MSW_tons', 0)}  
-            Landfilled: {city_data.get('Landfill_Frac', 0)}%  
-            Recycled: {city_data.get('Recycling_Frac', 0)}%  
-            Composted: {city_data.get('Compost_Frac', 0)}%  
-            Incinerated: {city_data.get('Incineration_Frac', 0)}%  
-            Landfill Methane Capture Rate: {city_data.get('Landfill_Methane_Capture', 'N/A')}  
+                # --- 4. Waste Sector ---
+                st.subheader("Waste Sector")
+                st.markdown(f"""
+                **Municipal Solid Waste Generated (tons/year):** {city_data.get('MSW_tons', 0)}  
+                Landfilled: {city_data.get('Landfill_Frac', 0)}%  
+                Recycled: {city_data.get('Recycling_Frac', 0)}%  
+                Composted: {city_data.get('Compost_Frac', 0)}%  
+                Incinerated: {city_data.get('Incineration_Frac', 0)}%  
+                Landfill Methane Capture Rate: {city_data.get('Landfill_Methane_Capture', 'N/A')}  
 
-            **Wastewater Treated (m³/year):** {city_data.get('Sewage_m3', 0)}  
-            Treatment Type: {city_data.get('Treatment_Type', 'N/A')}  
-            Sludge Generated (tons/year): {city_data.get('Sludge_tons', 0)}  
-            Energy Use in Treatment (kWh/year): {city_data.get('Energy_Wastewater_kWh', 0)}
-            """)
+                **Wastewater Treatment (m³/year):** {city_data.get('Sewage_m3', 0)}  
+                Treatment Type: {city_data.get('Treatment_Type', 'N/A')}  
+                Sludge Generated (tons/year): {city_data.get('Sludge_tons', 0)}  
+                Energy Use in Treatment (kWh/year): {city_data.get('Energy_Wastewater_kWh', 0)}
+                """)
 
-            # --- 5. Industrial Sector ---
-            st.subheader("Industrial Sector")
-            st.markdown(f"""
-            Coal Consumption (tons/year): {city_data.get('Coal_Ind_t', 0)}  
-            Natural Gas Consumption (m3/year): {city_data.get('Gas_Ind_m3', 0)}  
-            Electricity Consumption (kWh/year): {city_data.get('Electricity_Ind_kWh', 0)}  
-            Biomass (tons/year): {city_data.get('Biomass_Ind_t', 0)}  
+                # --- 5. Industrial Sector ---
+                st.subheader("Industrial Sector")
+                st.markdown(f"""
+                Coal: {city_data.get('Coal_Ind_t', 0)}, Gas: {city_data.get('Gas_Ind_m3', 0)}, Electricity: {city_data.get('Electricity_Ind_kWh', 0)}, Biomass: {city_data.get('Biomass_Ind_t', 0)}  
 
-            Industrial Process Emissions: {city_data.get('Industrial_Process_Emissions', 'N/A')}  
-            Fugitive Emissions: {city_data.get('Fugitive_Emissions', 'N/A')}
-            """)
+                Industrial Process Emissions: {city_data.get('Industrial Process Emissions', 'N/A')}  
+                Fugitive Emissions: {city_data.get('Fugitive Emissions', 'N/A')}
+                """)
 
-            # --- 6. Agriculture & Land Use ---
-            st.subheader("Agriculture & Land Use")
-            st.markdown(f"""
-            Cropland Area (ha): {city_data.get('Cropland_ha', 0)}  
-            Livestock: {city_data.get('Livestock_Count', 0)}  
-            Manure Management: {city_data.get('Manure_Management', 'N/A')}  
-            Fertilizer Use (tons/year): {city_data.get('Fertilizer_tons', 0)}  
-            Afforestation (ha): {city_data.get('Afforestation_ha', 0)}  
-            Deforestation (ha): {city_data.get('Deforestation_ha', 0)}  
-            Soil Carbon Sequestration (tons/year): {city_data.get('Soil_Carbon_Sequestration', 0)}
-            """)
+                # --- 6. Agriculture & Land Use ---
+                st.subheader("Agriculture & Land Use")
+                st.markdown(f"""
+                Cropland Area: {city_data.get('Cropland_ha', 'N/A')}  
+                Livestock: {city_data.get('Livestock_Count', 'N/A')}  
+                Fertilizer Use (tons/year): {city_data.get('Fertilizer_tons', 'N/A')}  
+                Afforestation/Deforestation (ha): {city_data.get('Afforestation_ha', 0)}/{city_data.get('Deforestation_ha', 0)}  
+                Soil Carbon Sequestration: {city_data.get('Soil_Carbon_Sequestration', 'N/A')}
+                """)
 
-            # --- 7. City Infrastructure ---
-            st.subheader("City Infrastructure")
-            st.markdown(f"""
-            Street Lights: {city_data.get('Street_Lights_Count', 0)}  
-            Street Lights Energy (kWh/year): {city_data.get('Street_Lights_Energy', 0)}  
-            Municipal Vehicle Fleet Fuel: {city_data.get('Municipal_Fleet_Fuel', 'N/A')}  
-            Water Pumping & Treatment Energy (kWh/year): {city_data.get('Water_Pumping_Energy', 0)}  
-            Cooling/Heating Municipal Buildings (kWh/year): {city_data.get('Cooling_Heating_Energy', 0)}
-            """)
+                # --- 7. City Infrastructure ---
+                st.subheader("City Infrastructure")
+                st.markdown(f"""
+                Street Lights: {city_data.get('Street_Lights_Count', 'N/A')}  
+                Street Lights Energy (kWh/year): {city_data.get('Street_Lights_Energy', 0)}  
+                Municipal Vehicle Fleet Fuel: {city_data.get('Municipal_Fleet_Fuel', 'N/A')}  
+                Water Pumping & Treatment Energy (kWh/year): {city_data.get('Water_Pumping_Energy', 0)}  
+                Cooling/Heating Municipal Buildings: {city_data.get('Cooling_Heating_Energy', 'N/A')}
+                """)
 
-            # --- 8. Optional Co-Benefit Indicators ---
-            st.subheader("Optional Co-benefit Indicators")
-            st.markdown(f"""
-            Air Pollution Reduction (%): {city_data.get('Air_Pollution_Reduction', 0)}  
-            Renewable Energy Share (%): {city_data.get('Renewable_Energy_Share', 0)}  
-            Water Usage (m³/year): {city_data.get('Water_Usage', 0)}
-            """)
+                # --- 8. Optional Co-benefits ---
+                st.subheader("Optional Co-benefit Indicators")
+                st.markdown(f"""
+                Renewable Energy Share (%): {city_data.get('Renewable_Energy_Share', 0)}  
+                Air Pollution Reduction (%): {city_data.get('Air_Pollution_Reduction', 0)}  
+                Water Usage (m³/year): {city_data.get('Water_Usage', 0)}
+                """)
 
-            st.success(f"GHG Inventory for {selected_city} displayed successfully!")
+                st.success(f"GHG Inventory for {selected_city} generated successfully!")
 
-            # --- Action Button to Goals Page ---
-            st.markdown("---")
-            st.markdown("### Next Step")
-            if st.button("View Actions / Goals to Achieve Net-Zero by 2050"):
-                st.session_state.menu = "Actions / Goals"
-                st.experimental_rerun()
+                # --- Next Step Button ---
+                st.markdown("---")
+                st.markdown("### Next Step")
+                if st.button("View Actions / Goals to Achieve Net-Zero by 2050"):
+                    st.session_state.menu = "Actions / Goals"
+                    st.experimental_rerun()
 
 
 # ---------------------------
