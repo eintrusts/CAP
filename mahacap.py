@@ -708,7 +708,8 @@ elif menu == "City Information":
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- Card Rendering Function ----------
-        def render_card(col, label, value, bg_color="#34495E"):
+        def render_card(col, label, value, bg_color="#34495E", value_color="#FFEB3B"):
+            """Render a card with label and bold input value"""
             card_html = f"""
             <div style='
                 background-color:{bg_color};
@@ -725,7 +726,7 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                {label}<br><b>{value}</b>
+                {label}<br><b style='color:{value_color};'>{value}</b>
             </div>
             """
             col.markdown(card_html, unsafe_allow_html=True)
@@ -777,7 +778,7 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                <a href='{cap_link}' target='_blank' style='color:#42A5F5; text-decoration:underline;'><b>View CAP Document</b></a>
+                <a href='{cap_link}' target='_blank' style='color:#FFEB3B; text-decoration:underline;'><b>View CAP Document</b></a>
             </div>
             """
             st.markdown(link_html, unsafe_allow_html=True)
