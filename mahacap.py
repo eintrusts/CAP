@@ -696,41 +696,23 @@ if menu == "Home":
         st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page (Dark SaaS with Hover & Shadow, Indian Number Format)
+# City Information Page
 # ---------------------------
 elif menu == "City Information":
     st.markdown("<h2 style='color:#ECEFF1; margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
 
-    # Helper function for Indian number formatting
-    def format_indian_number(num):
-        try:
-            num = int(round(float(num)))
-            s = str(num)[::-1]
-            parts = []
-            parts.append(s[:3])
-            s = s[3:]
-            while s:
-                parts.append(s[:2])
-                s = s[2:]
-            formatted = ','.join(parts)[::-1]
-            return formatted
-        except:
-            return str(num)
-
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
-        # ---------- Card Rendering Function with Shadow & Hover ----------
-        def render_card(col, label, value, bg_color="#34495E", value_color="#ECEFF1", bold=False):
-            bold_tag = "<b>" if bold else ""
-            end_bold = "</b>" if bold else ""
+        # ---------- Card Rendering Function ----------
+        def render_card(col, label, value, bg_color="#34495E"):
             card_html = f"""
             <div style='
                 background-color:{bg_color};
-                color:{value_color};
+                color:#ECEFF1;
                 padding:14px 10px;
                 border-radius:10px;
                 font-size:15px;
@@ -743,21 +725,25 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                {bold_tag}{label}{end_bold}<br>{value}
+                {label}<br><b>{value}</b>
             </div>
             """
             col.markdown(card_html, unsafe_allow_html=True)
 
+        # ---------- Indian Number Format Function ----------
+        def format_indian_number(num):
+            try:
+                return "{:,}".format(int(round(num))).replace(",", ",")
+            except:
+                return str(num)
+
         # ---------- BASIC INFORMATION ----------
-        st.markdown("<h4 style='color:#CFD8DC;'>Basic Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#ECEFF1;'>Basic Information</h4>", unsafe_allow_html=True)
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
-        density = round(population / area) if area else "—"
+        density = int(round(population / area)) if area else "—"
         cap_status = row.get("CAP Status", "—")
         cap_link = row.get("CAP Link", "")
-
-        cap_colors = {"completed": "#66BB6A", "in progress": "#FFA726", "not started": "#EF5350"}
-        cap_color = cap_colors.get(cap_status.lower(), "#607D8B")
 
         basic_metrics = [
             ("District", row.get("District", "—")),
@@ -765,24 +751,21 @@ elif menu == "City Information":
             ("Population", format_indian_number(population)),
             ("Area (sq.km)", format_indian_number(area)),
             ("Density (/sq.km)", format_indian_number(density) if density != "—" else "—"),
-            ("Est. Year", row.get("Est. Year", "—")),
+            ("Est. Year", int(row.get("Est. Year", 0)) if row.get("Est. Year") else "—"),
             ("CAP Status", cap_status)
         ]
 
         for i in range(0, len(basic_metrics), 3):
             cols = st.columns(3)
             for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
-                bg = cap_color if label == "CAP Status" else "#34495E"
-                val_color = "#ECEFF1" if label != "CAP Status" else "#FFFFFF"
-                bold = True if label in ["Population", "CAP Status"] else False
-                render_card(col, label, value, bg_color=bg, value_color=val_color, bold=bold)
+                render_card(col, label, value)
 
-        # Display CAP Link as clickable
+        # CAP Link
         if cap_link:
             link_html = f"""
             <div style='
                 background-color:#2C3E50;
-                color:#42A5F5;
+                color:#ECEFF1;
                 padding:12px;
                 border-radius:10px;
                 font-size:14px;
@@ -794,7 +777,7 @@ elif menu == "City Information":
             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
             onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
             >
-                <a href='{cap_link}' target='_blank' style='color:#42A5F5; text-decoration:underline;'>View CAP Document</a>
+                <a href='{cap_link}' target='_blank' style='color:#42A5F5; text-decoration:underline;'><b>View CAP Document</b></a>
             </div>
             """
             st.markdown(link_html, unsafe_allow_html=True)
@@ -802,9 +785,9 @@ elif menu == "City Information":
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- ENVIRONMENTAL INFORMATION ----------
-        st.markdown("<h4 style='color:#CFD8DC;'>Environmental Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#ECEFF1;'>Environmental Information</h4>", unsafe_allow_html=True)
         ghg_total = row.get("GHG Emissions", 0)
-        per_capita_ghg = round(ghg_total / population) if population else 0
+        per_capita_ghg = int(round(ghg_total / population)) if population else 0
         renewable_energy = row.get("Renewable Energy (MWh)", 0)
         urban_green = row.get("Urban Green Area (ha)", 0)
         solid_waste = row.get("Municipal Solid Waste (tons)", 0)
@@ -813,59 +796,59 @@ elif menu == "City Information":
         waste_composted = row.get("Waste Composted (%)", 0)
 
         env_metrics = [
-            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total), "#EF5350"),
-            ("Per Capita Emissions", format_indian_number(per_capita_ghg), "#EF5350"),
-            ("Renewable Energy (MWh)", format_indian_number(renewable_energy), "#66BB6A"),
-            ("Urban Green Area (ha)", format_indian_number(urban_green), "#66BB6A"),
-            ("Solid Waste (tons)", format_indian_number(solid_waste), "#FFA726"),
-            ("Wastewater Treated (m³)", format_indian_number(wastewater), "#66BB6A"),
-            ("Waste Landfilled (%)", f"{waste_landfilled}%", "#EF5350"),
-            ("Waste Composted (%)", f"{waste_composted}%", "#66BB6A")
+            ("Total GHG Emissions (tCO₂e)", format_indian_number(ghg_total)),
+            ("Per Capita GHG Emissions (tCO₂e/person)", format_indian_number(per_capita_ghg)),
+            ("Renewable Energy (MWh)", format_indian_number(renewable_energy)),
+            ("Urban Green Area (ha)", format_indian_number(urban_green)),
+            ("Solid Waste (tons)", format_indian_number(solid_waste)),
+            ("Wastewater Treated (m³)", format_indian_number(wastewater)),
+            ("Waste Landfilled (%)", f"{waste_landfilled}%"),
+            ("Waste Composted (%)", f"{waste_composted}%")
         ]
 
         for i in range(0, len(env_metrics), 3):
             cols = st.columns(3)
-            for col, (label, value, color) in zip(cols, env_metrics[i:i+3]):
-                render_card(col, label, value, value_color=color)
+            for col, (label, value) in zip(cols, env_metrics[i:i+3]):
+                render_card(col, label, value)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- SOCIAL INFORMATION ----------
-        st.markdown("<h4 style='color:#CFD8DC;'>Social Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#ECEFF1;'>Social Information</h4>", unsafe_allow_html=True)
         males = row.get("Males", 0)
         females = row.get("Females", 0)
         total_pop = males + females
-        children_m = row.get("Children Male",0)
-        children_f = row.get("Children Female",0)
+        children_m = row.get("Children Male", 0)
+        children_f = row.get("Children Female", 0)
         total_children = children_m + children_f
-        literacy_m = row.get("Male Literacy (%)",0)
-        literacy_f = row.get("Female Literacy (%)",0)
-        literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2))
+        literacy_m = row.get("Male Literacy (%)", 0)
+        literacy_f = row.get("Female Literacy (%)", 0)
+        literacy_total = int(round((literacy_m + literacy_f)/2))
 
         social_metrics = [
-            ("Male Population", format_indian_number(males), "#ECEFF1"),
-            ("Female Population", format_indian_number(females), "#ECEFF1"),
-            ("Total Population", format_indian_number(total_pop), "#66BB6A"),
-            ("Children (0–6 Male)", format_indian_number(children_m), "#ECEFF1"),
-            ("Children (0–6 Female)", format_indian_number(children_f), "#ECEFF1"),
-            ("Total Children", format_indian_number(total_children), "#66BB6A"),
-            ("Male Literacy (%)", literacy_m, "#FFA726"),
-            ("Female Literacy (%)", literacy_f, "#FFA726"),
-            ("Overall Literacy (%)", literacy_total, "#66BB6A"),
-            ("Slum Population (%)", row.get("Slum (%)",0), "#EF5350"),
-            ("Migrant Population (%)", row.get("Migrant (%)",0), "#FFA726"),
-            ("BPL Households (%)", row.get("BPL Households (%)",0), "#EF5350")
+            ("Male Population", format_indian_number(males)),
+            ("Female Population", format_indian_number(females)),
+            ("Total Population", format_indian_number(total_pop)),
+            ("Children (0–6 Male)", format_indian_number(children_m)),
+            ("Children (0–6 Female)", format_indian_number(children_f)),
+            ("Total Children", format_indian_number(total_children)),
+            ("Male Literacy (%)", literacy_m),
+            ("Female Literacy (%)", literacy_f),
+            ("Overall Literacy (%)", literacy_total),
+            ("Slum Population (%)", row.get("Slum (%)",0)),
+            ("Migrant Population (%)", row.get("Migrant (%)",0)),
+            ("BPL Households (%)", row.get("BPL Households (%)",0))
         ]
 
         for i in range(0, len(social_metrics), 3):
             cols = st.columns(3)
-            for col, (label, value, color) in zip(cols, social_metrics[i:i+3]):
-                render_card(col, label, value, value_color=color)
+            for col, (label, value) in zip(cols, social_metrics[i:i+3]):
+                render_card(col, label, value)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # ---------- CONTACT INFORMATION ----------
-        st.markdown("<h4 style='color:#CFD8DC;'>Contact Information</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#ECEFF1;'>Contact Information</h4>", unsafe_allow_html=True)
         contact_metrics = [
             ("Department Exist", row.get("Department Exist","—")),
             ("Department Name", row.get("Department Name","—")),
@@ -877,7 +860,8 @@ elif menu == "City Information":
         for i in range(0, len(contact_metrics), 2):
             cols = st.columns(2)
             for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
-                render_card(col, label, value, value_color="#ECEFF1")
+                render_card(col, label, value)
+                
 
 # ---------------------------
 # Admin Panel Page
