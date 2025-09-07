@@ -319,116 +319,45 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Premium SaaS Dark Gradient Style)
+# Sidebar
 # ---------------------------
 st.markdown("""
 <style>
-/* Sidebar background */
-[data-testid="stSidebar"] {
-    background-color: #1B1F23;
-    color: #ECEFF1;
-    padding-top: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Sidebar logo */
-[data-testid="stSidebar"] img {
-    margin-bottom: 25px;
-    border-radius: 8px;
-}
-
-/* Sidebar buttons */
+[data-testid="stSidebar"] {background:#1B1F23; color:#ECEFF1; padding-top:20px; font-family:Segoe UI, Tahoma, Geneva, Verdana, sans-serif;}
+[data-testid="stSidebar"] img {margin-bottom:25px; border-radius:8px;}
 [data-testid="stSidebar"] button {
-    background: linear-gradient(90deg, #2A2E33 0%, #2A2E33 100%);
-    color: #ECEFF1;
-    width: 100%;
-    height: 55px;
-    margin-bottom: 12px;
-    border-radius: 6px;
-    font-size: 20px;
-    font-weight: 600;
-    border: none;
+    background:#2A2E33; color:#ECEFF1; width:100%; height:55px; margin-bottom:12px; border-radius:6px; font-size:20px; font-weight:600;
+    border:none; text-align:left; padding-left:25px; display:flex; align-items:center; justify-content:flex-start; position:relative; overflow:hidden;
     transition: all 0.3s ease-in-out;
-    text-align: left;
-    padding-left: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    position: relative;
-    overflow: hidden;
 }
-
-/* Hover effect with subtle gradient */
-[data-testid="stSidebar"] button:hover {
-    background: linear-gradient(90deg, #3A3F46 0%, #2F343C 100%);
-    transform: translateX(3px);
-    cursor: pointer;
-}
-
-/* Active button sliding indicator */
+[data-testid="stSidebar"] button:hover {background:linear-gradient(90deg,#3A3F46 0%,#2F343C 100%); transform:translateX(3px); cursor:pointer;}
 [data-testid="stSidebar"] button[data-active="true"]::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 5px;
-    height: 100%;
-    background-color: #42A5F5;
-    border-radius: 6px 0 0 6px;
-    transition: all 0.3s ease-in-out;
+    content:''; position:absolute; left:0; top:0; width:5px; height:100%; background:#42A5F5; border-radius:6px 0 0 6px; transition:0.3s;
 }
-
-/* Active button gradient */
-[data-testid="stSidebar"] button[data-active="true"] {
-    background: linear-gradient(90deg, #3A3F46 0%, #343A42 100%);
-    color: #FFFFFF;
-    font-weight: 700;
-}
-
-/* Separator lines */
-[data-testid="stSidebar"] hr {
-    border: 0.5px solid #546E7A;
-    margin: 20px 0;
-}
-
-/* Sidebar footer */
-.sidebar-footer {
-    color: #B0BEC5;
-    font-size: 13px;
-    text-align: center;
-    margin-top: 30px;
-}
+[data-testid="stSidebar"] button[data-active="true"] {background:linear-gradient(90deg,#3A3F46 0%,#343A42 100%); color:#FFF; font-weight:700;}
+[data-testid="stSidebar"] hr {border:0.5px solid #546E7A; margin:20px 0;}
+.sidebar-footer {color:#B0BEC5; font-size:13px; text-align:center; margin-top:30px;}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------
 # Sidebar Logo
 # ---------------------------
-st.sidebar.image(
-    "https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true",
-    use_container_width=True
-)
+st.sidebar.image("https://raw.githubusercontent.com/eintrusts/CAP/main/EinTrust%20%20(2).png?raw=true", use_container_width=True)
 
 # ---------------------------
 # Sidebar Menu Buttons
 # ---------------------------
-menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
-if st.session_state.authenticated:
-    menu_items.append(("CAP Generation", "CAP Generation"))
+menu_items = [("Home","Home"), ("City Information","City Information"), ("Admin","Admin")]
+if st.session_state.authenticated: menu_items.append(("CAP Generation","CAP Generation"))
 
-for label, page_name in menu_items:
-    is_active = st.session_state.menu == page_name
-    if st.sidebar.button(label, key=label):
-        st.session_state.menu = page_name
-        is_active = True
-    st.markdown(f"""
-    <script>
-    const btn = window.parent.document.querySelector('button[key="{label}"]');
-    if (btn) {{
-        btn.setAttribute('data-active', {'true' if is_active else 'false'});
-    }}
-    </script>
-    """, unsafe_allow_html=True)
+for label, page in menu_items:
+    active = st.session_state.menu == page
+    if st.sidebar.button(label, key=label): st.session_state.menu = page; active=True
+    st.markdown(f"""<script>
+        const btn = window.parent.document.querySelector('button[key="{label}"]');
+        if(btn) btn.setAttribute('data-active', {'true' if active else 'false'});
+        </script>""", unsafe_allow_html=True)
 
 # ---------------------------
 # Sidebar Footer
