@@ -127,6 +127,29 @@ def reset_all_data():
 # ---------------------------
 # Helper Functions
 # ---------------------------
+# ---------------------------
+# Indian Number Formatter
+# ---------------------------
+
+def format_indian_number(num):
+    """
+    Format numbers in Indian style (e.g., 1,23,45,678)
+    No decimal points.
+    """
+    try:
+        num = int(round(num))  # Round and convert to integer
+        s = str(num)[::-1]  # Reverse string
+        parts = []
+        parts.append(s[:3])  # Last 3 digits
+        s = s[3:]
+        while s:
+            parts.append(s[:2])
+            s = s[2:]
+        formatted = ','.join(parts)[::-1]  # Reverse back
+        return formatted
+    except:
+        return str(num)
+
 def format_number(num):
     """Format number in Indian style (1,00,000) without decimals"""
     try:
