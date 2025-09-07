@@ -696,12 +696,28 @@ if menu == "Home":
         st.plotly_chart(fig_vuln, use_container_width=True)
 
 # ---------------------------
-# City Information Page (Dark SaaS with Hover & Shadow)
+# City Information Page (Dark SaaS with Hover & Shadow, Indian Number Format)
 # ---------------------------
 elif menu == "City Information":
     st.markdown("<h2 style='color:#ECEFF1; margin-bottom:15px;'>City Information Dashboard</h2>", unsafe_allow_html=True)
     df_meta = st.session_state.data.copy()
     city = st.selectbox("Select City", list(cities_districts.keys()))
+
+    # Helper function for Indian number formatting
+    def format_indian_number(num):
+        try:
+            num = int(round(float(num)))
+            s = str(num)[::-1]
+            parts = []
+            parts.append(s[:3])
+            s = s[3:]
+            while s:
+                parts.append(s[:2])
+                s = s[2:]
+            formatted = ','.join(parts)[::-1]
+            return formatted
+        except:
+            return str(num)
 
     if not df_meta.empty and city in df_meta["City Name"].values:
         row = df_meta[df_meta["City Name"] == city].iloc[0]
@@ -736,7 +752,7 @@ elif menu == "City Information":
         st.markdown("<h4 style='color:#CFD8DC;'>Basic Information</h4>", unsafe_allow_html=True)
         population = row.get("Population", 0)
         area = row.get("Area (sq.km)", row.get("Geographical Area (sq. km)", 0))
-        density = round(population / area, 2) if area else "—"
+        density = round(population / area) if area else "—"
         cap_status = row.get("CAP Status", "—")
         cap_link = row.get("CAP Link", "")
 
@@ -747,8 +763,8 @@ elif menu == "City Information":
             ("District", row.get("District", "—")),
             ("ULB Category", row.get("ULB Category", "—")),
             ("Population", format_indian_number(population)),
-            ("Area (sq.km)", area),
-            ("Density (/sq.km)", density),
+            ("Area (sq.km)", format_indian_number(area)),
+            ("Density (/sq.km)", format_indian_number(density) if density != "—" else "—"),
             ("Est. Year", row.get("Est. Year", "—")),
             ("CAP Status", cap_status)
         ]
@@ -788,7 +804,7 @@ elif menu == "City Information":
         # ---------- ENVIRONMENTAL INFORMATION ----------
         st.markdown("<h4 style='color:#CFD8DC;'>Environmental Information</h4>", unsafe_allow_html=True)
         ghg_total = row.get("GHG Emissions", 0)
-        per_capita_ghg = round(ghg_total / population, 2) if population else 0
+        per_capita_ghg = round(ghg_total / population) if population else 0
         renewable_energy = row.get("Renewable Energy (MWh)", 0)
         urban_green = row.get("Urban Green Area (ha)", 0)
         solid_waste = row.get("Municipal Solid Waste (tons)", 0)
@@ -797,12 +813,12 @@ elif menu == "City Information":
         waste_composted = row.get("Waste Composted (%)", 0)
 
         env_metrics = [
-            ("GHG Emissions (tCO2e)", ghg_total, "#EF5350"),
-            ("Per Capita Emissions", per_capita_ghg, "#EF5350"),
-            ("Renewable Energy (MWh)", renewable_energy, "#66BB6A"),
-            ("Urban Green Area (ha)", urban_green, "#66BB6A"),
-            ("Solid Waste (tons)", solid_waste, "#FFA726"),
-            ("Wastewater Treated (m³)", wastewater, "#66BB6A"),
+            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total), "#EF5350"),
+            ("Per Capita Emissions", format_indian_number(per_capita_ghg), "#EF5350"),
+            ("Renewable Energy (MWh)", format_indian_number(renewable_energy), "#66BB6A"),
+            ("Urban Green Area (ha)", format_indian_number(urban_green), "#66BB6A"),
+            ("Solid Waste (tons)", format_indian_number(solid_waste), "#FFA726"),
+            ("Wastewater Treated (m³)", format_indian_number(wastewater), "#66BB6A"),
             ("Waste Landfilled (%)", f"{waste_landfilled}%", "#EF5350"),
             ("Waste Composted (%)", f"{waste_composted}%", "#66BB6A")
         ]
@@ -824,15 +840,15 @@ elif menu == "City Information":
         total_children = children_m + children_f
         literacy_m = row.get("Male Literacy (%)",0)
         literacy_f = row.get("Female Literacy (%)",0)
-        literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2,2))
+        literacy_total = row.get("Literacy (%)", round((literacy_m + literacy_f)/2))
 
         social_metrics = [
-            ("Male Population", males, "#ECEFF1"),
-            ("Female Population", females, "#ECEFF1"),
-            ("Total Population", total_pop, "#66BB6A"),
-            ("Children (0–6 Male)", children_m, "#ECEFF1"),
-            ("Children (0–6 Female)", children_f, "#ECEFF1"),
-            ("Total Children", total_children, "#66BB6A"),
+            ("Male Population", format_indian_number(males), "#ECEFF1"),
+            ("Female Population", format_indian_number(females), "#ECEFF1"),
+            ("Total Population", format_indian_number(total_pop), "#66BB6A"),
+            ("Children (0–6 Male)", format_indian_number(children_m), "#ECEFF1"),
+            ("Children (0–6 Female)", format_indian_number(children_f), "#ECEFF1"),
+            ("Total Children", format_indian_number(total_children), "#66BB6A"),
             ("Male Literacy (%)", literacy_m, "#FFA726"),
             ("Female Literacy (%)", literacy_f, "#FFA726"),
             ("Overall Literacy (%)", literacy_total, "#66BB6A"),
