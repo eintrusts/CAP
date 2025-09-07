@@ -128,16 +128,16 @@ def reset_all_data():
 # Helper Functions
 # ---------------------------
 # ---------------------------
-# Indian Number Formatter
+# Indian Number Formatter (Global)
 # ---------------------------
-
 def format_indian_number(num):
     """
     Format numbers in Indian style (e.g., 1,23,45,678)
     No decimal points.
+    Works for int, float, and string numbers.
     """
     try:
-        num = int(round(num))  # Round and convert to integer
+        num = int(round(float(num)))  # Round float to int
         s = str(num)[::-1]  # Reverse string
         parts = []
         parts.append(s[:3])  # Last 3 digits
@@ -150,78 +150,19 @@ def format_indian_number(num):
     except:
         return str(num)
 
-def format_number(num):
-    """Format number in Indian style (1,00,000) without decimals"""
-    try:
-        num = int(round(num))
-        s = str(num)
-        # First group (last 3 digits)
-        r = s[-3:]
-        s = s[:-3]
-        # Add commas every 2 digits
-        while len(s) > 2:
-            r = s[-2:] + "," + r
-            s = s[:-2]
-        if s:
-            r = s + "," + r
-        return r
-    except:
-        return str(num)
 
-# --- Pandas: Apply formatting globally ---
-pd.options.display.float_format = lambda x: format_number(x)
-
-# --- Streamlit: Patch metric() ---
-st._old_metric = st.metric
-def metric_with_format(label, value, delta=None, **kwargs):
-    value = format_number(value) if isinstance(value, (int, float)) else value
-    if delta is not None and isinstance(delta, (int, float)):
-        delta = format_number(delta)
-    return st._old_metric(label, value, delta, **kwargs)
-st.metric = metric_with_format
-
-# --- Streamlit: Patch write() ---
-st._old_write = st.write
-def write_with_format(*args, **kwargs):
-    formatted = [format_number(a) if isinstance(a, (int, float)) else a for a in args]
-    return st._old_write(*formatted, **kwargs)
-st.write = write_with_format
-
-# --- Plotly: auto Indian commas ---
-def format_plotly(fig):
-    fig.update_xaxes(tickformat=",")
-    fig.update_yaxes(tickformat=",")
-    return fig
-
-# --- Excel/PDF: Formatter helper ---
-def format_dataframe_for_export(df):
-    """Convert all numeric values in DataFrame to Indian format (strings)"""
-    df = df.copy()
-    for col in df.columns:
-        if pd.api.types.is_numeric_dtype(df[col]):
-            df[col] = df[col].apply(lambda x: format_number(x) if pd.notnull(x) else x)
-    return df
-
-def format_number(num):
-    """Format number in Indian style (1,00,000) without decimals"""
-    try:
-        num = int(round(num))
-        s = str(num)
-        r = s[-3:]
-        s = s[:-3]
-        while len(s) > 2:
-            r = s[-2:] + "," + r
-            s = s[:-2]
-        if s:
-            r = s + "," + r
-        return r
-    except:
-        return str(num)
-
-# ✅ Alias for backward compatibility
-format_indian_number = format_number
-
-
+# ---------------------------
+# Helper to format entire dataframe (all numeric columns)
+# ---------------------------
+def format_df_indian(df):
+    """
+    Convert all numeric columns in a DataFrame to Indian number format
+    """
+    df_copy = df.copy()
+    for col in df_copy.columns:
+        if pd.api.types.is_numeric_dtype(df_copy[col]):
+            df_copy[col] = df_copy[col].apply(format_indian_number)
+    return df_copy
 
 # ---------------------------
 # Dark / Professional SaaS CSS
