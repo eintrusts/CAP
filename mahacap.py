@@ -7,157 +7,70 @@ import io
 from datetime import datetime
 
 # ---------------------------
-# Page Config
+# Page Config & Admin Password
 # ---------------------------
-st.set_page_config(
-    page_title="Maharashtra CAP Dashboard",
-    page_icon="🌍",
-    layout="wide"
-)
-
-# ---------------------------
-# Admin Password
-# ---------------------------
+st.set_page_config(page_title="Maharashtra CAP Dashboard", page_icon="🌍", layout="wide")
 ADMIN_PASSWORD = "eintrust2025"
-
-# ---------------------------
-# Data Files
-# ---------------------------
-DATA_FILE = "cities_data.csv"
-CAP_DATA_FILE = "cap_raw_data.csv"
+DATA_FILE, CAP_DATA_FILE = "cities_data.csv", "cap_raw_data.csv"
 
 # ---------------------------
 # Cities & Districts
 # ---------------------------
 cities_districts = {
-    "Mumbai": "Mumbai",
-    "Kalyan-Dombivli": "Thane",
-    "Mira-Bhayandar": "Thane",
-    "Navi Mumbai": "Thane",
-    "Bhiwandi-Nizampur": "Thane",
-    "Ulhasnagar": "Thane",
-    "Ambernath Council": "Thane",
-    "Vasai-Virar": "Palghar",
-    "Thane": "Thane",
-    "Badlapur Council": "Thane",
-    "Pune": "Pune",
-    "Pimpri-Chinchwad": "Pune",
-    "Panvel": "Raigad",
-    "Malegaon": "Nashik",
-    "Nashik": "Nashik",
-    "Nandurbar Council": "Nandurbar",
-    "Bhusawal Council": "Jalgaon",
-    "Jalgaon": "Jalgaon",
-    "Dhule": "Dhule",
-    "Ahilyanagar": "Ahilyanagar",
-    "Chh. Sambhajinagar": "Chh. Sambhajianagar",
-    "Jalna": "Jalna",
-    "Beed Council": "Beed",
-    "Satara Council": "Satara",
-    "Sangli-Miraj-Kupwad": "Sangli",
-    "Kolhapur": "Kolhapur",
-    "Ichalkaranji": "Kolhapur",
-    "Solapur": "Solapur",
-    "Barshi Council": "Solapur",
-    "Nanded-Waghala": "Nanded",
-    "Yawatmal Council": "Yawatmal",
-    "Dharashiv Council": "Dharashiv",
-    "Latur": "Latur",
-    "Udgir Council": "Latur",
-    "Akola": "Akola",
-    "Parbhani Council": "Parbhani",
-    "Amravati": "Amravati",
-    "Achalpur Council": "Amravati",
-    "Wardha Council": "Wardha",
-    "Hinganghat Council": "Wardha",
-    "Nagpur": "Nagpur",
-    "Chandrapur": "Chandrapur",
-    "Gondia Council": "Gondia"
+    "Mumbai":"Mumbai","Kalyan-Dombivli":"Thane","Mira-Bhayandar":"Thane","Navi Mumbai":"Thane",
+    "Bhiwandi-Nizampur":"Thane","Ulhasnagar":"Thane","Ambernath Council":"Thane","Vasai-Virar":"Palghar",
+    "Thane":"Thane","Badlapur Council":"Thane","Pune":"Pune","Pimpri-Chinchwad":"Pune","Panvel":"Raigad",
+    "Malegaon":"Nashik","Nashik":"Nashik","Nandurbar Council":"Nandurbar","Bhusawal Council":"Jalgaon",
+    "Jalgaon":"Jalgaon","Dhule":"Dhule","Ahilyanagar":"Ahilyanagar","Chh. Sambhajinagar":"Chh. Sambhajianagar",
+    "Jalna":"Jalna","Beed Council":"Beed","Satara Council":"Satara","Sangli-Miraj-Kupwad":"Sangli",
+    "Kolhapur":"Kolhapur","Ichalkaranji":"Kolhapur","Solapur":"Solapur","Barshi Council":"Solapur",
+    "Nanded-Waghala":"Nanded","Yawatmal Council":"Yawatmal","Dharashiv Council":"Dharashiv","Latur":"Latur",
+    "Udgir Council":"Latur","Akola":"Akola","Parbhani Council":"Parbhani","Amravati":"Amravati",
+    "Achalpur Council":"Amravati","Wardha Council":"Wardha","Hinganghat Council":"Wardha",
+    "Nagpur":"Nagpur","Chandrapur":"Chandrapur","Gondia Council":"Gondia"
 }
 
 # ---------------------------
-# Session State
+# Session State Defaults
 # ---------------------------
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "menu" not in st.session_state:
-    st.session_state.menu = "Home"
-if "last_updated" not in st.session_state:
-    st.session_state.last_updated = None
+for key, default in [("authenticated", False), ("menu", "Home"), ("last_updated", None)]:
+    if key not in st.session_state: st.session_state[key] = default
 
 # ---------------------------
-# Load Data
+# Load CSV Helper
 # ---------------------------
+import os, pandas as pd
 def load_csv(file_path, default_cols):
-    if os.path.exists(file_path):
-        try:
-            return pd.read_csv(file_path)
-        except:
-            return pd.DataFrame(columns=default_cols)
-    else:
-        return pd.DataFrame(columns=default_cols)
+    return pd.read_csv(file_path) if os.path.exists(file_path) else pd.DataFrame(columns=default_cols)
 
-meta_cols = [
-    "City Name", "District", "Population", "ULB Category", "CAP Status",
-    "GHG Emissions", "Environment Department Exist", "Department Name",
-    "Head Name", "Department Email"
-]
+meta_cols = ["City Name","District","Population","ULB Category","CAP Status","GHG Emissions",
+             "Environment Department Exist","Department Name","Head Name","Department Email"]
 cap_cols = []
 
 st.session_state.data = load_csv(DATA_FILE, meta_cols)
 st.session_state.cap_data = load_csv(CAP_DATA_FILE, cap_cols)
+st.session_state.data = st.session_state.data[~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)]
 
-# Remove Raigad Council (case-insensitive)
-st.session_state.data = st.session_state.data[
-    ~st.session_state.data["City Name"].str.contains("Raigad Council", case=False, na=False)
-]
 def reset_all_data():
-    # Clear session state
     st.session_state.clear()
-    
-    # Optionally, reset CSV files
-    if os.path.exists(DATA_FILE):
-        os.remove(DATA_FILE)
-    if os.path.exists(CAP_DATA_FILE):
-        os.remove(CAP_DATA_FILE)
-    
+    for f in [DATA_FILE, CAP_DATA_FILE]:
+        if os.path.exists(f): os.remove(f)
     st.success("All data has been reset successfully!")
-    st.experimental_rerun()  # Refresh the app
+    st.experimental_rerun()
 
 # ---------------------------
-# Helper Functions
-# ---------------------------
-# ---------------------------
-# Indian Number Formatter (Global)
+# Indian Number Formatter
 # ---------------------------
 def format_indian_number(num):
-    """
-    Format numbers in Indian style (e.g., 1,23,45,678)
-    No decimal points.
-    Works for int, float, and string numbers.
-    """
     try:
-        num = int(round(float(num)))  # Round float to int
-        s = str(num)[::-1]  # Reverse string
-        parts = []
-        parts.append(s[:3])  # Last 3 digits
-        s = s[3:]
-        while s:
-            parts.append(s[:2])
-            s = s[2:]
-        formatted = ','.join(parts)[::-1]  # Reverse back
-        return formatted
-    except:
-        return str(num)
+        num = int(round(float(num)))
+        s, parts = str(num)[::-1], []
+        parts.append(s[:3]); s = s[3:]
+        while s: parts.append(s[:2]); s=s[2:]
+        return ','.join(parts)[::-1]
+    except: return str(num)
 
-
-# ---------------------------
-# Helper to format entire dataframe (all numeric columns)
-# ---------------------------
 def format_df_indian(df):
-    """
-    Convert all numeric columns in a DataFrame to Indian number format
-    """
     df_copy = df.copy()
     for col in df_copy.columns:
         if pd.api.types.is_numeric_dtype(df_copy[col]):
@@ -169,154 +82,42 @@ def format_df_indian(df):
 # ---------------------------
 st.markdown("""
 <style>
-/* ------------------- Main App ------------------- */
-[data-testid="stAppViewContainer"] {
-    background-color: #1E1E2F;  /* Deep dark background */
-    color: #E6E6E6;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* ------------------- Sidebar ------------------- */
-[data-testid="stSidebar"] {
-    background-color: #2B2B3B; 
-    color: #E6E6E6;
-    padding-top: 20px;
-    font-size: 18px;
-    font-weight: 500;
-}
-[data-testid="stSidebar"] img {
-    margin-bottom: 25px;
-    border-radius: 6px;
-}
-[data-testid="stSidebar"] hr {
-    border: 0.5px solid #3A3A4A;
-    margin: 20px 0;
-}
-.sidebar-footer {
-    color: #B0BEC5;
-    font-size: 13px;
-    text-align: center;
-    margin-top: 30px;
-}
-
-/* ------------------- Buttons ------------------- */
-.stButton>button {
-    background-color: #3A8B34; /* Primary green */
-    color: #FFFFFF; 
-    border-radius: 8px; 
-    height: 45px;
-    font-size: 18px;
-    font-weight: 600;
-    width: 100%;
-    transition: all 0.2s ease-in-out;
-}
-.stButton>button:hover {
-    background-color: #2E6B29;
-}
-
-/* Active/selected sidebar buttons */
-.stButton>button[data-active="true"] {
-    background-color: #42A5F5; 
-    color: #FFFFFF;
-}
-
-/* ------------------- Metrics / Cards ------------------- */
-[data-testid="stMetricValue"] {
-    color: #54c750; 
-    font-weight: 700;
-    font-size: 26px;
-}
-.stCard {
-    background-color: #2B2B3B;
-    padding: 18px;
-    border-radius: 12px;
-    text-align: center;
-    margin-bottom: 12px;
-    transition: all 0.2s ease-in-out;
-}
-.stCard:hover {
-    background-color: #353548;
-}
-.stCard h4 {
-    margin: 0;
-    font-weight: 500;
-    color: #E6E6E6;
-    font-size: 16px;
-}
-.stCard h2 {
-    margin: 6px 0 0 0;
-    font-weight: 700;
-    color: #54c750;
-    font-size: 28px;
-}
-
-/* ------------------- Inputs & Forms ------------------- */
-input, textarea, select {
-    background-color: #2B2B3B; 
-    color: #E6E6E6; 
-    border: 1px solid #54c750;
-    border-radius: 6px;
-    padding: 6px 10px;
-}
-.stExpander>div>div>div>div {
-    background-color: #2B2B3B; 
-    color: #E6E6E6;
-}
-
-/* ------------------- Tables ------------------- */
-.stDataFrame, .stTable {
-    color: #E6E6E6;
-    background-color: #1E1E2F;
-    border-radius: 8px;
-}
-
-/* ------------------- Links ------------------- */
-a {
-    color: #42A5F5;
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
-}
-
-/* ------------------- Headers ------------------- */
-h2, h3, h4 {
-    color: #CFD8DC;
-    font-weight: 600;
-}
-
-/* ------------------- Scrollbar ------------------- */
-::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #1E1E2F;
-}
-::-webkit-scrollbar-thumb {
-    background-color: #42A5F5;
-    border-radius: 6px;
-}
-
-/* ------------------- Dark theme consistency for charts ------------------- */
-[data-testid="stPlotlyChart"] {
-    background-color: #1E1E2F !important;
-}
+[data-testid="stAppViewContainer"]{background:#1E1E2F;color:#E6E6E6;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;}
+[data-testid="stSidebar"]{background:#2B2B3B;color:#E6E6E6;padding-top:20px;font-size:18px;font-weight:500;}
+[data-testid="stSidebar"] img{margin-bottom:25px;border-radius:6px;}
+[data-testid="stSidebar"] hr{border:0.5px solid #3A3A4A;margin:20px 0;}
+.sidebar-footer{color:#B0BEC5;font-size:13px;text-align:center;margin-top:30px;}
+.stButton>button{background:#3A8B34;color:#FFF;border-radius:8px;height:45px;font-size:18px;font-weight:600;width:100%;transition:0.2s;}
+.stButton>button:hover{background:#2E6B29;}
+.stButton>button[data-active="true"]{background:#42A5F5;color:#FFF;}
+[data-testid="stMetricValue"]{color:#54c750;font-weight:700;font-size:26px;}
+.stCard{background:#2B2B3B;padding:18px;border-radius:12px;text-align:center;margin-bottom:12px;transition:0.2s;}
+.stCard:hover{background:#353548;}
+.stCard h4{margin:0;font-weight:500;color:#E6E6E6;font-size:16px;}
+.stCard h2{margin:6px 0 0 0;font-weight:700;color:#54c750;font-size:28px;}
+input,textarea,select{background:#2B2B3B;color:#E6E6E6;border:1px solid #54c750;border-radius:6px;padding:6px 10px;}
+.stExpander>div>div>div>div{background:#2B2B3B;color:#E6E6E6;}
+.stDataFrame,.stTable{color:#E6E6E6;background:#1E1E2F;border-radius:8px;}
+a{color:#42A5F5;text-decoration:none;}a:hover{text-decoration:underline;}
+h2,h3,h4{color:#CFD8DC;font-weight:600;}
+::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#1E1E2F;}::-webkit-scrollbar-thumb{background:#42A5F5;border-radius:6px;}
+[data-testid="stPlotlyChart"]{background:#1E1E2F !important;}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Admin Login
+# Admin Login Form
 # ---------------------------
 def admin_login():
     with st.form("login_form", clear_on_submit=False):
         pw = st.text_input("Enter Admin Password", type="password")
-        submit = st.form_submit_button("Login")
-        if submit:
+        if st.form_submit_button("Login"):
             if pw == ADMIN_PASSWORD:
                 st.session_state.authenticated = True
                 st.success("Admin login successful")
             else:
                 st.error("Incorrect password")
+
 
 # ---------------------------
 # Sidebar
