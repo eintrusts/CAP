@@ -997,136 +997,125 @@ if menu == "CAP Generation":
         Each sector below can be expanded to enter multiple data points.
         """)
 
-        # Load CAP data into session state if not already
-        CAP_DATA_FILE = "cap_raw_data.csv"
-        if "cap_data" not in st.session_state:
-            try:
-                st.session_state.cap_data = pd.read_csv(CAP_DATA_FILE)
-            except FileNotFoundError:
-                st.session_state.cap_data = pd.DataFrame()
-
-        df_cap = st.session_state.cap_data
-
-        # Select city for new entry or edit existing
-        city_names = df_cap["City"].tolist() if not df_cap.empty else []
-        city_choice = st.selectbox("Select City to Edit or Add New", ["-- New City --"] + city_names)
-
-        if city_choice != "-- New City --":
-            city_row = df_cap[df_cap["City"] == city_choice].iloc[0].to_dict()
-        else:
-            city_row = {}
-
         with st.form("cap_comprehensive_form", clear_on_submit=False):
 
             # -------------------
             # 1. General City Info
             # -------------------
             with st.expander("1. General City Info", expanded=True):
-                city = st.selectbox("City Name", list(cities_districts.keys()), index=list(cities_districts.keys()).index(city_row.get("City", "")) if city_row.get("City") else 0)
-                state = st.text_input("State", value=city_row.get("State", ""))
-                population = st.number_input("Population", min_value=0, value=int(city_row.get("Population", 0)), step=1000)
-                area_km2 = st.number_input("Area (km²)", min_value=0.0, value=float(city_row.get("Area_km2", 0)), step=0.1)
-                admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"], index=["Municipal Corporation", "Municipal Council", "Other"].index(city_row.get("Admin_Type", "Municipal Corporation")))
-                inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=int(city_row.get("Inventory_Year", datetime.now().year)))
+                city = st.selectbox("City Name", list(cities_districts.keys()))
+                state = st.text_input("State")
+                population = st.number_input("Population", min_value=0, value=0, step=1000)
+                area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
+                admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"])
+                inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=datetime.now().year)
 
             # -------------------
             # 2. Energy Sector
             # -------------------
             with st.expander("2. Energy Sector"):
-                municipal_electricity = st.number_input("Municipal Buildings (MWh/year)", min_value=0, value=int(city_row.get("Municipal_Electricity", 0)))
-                residential_electricity = st.number_input("Residential (MWh/year)", min_value=0, value=int(city_row.get("Residential_Electricity", 0)))
-                commercial_electricity = st.number_input("Commercial (MWh/year)", min_value=0, value=int(city_row.get("Commercial_Electricity", 0)))
-                industrial_electricity = st.number_input("Industrial (MWh/year)", min_value=0, value=int(city_row.get("Industrial_Electricity", 0)))
-                purchased_heat_gj = st.number_input("Purchased Heat/Steam (GJ/year)", min_value=0, value=int(city_row.get("Purchased_Heat_GJ", 0)))
+                st.subheader("Electricity & Heat Consumption (kWh/year or GJ/year)")
+                municipal_electricity = st.number_input("Municipal Buildings", min_value=0, value=0, step=100)
+                residential_electricity = st.number_input("Residential", min_value=0, value=0, step=100)
+                commercial_electricity = st.number_input("Commercial", min_value=0, value=0, step=100)
+                industrial_electricity = st.number_input("Industrial", min_value=0, value=0, step=100)
+                purchased_heat_gj = st.number_input("Purchased Heat/Steam (GJ/year)", min_value=0, value=0, step=10)
 
-                diesel_gen_mwh = st.number_input("Diesel Generators (MWh/year)", min_value=0, value=int(city_row.get("Diesel_Gen_MWh", 0)))
-                gas_turbine_mwh = st.number_input("Gas Turbines (MWh/year)", min_value=0, value=int(city_row.get("Gas_Turbine_MWh", 0)))
+                st.subheader("On-site Generation")
+                diesel_gen_mwh = st.number_input("Diesel Generators (MWh/year)", min_value=0, value=0, step=10)
+                gas_turbine_mwh = st.number_input("Gas Turbines (MWh/year)", min_value=0, value=0, step=10)
 
-                solar_mwh = st.number_input("Solar Rooftops (MWh/year)", min_value=0, value=int(city_row.get("Solar_MWh", 0)))
-                wind_mwh = st.number_input("Wind Energy (MWh/year)", min_value=0, value=int(city_row.get("Wind_MWh", 0)))
-                biomass_mwh = st.number_input("Biomass (MWh/year)", min_value=0, value=int(city_row.get("Biomass_MWh", 0)))
+                st.subheader("Renewable Energy Production")
+                solar_mwh = st.number_input("Solar Rooftops (MWh/year)", min_value=0, value=0, step=10)
+                wind_mwh = st.number_input("Wind Energy (MWh/year)", min_value=0, value=0, step=10)
+                biomass_mwh = st.number_input("Biomass (MWh/year)", min_value=0, value=0, step=10)
 
-                diesel_l = st.number_input("Diesel (L/year)", min_value=0, value=int(city_row.get("Diesel_L", 0)))
-                petrol_l = st.number_input("Petrol (L/year)", min_value=0, value=int(city_row.get("Petrol_L", 0)))
-                lpg_l = st.number_input("LPG (L/year)", min_value=0, value=int(city_row.get("LPG_L", 0)))
-                natural_gas_m3 = st.number_input("Natural Gas (m3/year)", min_value=0, value=int(city_row.get("Natural_Gas_m3", 0)))
-                coal_t = st.number_input("Coal (tons/year)", min_value=0, value=int(city_row.get("Coal_t", 0)))
+                st.subheader("Stationary Fuel Combustion")
+                diesel_l = st.number_input("Diesel (L/year)", min_value=0, value=0, step=10)
+                petrol_l = st.number_input("Petrol (L/year)", min_value=0, value=0, step=10)
+                lpg_l = st.number_input("LPG (L/year)", min_value=0, value=0, step=10)
+                natural_gas_m3 = st.number_input("Natural Gas (m3/year)", min_value=0, value=0, step=10)
+                coal_t = st.number_input("Coal (tons/year)", min_value=0, value=0, step=1)
 
             # -------------------
             # 3. Transport Sector
             # -------------------
             with st.expander("3. Transport Sector"):
-                cars = st.number_input("Cars", min_value=0, value=int(city_row.get("Cars", 0)))
-                buses = st.number_input("Buses", min_value=0, value=int(city_row.get("Buses", 0)))
-                trucks = st.number_input("Trucks", min_value=0, value=int(city_row.get("Trucks", 0)))
-                two_wheelers = st.number_input("2/3-Wheelers", min_value=0, value=int(city_row.get("Two_Wheelers", 0)))
+                st.subheader("Public & Private Transport")
+                cars = st.number_input("Cars", min_value=0, value=0, step=10)
+                buses = st.number_input("Buses", min_value=0, value=0, step=5)
+                trucks = st.number_input("Trucks", min_value=0, value=0, step=5)
+                two_wheelers = st.number_input("2/3-Wheelers", min_value=0, value=0, step=10)
 
-                avg_km_cars = st.number_input("Avg km traveled by Cars per Year", min_value=0, value=int(city_row.get("Avg_Km_Cars", 0)))
-                avg_km_buses = st.number_input("Avg km traveled by Buses per Year", min_value=0, value=int(city_row.get("Avg_Km_Buses", 0)))
-                avg_km_trucks = st.number_input("Avg km traveled by Trucks per Year", min_value=0, value=int(city_row.get("Avg_Km_Trucks", 0)))
-                avg_km_2w = st.number_input("Avg km traveled by 2/3-Wheelers per Year", min_value=0, value=int(city_row.get("Avg_Km_2W", 0)))
+                avg_km_cars = st.number_input("Average km traveled by Cars per Year", min_value=0, value=0, step=100)
+                avg_km_buses = st.number_input("Average km traveled by Buses per Year", min_value=0, value=0, step=100)
+                avg_km_trucks = st.number_input("Average km traveled by Trucks per Year", min_value=0, value=0, step=100)
+                avg_km_2w = st.number_input("Average km traveled by 2/3-Wheelers per Year", min_value=0, value=0, step=100)
 
-                freight_distance_km = st.number_input("Goods Vehicles Distance (km/year)", min_value=0, value=int(city_row.get("Freight_Distance_km", 0)))
-                freight_fuel_diesel_l = st.number_input("Diesel Fuel for Freight (L/year)", min_value=0, value=int(city_row.get("Freight_Fuel_Diesel_L", 0)))
-                freight_fuel_cng_m3 = st.number_input("CNG Fuel for Freight (m3/year)", min_value=0, value=int(city_row.get("Freight_Fuel_CNG_m3", 0)))
-                freight_fuel_electric_mwh = st.number_input("Electricity for Freight (MWh/year)", min_value=0, value=int(city_row.get("Freight_Fuel_Electric_MWh", 0)))
+                st.subheader("Freight & Logistics")
+                freight_distance_km = st.number_input("Goods Vehicles Distance Traveled (km/year)", min_value=0, value=0, step=100)
+                freight_fuel_diesel_l = st.number_input("Diesel Fuel for Freight (L/year)", min_value=0, value=0, step=10)
+                freight_fuel_cng_m3 = st.number_input("CNG Fuel for Freight (m3/year)", min_value=0, value=0, step=10)
+                freight_fuel_electric_mwh = st.number_input("Electricity for Freight (MWh/year)", min_value=0, value=0, step=10)
 
             # -------------------
             # 4. Waste Sector
             # -------------------
             with st.expander("4. Waste Sector"):
-                msw_tons = st.number_input("Municipal Solid Waste (tons/year)", min_value=0, value=int(city_row.get("MSW_tons", 0)))
-                landfill_frac = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Landfill_Frac", 0)))
-                recycling_frac = st.number_input("Fraction Recycled (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Recycling_Frac", 0)))
-                compost_frac = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Compost_Frac", 0)))
-                incineration_frac = st.number_input("Fraction Incinerated (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Incineration_Frac", 0)))
-                landfill_methane_capture = st.number_input("Landfill Methane Capture (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Landfill_Methane_Capture", 0)))
+                st.subheader("Solid Waste")
+                msw_tons = st.number_input("Municipal Solid Waste Generated (tons/year)", min_value=0, value=0, step=10)
+                landfill_frac = st.number_input("Fraction Landfilled (%)", min_value=0.0, max_value=100.0, value=0.0)
+                recycling_frac = st.number_input("Fraction Recycled (%)", min_value=0.0, max_value=100.0, value=0.0)
+                compost_frac = st.number_input("Fraction Composted (%)", min_value=0.0, max_value=100.0, value=0.0)
+                incineration_frac = st.number_input("Fraction Incinerated (%)", min_value=0.0, max_value=100.0, value=0.0)
+                landfill_methane_capture = st.number_input("Landfill Methane Capture Rate (%)", min_value=0.0, max_value=100.0, value=0.0)
 
-                sewage_m3 = st.number_input("Sewage Generated (m³/year)", min_value=0, value=int(city_row.get("Sewage_m3", 0)))
-                treatment_type = st.selectbox("Treatment Type", ["Primary", "Secondary", "Tertiary"], index=["Primary","Secondary","Tertiary"].index(city_row.get("Treatment_Type","Primary")))
-                sludge_tons = st.number_input("Sludge Generated (tons/year)", min_value=0, value=int(city_row.get("Sludge_tons",0)))
-                energy_wastewater_kwh = st.number_input("Energy Use in Treatment (kWh/year)", min_value=0, value=int(city_row.get("Energy_Wastewater_kWh",0)))
+                st.subheader("Wastewater")
+                sewage_m3 = st.number_input("Sewage Generated (m³/year)", min_value=0, value=0, step=1000)
+                treatment_type = st.selectbox("Treatment Type", ["Primary", "Secondary", "Tertiary"])
+                sludge_tons = st.number_input("Sludge Generated (tons/year)", min_value=0, value=0, step=10)
+                energy_wastewater_kwh = st.number_input("Energy Use in Treatment (kWh/year)", min_value=0, value=0, step=10)
 
             # -------------------
             # 5. Industrial Sector
             # -------------------
             with st.expander("5. Industrial Sector"):
-                coal_ind = st.number_input("Coal Consumption (tons/year)", min_value=0, value=int(city_row.get("Coal_Ind_t",0)))
-                gas_ind = st.number_input("Natural Gas Consumption (m3/year)", min_value=0, value=int(city_row.get("Gas_Ind_m3",0)))
-                electricity_ind = st.number_input("Electricity Consumption (kWh/year)", min_value=0, value=int(city_row.get("Electricity_Ind_kWh",0)))
-                biomass_ind = st.number_input("Biomass (tons/year)", min_value=0, value=int(city_row.get("Biomass_Ind_t",0)))
-                industrial_process = st.text_area("Industrial Process Emissions", value=city_row.get("Industrial_Process", ""), height=80)
-                fugitive_emissions = st.text_area("Fugitive Emissions", value=city_row.get("Fugitive_Emissions",""), height=80)
+                coal_ind = st.number_input("Coal Consumption (tons/year)", min_value=0, value=0, step=1)
+                gas_ind = st.number_input("Natural Gas Consumption (m3/year)", min_value=0, value=0, step=10)
+                electricity_ind = st.number_input("Electricity Consumption (kWh/year)", min_value=0, value=0, step=100)
+                biomass_ind = st.number_input("Biomass (tons/year)", min_value=0, value=0, step=1)
+                industrial_process = st.text_area("Industrial Process Emissions (cement, chemical, metal)", value="", height=80)
+                fugitive_emissions = st.text_area("Fugitive Emissions (refrigeration, industrial processes)", value="", height=80)
 
             # -------------------
             # 6. Agriculture & Land Use
             # -------------------
             with st.expander("6. Agriculture & Land Use"):
-                cropland_ha = st.number_input("Cropland (ha)", min_value=0, value=int(city_row.get("Cropland_ha",0)))
-                livestock_count = st.number_input("Livestock (number of animals)", min_value=0, value=int(city_row.get("Livestock_Count",0)))
-                manure_management = st.text_input("Manure Management Type", value=city_row.get("Manure_Management",""))
-                fertilizer_tons = st.number_input("Fertilizer Use (tons/year)", min_value=0, value=int(city_row.get("Fertilizer_tons",0)))
-                afforestation_ha = st.number_input("Afforestation (ha)", min_value=0, value=int(city_row.get("Afforestation_ha",0)))
-                deforestation_ha = st.number_input("Deforestation (ha)", min_value=0, value=int(city_row.get("Deforestation_ha",0)))
-                soil_carbon_sequestration = st.number_input("Soil Carbon Sequestration (tons/year)", min_value=0, value=int(city_row.get("Soil_Carbon_Sequestration",0)))
+                cropland_ha = st.number_input("Cropland (ha)", min_value=0, value=0, step=1)
+                livestock_count = st.number_input("Livestock (number of animals)", min_value=0, value=0, step=1)
+                manure_management = st.text_input("Manure Management Type", value="")
+                fertilizer_tons = st.number_input("Fertilizer Use (tons/year)", min_value=0, value=0, step=1)
+                afforestation_ha = st.number_input("Afforestation (ha)", min_value=0, value=0, step=1)
+                deforestation_ha = st.number_input("Deforestation (ha)", min_value=0, value=0, step=1)
+                soil_carbon_sequestration = st.number_input("Soil Carbon Sequestration (optional, tons/year)", min_value=0, value=0, step=1)
 
             # -------------------
             # 7. City Infrastructure
             # -------------------
             with st.expander("7. City Infrastructure"):
-                street_lights_count = st.number_input("Number of Street Lights", min_value=0, value=int(city_row.get("Street_Lights_Count",0)))
-                street_lights_energy = st.number_input("Street Lights Energy (kWh/year)", min_value=0, value=int(city_row.get("Street_Lights_Energy",0)))
-                municipal_fleet_fuel = st.text_input("Municipal Vehicle Fleet Fuel & Consumption", value=city_row.get("Municipal_Fleet_Fuel",""))
-                water_pumping_energy = st.number_input("Water Pumping & Treatment Energy (kWh/year)", min_value=0, value=int(city_row.get("Water_Pumping_Energy",0)))
-                cooling_heating_energy = st.number_input("Cooling/Heating in Municipal Buildings (kWh/year)", min_value=0, value=int(city_row.get("Cooling_Heating_Energy",0)))
+                street_lights_count = st.number_input("Number of Street Lights", min_value=0, value=0, step=10)
+                street_lights_energy = st.number_input("Street Lights Energy (kWh/year)", min_value=0, value=0, step=10)
+                municipal_fleet_fuel = st.text_input("Municipal Vehicle Fleet Fuel & Consumption")
+                water_pumping_energy = st.number_input("Water Pumping & Treatment Energy (kWh/year)", min_value=0, value=0, step=10)
+                cooling_heating_energy = st.number_input("Cooling/Heating in Municipal Buildings (kWh/year)", min_value=0, value=0, step=10)
 
             # -------------------
             # 8. Optional Co-Benefit Indicators
             # -------------------
             with st.expander("8. Optional Co-Benefit Indicators"):
-                air_pollution_reduction = st.number_input("Air Pollution Reduction (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Air_Pollution_Reduction",0)))
-                renewable_energy_share = st.number_input("Renewable Energy Share (%)", min_value=0.0, max_value=100.0, value=float(city_row.get("Renewable_Energy_Share",0)))
-                water_usage = st.number_input("Water Usage (m³/year)", min_value=0, value=int(city_row.get("Water_Usage",0)))
+                air_pollution_reduction = st.number_input("Air Pollution Reduction (%)", min_value=0.0, max_value=100.0, value=0.0)
+                renewable_energy_share = st.number_input("Renewable Energy Share (%)", min_value=0.0, max_value=100.0, value=0.0)
+                water_usage = st.number_input("Water Usage (m³/year)", min_value=0, value=0, step=100)
 
             # -------------------
             # File upload
@@ -1136,7 +1125,7 @@ if menu == "CAP Generation":
             # -------------------
             # Submit button
             # -------------------
-            submit_cap = st.form_submit_button("Save / Update GHG Inventory Data")
+            submit_cap = st.form_submit_button("Generate GHG Inventory")
 
             if submit_cap:
                 raw_data = {
@@ -1208,19 +1197,21 @@ if menu == "CAP Generation":
                     "Submission_Date": datetime.now()
                 }
 
-                # Update existing row or append new
-                if city_choice != "-- New City --":
-                    idx = df_cap[df_cap["City"] == city_choice].index[0]
-                    df_cap.loc[idx] = raw_data
-                else:
-                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
-
-                # Save in session_state and CSV
+                df_cap = st.session_state.get("cap_data", pd.DataFrame())
+                df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
                 st.session_state.cap_data = df_cap
                 df_cap.to_csv(CAP_DATA_FILE, index=False)
 
-                st.success(f"Data for {city} saved successfully! You can now generate GHG Inventory.")
+                st.success(f"Raw data for {city} submitted successfully!")
 
+                # Safe redirect using session flag
+                st.session_state.redirect_to_ghg = True
+
+        # Outside form: handle redirect
+        if st.session_state.get("redirect_to_ghg", False):
+            st.session_state.menu = "GHG Inventory"
+            st.session_state.redirect_to_ghg = False
+            st.experimental_rerun()
                 
 
 # ---------------------------
