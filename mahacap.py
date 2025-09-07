@@ -26,6 +26,16 @@ ADMIN_PASSWORD = "eintrust2025"
 DATA_FILE = "cities_data.csv"
 CAP_DATA_FILE = "cap_raw_data.csv"
 
+# At the top of your Streamlit app, after imports
+CAP_DATA_FILE = "cap_raw_data.csv"
+
+# Load CAP data into session_state automatically
+if "cap_data" not in st.session_state:
+    try:
+        st.session_state.cap_data = pd.read_csv(CAP_DATA_FILE)
+    except FileNotFoundError:
+        st.session_state.cap_data = pd.DataFrame()
+
 # ---------------------------
 # Cities & Districts
 # ---------------------------
