@@ -705,10 +705,14 @@ elif menu == "City Information":
             col           : Streamlit column to render the card
             label         : Metric label
             value         : Metric value
-            inputed_value : If True, value is actual inputed data (shows bold + colored)
+            inputed_value : If True, value is actual inputed data (shows bold + larger font)
             bg_color      : Background color of card
             """
-            value_html = f"<b style='color:#2E7D32; font-size:16px;'>{value}</b>" if inputed_value else f"{value}"
+            if inputed_value:
+                value_html = f"<b style='font-size:18px;'>{value}</b>"
+            else:
+                value_html = f"<span style='font-size:15px;'>{value}</span>"
+
             card_html = f"""
             <div style='
                 background-color:{bg_color};
@@ -756,110 +760,7 @@ elif menu == "City Information":
             cols = st.columns(3)
             for col, (label, value) in zip(cols, basic_metrics[i:i+3]):
                 bg = cap_color if label == "CAP Status" else "#34495E"
-                inputed = True if label not in ["District", "ULB Category"] else False
-                render_card(col, label, value, inputed_value=inputed, bg_color=bg)
-
-        # CAP Link
-        if cap_link:
-            link_html = f"""
-            <div style='
-                background-color:#34495E;
-                color:#42A5F5;
-                padding:12px;
-                border-radius:10px;
-                font-size:14px;
-                text-align:center;
-                margin-top:6px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-                transition: transform 0.2s, box-shadow 0.2s;
-            '
-            onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
-            onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
-            >
-                <a href='{cap_link}' target='_blank' style='color:#42A5F5; text-decoration:underline;'>View CAP Document</a>
-            </div>
-            """
-            st.markdown(link_html, unsafe_allow_html=True)
-
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
-
-        # ---------- ENVIRONMENTAL INFORMATION ----------
-        st.markdown("<h4>Environmental Information</h4>", unsafe_allow_html=True)
-        ghg_total = row.get("GHG Emissions", 0)
-        per_capita_ghg = round(ghg_total / population) if population else 0
-        renewable_energy = row.get("Renewable Energy (MWh)", 0)
-        urban_green = row.get("Urban Green Area (ha)", 0)
-        solid_waste = row.get("Municipal Solid Waste (tons)", 0)
-        wastewater = row.get("Wastewater Treated (m3)", 0)
-        waste_landfilled = row.get("Waste Landfilled (%)", 0)
-        waste_composted = row.get("Waste Composted (%)", 0)
-
-        env_metrics = [
-            ("GHG Emissions (tCO2e)", format_indian_number(ghg_total)),
-            ("Per Capita Emissions (tCO2e)", format_indian_number(per_capita_ghg)),
-            ("Renewable Energy (MWh)", format_indian_number(renewable_energy)),
-            ("Urban Green Area (ha)", format_indian_number(urban_green)),
-            ("Solid Waste (tons)", format_indian_number(solid_waste)),
-            ("Wastewater Treated (m³)", format_indian_number(wastewater)),
-            ("Waste Landfilled (%)", f"{waste_landfilled}%"),
-            ("Waste Composted (%)", f"{waste_composted}%")
-        ]
-
-        for i in range(0, len(env_metrics), 3):
-            cols = st.columns(3)
-            for col, (label, value) in zip(cols, env_metrics[i:i+3]):
-                render_card(col, label, value, inputed_value=True)
-
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
-
-        # ---------- SOCIAL INFORMATION ----------
-        st.markdown("<h4>Social Information</h4>", unsafe_allow_html=True)
-        males = row.get("Males", 0)
-        females = row.get("Females", 0)
-        total_pop = males + females
-        children_m = row.get("Children Male",0)
-        children_f = row.get("Children Female",0)
-        total_children = children_m + children_f
-        literacy_m = row.get("Male Literacy (%)",0)
-        literacy_f = row.get("Female Literacy (%)",0)
-        literacy_total = round((literacy_m + literacy_f)/2,2)
-
-        social_metrics = [
-            ("Male Population", format_indian_number(males)),
-            ("Female Population", format_indian_number(females)),
-            ("Total Population", format_indian_number(total_pop)),
-            ("Children (0–6 Male)", format_indian_number(children_m)),
-            ("Children (0–6 Female)", format_indian_number(children_f)),
-            ("Total Children", format_indian_number(total_children)),
-            ("Male Literacy (%)", literacy_m),
-            ("Female Literacy (%)", literacy_f),
-            ("Overall Literacy (%)", literacy_total),
-            ("Slum Population (%)", row.get("Slum (%)",0)),
-            ("Migrant Population (%)", row.get("Migrant (%)",0)),
-            ("BPL Households (%)", row.get("BPL Households (%)",0))
-        ]
-
-        for i in range(0, len(social_metrics), 3):
-            cols = st.columns(3)
-            for col, (label, value) in zip(cols, social_metrics[i:i+3]):
-                render_card(col, label, value, inputed_value=True)
-
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
-
-        # ---------- CONTACT INFORMATION ----------
-        st.markdown("<h4>Contact Information</h4>", unsafe_allow_html=True)
-        contact_metrics = [
-            ("Department Exist", row.get("Department Exist","—")),
-            ("Department Name", row.get("Department Name","—")),
-            ("Email", row.get("Email","—")),
-            ("Contact Number", row.get("Contact Number","—")),
-            ("Website", row.get("Website","—"))
-        ]
-
-        for i in range(0, len(contact_metrics), 2):
-            cols = st.columns(2)
-            for col, (label, value) in zip(cols, contact_metrics[i:i+2]):
-                render_card(col, label, value, inputed_value=False)
+                inputed =
 
 # ---------------------------
 # Admin Panel Page
