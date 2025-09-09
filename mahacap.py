@@ -435,241 +435,111 @@ menu = st.session_state.menu
 
 
 # ---------------------------
-# Home Page: Maharashtra Dashboard (Professional SaaS Look)
+# CAP Generation Page
 # ---------------------------
-if menu == "Home":
-    st.header("Maharashtra's Net Zero Journey")
-    st.markdown("Climate Action Plan Dashboard")
+if menu == "CAP Generation":
+    st.header("CAP Generation : Comprehensive Data Collection")
 
-    df = st.session_state.get("data", pd.DataFrame()).copy()
+    if not st.session_state.get("authenticated", False):
+        admin_login()
+    else:
+        st.markdown("""
+        Collect detailed city-level raw data for generating a comprehensive GHG inventory.
+        Use the tabs below to organize data entry by sector.
+        """)
 
-    # ---------- Utility: Render Card ----------
-    def render_card(col, label, value, is_input=False, bg_color="#34495E"):
-        """
-        Reusable card renderer for uniform styling.
-        - is_input: True for inputted values (highlighted in white, bold, larger font).
-        """
-        if is_input:
-            value_html = f"<b style='color:#FFFFFF;font-size:20px;'>{value}</b>"
-        else:
-            value_html = f"<span style='font-size:15px;color:#FFFFFF;'>{value}</span>"
+        with st.form("cap_comprehensive_form", clear_on_submit=False):
 
-        card_html = f"""
-        <div style='
-            background-color:{bg_color};
-            color:#ECEFF1;
-            padding:14px 10px;
-            border-radius:12px;
-            text-align:center;
-            min-height:70px;
-            margin-bottom:12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
-        '
-        onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 10px rgba(0,0,0,0.5)';"
-        onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.4)';"
-        >
-            {label}<br>{value_html}
-        </div>
-        """
-        col.markdown(card_html, unsafe_allow_html=True)
+            # ---------- Tabs for organized input ----------
+            tabs = st.tabs([
+                "General City Info", "Energy Sector", "Transport Sector", 
+                "Waste Sector", "Industrial Sector", "Agriculture & Land Use", 
+                "City Infrastructure", "Optional Indicators", "Upload"
+            ])
 
-    # ---------- Utility: Dark Layout for Charts ----------
-    def dark_layout(fig, title=None):
-        fig.update_layout(
-            plot_bgcolor="#111111",
-            paper_bgcolor="#111111",
-            font=dict(color="white"),
-            title=dict(text=title, font=dict(size=20, color="white")) if title else None,
-            xaxis=dict(showgrid=False, color="white"),
-            yaxis=dict(showgrid=False, color="white")
-        )
-        return fig
+            # -------------------
+            # 1. General City Info
+            # -------------------
+            with tabs[0]:
+                st.markdown("### General City Info")
+                city = st.selectbox("City Name", list(cities_districts.keys()))
+                state = st.text_input("State")
+                population = st.number_input("Population", min_value=0, value=0, step=1000)
+                area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
+                admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"])
+                inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=datetime.now().year)
 
-    # =====================
-    # CAP Status Summary Cards with Gradient
-    # =====================
-    if not df.empty and "CAP Status" in df.columns:
-        c1, c2, c3, c4 = st.columns(4)
-        status_counts = {
-            "Total Cities": len(df),
-            "Not Started": df[df["CAP Status"].str.lower() == "not started"].shape[0],
-            "In Progress": df[df["CAP Status"].str.lower() == "in progress"].shape[0],
-            "Completed": df[df["CAP Status"].str.lower() == "completed"].shape[0]
-        }
+            # -------------------
+            # 2. Energy Sector
+            # -------------------
+            with tabs[1]:
+                st.markdown("### Energy Sector")
+                # (keep all your existing inputs here unchanged)
 
-        card_colors = {
-            "Total Cities": ["#4B8BF4", "#2C6BE0"],
-            "Not Started": ["#FF6B6B", "#FF3B3B"],
-            "In Progress": ["#FFA500", "#FF8C00"],
-            "Completed": ["#28A745", "#1E7E34"]
-        }
+            # -------------------
+            # 3. Transport Sector
+            # -------------------
+            with tabs[2]:
+                st.markdown("### Transport Sector")
+                # (keep all your existing inputs here unchanged)
 
-        for col, (title, val) in zip([c1, c2, c3, c4], status_counts.items()):
-            color1, color2 = card_colors[title]
-            col.markdown(
-                f"""
-                <div style="
-                    background: linear-gradient(135deg, {color1}, {color2});
-                    padding: 20px;
-                    border-radius: 12px;
-                    text-align: center;
-                    color: white;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                ">
-                    <h5>{title}</h5>
-                    <h2>{format_indian_number(val)}</h2>
-                </div>
-                """, unsafe_allow_html=True
-            )
+            # -------------------
+            # 4. Waste Sector
+            # -------------------
+            with tabs[3]:
+                st.markdown("### Waste Sector")
+                # (keep all your existing inputs here unchanged)
 
-    st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
+            # -------------------
+            # 5. Industrial Sector
+            # -------------------
+            with tabs[4]:
+                st.markdown("### Industrial Sector")
+                # (keep all your existing inputs here unchanged)
 
-    # =====================
-    # Maharashtra Summary Metrics
-    # =====================
-    if "Maharashtra" in df["City Name"].values:
-        maha_row = df[df["City Name"] == "Maharashtra"].iloc[0]
-        population = maha_row.get("Population", 0)
-        ghg_total = maha_row.get("GHG Emissions", 0)
-        cap_status = maha_row.get("CAP Status", "—")
-        cap_link = maha_row.get("CAP Link", "")
-        vulnerability_score = maha_row.get("Vulnerability Score", 0)
-        est_ghg = round(population * (ghg_total/population if population else 0), 2)
+            # -------------------
+            # 6. Agriculture & Land Use
+            # -------------------
+            with tabs[5]:
+                st.markdown("### Agriculture & Land Use")
+                # (keep all your existing inputs here unchanged)
 
-        st.subheader("Maharashtra Overview")
+            # -------------------
+            # 7. City Infrastructure
+            # -------------------
+            with tabs[6]:
+                st.markdown("### City Infrastructure")
+                # (keep all your existing inputs here unchanged)
 
-        # Row 1
-        cols = st.columns(4)
-        render_card(cols[0], "CAP Status", cap_status, is_input=True,
-                    bg_color={"completed":"#28A745","in progress":"#FFA500","not started":"#FF3B3B"}.get(str(cap_status).lower(), "#34495E"))
-        render_card(cols[1], "CAP Link", f"<a href='{cap_link}' target='_blank' style='color:#ECEFF1;text-decoration:underline;'>Open Document</a>" if cap_link else "—")
-        render_card(cols[2], "GHG Emissions (tCO2e)", format_indian_number(ghg_total), is_input=True)
-        render_card(cols[3], "Estimated GHG by Population", format_indian_number(est_ghg), is_input=True)
+            # -------------------
+            # 8. Optional Co-Benefit Indicators
+            # -------------------
+            with tabs[7]:
+                st.markdown("### Optional Co-Benefit Indicators")
+                # (keep all your existing inputs here unchanged)
 
-        # Row 2
-        cols = st.columns(2)
-        render_card(cols[0], "Vulnerability Assessment Score", round(vulnerability_score,2), is_input=True)
-        render_card(cols[1], "Population", format_indian_number(population), is_input=True)
+            # -------------------
+            # 9. File upload + Submit
+            # -------------------
+            with tabs[8]:
+                st.markdown("### Upload Supporting Documents")
+                file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf","xlsx","csv"])
 
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
+                # ✅ Show submit button ONLY here
+                submit_cap = st.form_submit_button("Generate GHG Inventory")
 
-        # =====================
-        # Environmental Metrics
-        # =====================
-        st.subheader("Environmental Metrics")
-        env_cols = ["Renewable Energy (MWh)", "Urban Green Area (ha)", "Municipal Solid Waste (tons)",
-                    "Waste Landfilled (%)", "Waste Composted (%)", "Wastewater Treated (m3)"]
-        for i in range(0, len(env_cols), 3):
-            cols = st.columns(3)
-            for col, name in zip(cols, env_cols[i:i+3]):
-                val = maha_row.get(name, 0)
-                display_val = f"{int(val)}%" if "%" in name else format_indian_number(val)
-                render_card(col, name, display_val, is_input=True)
+                if submit_cap:
+                    raw_data = { ... }  # keep your same raw_data dict intact
 
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
+                    df_cap = st.session_state.get("cap_data", pd.DataFrame())
+                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
+                    st.session_state.cap_data = df_cap
+                    df_cap.to_csv(CAP_DATA_FILE, index=False)
 
-        # =====================
-        # Social Metrics
-        # =====================
-        st.subheader("Social Metrics")
-        males = maha_row.get("Males", 0)
-        females = maha_row.get("Females", 0)
-        total_pop = males + females
-        children_m = maha_row.get("Children Male", 0)
-        children_f = maha_row.get("Children Female", 0)
-        total_children = children_m + children_f
-        literacy_m = maha_row.get("Male Literacy (%)", 0)
-        literacy_f = maha_row.get("Female Literacy (%)", 0)
-        literacy_avg = round((literacy_m + literacy_f)/2, 2)
+                    st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
+                    st.session_state.menu = "GHG Inventory"
+                    st.experimental_rerun()
 
-        social_metrics = [
-            ("Male Population", format_indian_number(males)),
-            ("Female Population", format_indian_number(females)),
-            ("Total Population", format_indian_number(total_pop)),
-            ("Children (0–6 Male)", format_indian_number(children_m)),
-            ("Children (0–6 Female)", format_indian_number(children_f)),
-            ("Total Children (0–6)", format_indian_number(total_children)),
-            ("Male Literacy (%)", f"{literacy_m}%"),
-            ("Female Literacy (%)", f"{literacy_f}%"),
-            ("Average Literacy (%)", f"{literacy_avg}%"),
-            ("Migrant Population (%)", f"{maha_row.get('Migrant (%)',0)}%"),
-            ("Slum Population (%)", f"{maha_row.get('Slum (%)',0)}%"),
-            ("BPL Households (%)", f"{maha_row.get('BPL Households (%)',0)}%"),
-            ("Urbanization Rate (%)", f"{maha_row.get('Urbanization Rate (%)',0)}%")
-        ]
-
-        for i in range(0, len(social_metrics), 3):
-            cols = st.columns(3)
-            for col, (label, val) in zip(cols, social_metrics[i:i+3]):
-                render_card(col, label, val, is_input=True)
-
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
-
-        # =====================
-        # Contact Information
-        # =====================
-        st.subheader("Contact Information")
-        contacts = [
-            ("Department Exist", maha_row.get("Department Exist","—")),
-            ("Department Name", maha_row.get("Department Name","—")),
-            ("Email", maha_row.get("Email","—")),
-            ("Contact Number", maha_row.get("Contact Number","—")),
-            ("Website", maha_row.get("Website","—"))
-        ]
-        for i in range(0, len(contacts), 2):
-            cols = st.columns(2)
-            for col, (label, val) in zip(cols, contacts[i:i+2]):
-                render_card(col, label, val)
-
-        st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
-
-        # =====================
-        # Charts (Dark Mode)
-        # =====================
-        import plotly.express as px
-        df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
-        df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
-        df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
-
-        # Chart 1
-        fig_ghg = px.bar(df, x="City Name", y="GHG Emissions",
-                         text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
-                         color="GHG Emissions", color_continuous_scale="Blues")
-        fig_ghg.update_traces(marker_line_width=0, textposition="outside")
-        st.plotly_chart(dark_layout(fig_ghg, "City-wise Total GHG Emissions"), use_container_width=True)
-
-        # Chart 2
-        fig_est = px.bar(df, x="City Name", y="Estimated GHG",
-                         text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
-                         color="Estimated GHG", color_continuous_scale="Oranges")
-        fig_est.update_traces(marker_line_width=0, textposition="outside")
-        st.plotly_chart(dark_layout(fig_est, "Estimated GHG Emissions by Population"), use_container_width=True)
-
-        # Chart 3
-        evs_cols = ["GHG Emissions","Municipal Solid Waste (tons)","Wastewater Treated (m3)"]
-        for c in evs_cols:
-            if c not in df.columns: df[c] = 0
-        max_env = {c: df[c].max() or 1 for c in evs_cols}
-        df["EVS"] = (df["GHG Emissions"]/max_env["GHG Emissions"]*0.5 +
-                     df["Municipal Solid Waste (tons)"]/max_env["Municipal Solid Waste (tons)"]*0.25 +
-                     df["Wastewater Treated (m3)"]/max_env["Wastewater Treated (m3)"]*0.25) * 100
-        social_factors = {"Population":0.3,"Households":0.2,"Urbanization Rate (%)":0.2,"Literacy Rate (%)":0.15,"Poverty Rate (%)":0.15}
-        for c in social_factors:
-            if c not in df.columns: df[c]=0
-            else: df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
-        max_social = {c: df[c].max() or 1 for c in social_factors}
-        df["SVS"] = ((df["Population"]/max_social["Population"])*0.3 +
-                     (df["Households"]/max_social["Households"])*0.2 +
-                     (df["Urbanization Rate (%)"]/max_social["Urbanization Rate (%)"])*0.2 +
-                     (1 - df["Literacy Rate (%)"]/max_social["Literacy Rate (%)"])*0.15 +
-                     (df["Poverty Rate (%)"]/max_social["Poverty Rate (%)"])*0.15) * 100
-        vuln_df = df[["City Name","EVS","SVS"]].melt(id_vars="City Name", var_name="Score Type", value_name="Score")
-        fig_vuln = px.bar(vuln_df, x="City Name", y="Score", color="Score Type", barmode="group",
-                          text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
-                          color_discrete_map={"EVS":"#1f77b4","SVS":"#ff7f0e"})
-        fig_vuln.update_traces(textposition="outside")
-        st.plotly_chart(dark_layout(fig_vuln, "City Vulnerability Scores (Environmental vs Social)"), use_container_width=True)
         
 # ---------------------------
 # City Information Page
