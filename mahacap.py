@@ -447,11 +447,10 @@ if menu == "Home":
     def render_card(col, label, value, is_input=False, bg_color="#34495E"):
         """
         Reusable card renderer for uniform styling.
-        - is_input: True for inputted values (highlighted in forest green, bold, larger).
-        - bg_color: background color of the card.
+        - is_input: True for inputted values (highlighted in green, bold, larger).
         """
         if is_input:
-            value_html = f"<b style='color:#228B22;font-size:18px;'>{value}</b>"
+            value_html = f"<b style='color:#00E676;font-size:20px;'>{value}</b>"
         else:
             value_html = f"<span style='font-size:15px;'>{value}</span>"
 
@@ -474,6 +473,18 @@ if menu == "Home":
         </div>
         """
         col.markdown(card_html, unsafe_allow_html=True)
+
+    # ---------- Utility: Dark Layout for Charts ----------
+    def dark_layout(fig, title=None):
+        fig.update_layout(
+            plot_bgcolor="#111111",
+            paper_bgcolor="#111111",
+            font=dict(color="white"),
+            title=dict(text=title, font=dict(size=20, color="white")) if title else None,
+            xaxis=dict(showgrid=False, color="white"),
+            yaxis=dict(showgrid=False, color="white")
+        )
+        return fig
 
     # =====================
     # CAP Status Summary Cards with Gradient
@@ -528,15 +539,15 @@ if menu == "Home":
 
         st.subheader("Maharashtra Overview")
 
-        # Row 1: CAP + GHG
+        # Row 1
         cols = st.columns(4)
         render_card(cols[0], "CAP Status", cap_status, is_input=True,
                     bg_color={"completed":"#28A745","in progress":"#FFA500","not started":"#FF3B3B"}.get(str(cap_status).lower(), "#34495E"))
-        render_card(cols[1], "CAP Link", f"<a href='{cap_link}' target='_blank' style='color:#ECEFF1;text-decoration:underline;'>Open Document</a>" if cap_link else "—", is_input=False)
+        render_card(cols[1], "CAP Link", f"<a href='{cap_link}' target='_blank' style='color:#ECEFF1;text-decoration:underline;'>Open Document</a>" if cap_link else "—")
         render_card(cols[2], "GHG Emissions (tCO2e)", format_indian_number(ghg_total), is_input=True)
         render_card(cols[3], "Estimated GHG by Population", format_indian_number(est_ghg), is_input=True)
 
-        # Row 2: Vulnerability + Population
+        # Row 2
         cols = st.columns(2)
         render_card(cols[0], "Vulnerability Assessment Score", round(vulnerability_score,2), is_input=True)
         render_card(cols[1], "Population", format_indian_number(population), is_input=True)
@@ -609,39 +620,33 @@ if menu == "Home":
         for i in range(0, len(contacts), 2):
             cols = st.columns(2)
             for col, (label, val) in zip(cols, contacts[i:i+2]):
-                render_card(col, label, val, is_input=False)
+                render_card(col, label, val)
 
         st.markdown("<hr style='border:0.5px solid #546E7A;'>", unsafe_allow_html=True)
 
         # =====================
-        # Charts
+        # Charts (Dark Mode)
         # =====================
         import plotly.express as px
         df["GHG Emissions"] = pd.to_numeric(df["GHG Emissions"], errors="coerce").fillna(0)
         df["Per Capita GHG"] = df.apply(lambda x: (x["GHG Emissions"]/x["Population"]) if x["Population"] else 0, axis=1)
         df["Estimated GHG"] = df["Population"] * df["Per Capita GHG"]
 
-        # Chart 1: Total GHG
-        fig_ghg = px.bar(
-            df, x="City Name", y="GHG Emissions",
-            text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
-            title="City-wise Total GHG Emissions",
-            color="GHG Emissions", color_continuous_scale="Blues"
-        )
-        fig_ghg.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
-        st.plotly_chart(fig_ghg, use_container_width=True)
+        # Chart 1
+        fig_ghg = px.bar(df, x="City Name", y="GHG Emissions",
+                         text=df["GHG Emissions"].apply(lambda x: format_indian_number(round(x,0))),
+                         color="GHG Emissions", color_continuous_scale="Blues")
+        fig_ghg.update_traces(marker_line_width=0, textposition="outside")
+        st.plotly_chart(dark_layout(fig_ghg, "City-wise Total GHG Emissions"), use_container_width=True)
 
-        # Chart 2: Estimated GHG
-        fig_est = px.bar(
-            df, x="City Name", y="Estimated GHG",
-            text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
-            title="Estimated GHG Emissions by Population",
-            color="Estimated GHG", color_continuous_scale="Oranges"
-        )
-        fig_est.update_traces(marker_line_width=0, textposition="outside", hovertemplate="%{y:,} tCO2e")
-        st.plotly_chart(fig_est, use_container_width=True)
+        # Chart 2
+        fig_est = px.bar(df, x="City Name", y="Estimated GHG",
+                         text=df["Estimated GHG"].apply(lambda x: format_indian_number(round(x,0))),
+                         color="Estimated GHG", color_continuous_scale="Oranges")
+        fig_est.update_traces(marker_line_width=0, textposition="outside")
+        st.plotly_chart(dark_layout(fig_est, "Estimated GHG Emissions by Population"), use_container_width=True)
 
-        # Chart 3: Vulnerability (EVS + SVS)
+        # Chart 3
         evs_cols = ["GHG Emissions","Municipal Solid Waste (tons)","Wastewater Treated (m3)"]
         for c in evs_cols:
             if c not in df.columns: df[c] = 0
@@ -660,16 +665,11 @@ if menu == "Home":
                      (1 - df["Literacy Rate (%)"]/max_social["Literacy Rate (%)"])*0.15 +
                      (df["Poverty Rate (%)"]/max_social["Poverty Rate (%)"])*0.15) * 100
         vuln_df = df[["City Name","EVS","SVS"]].melt(id_vars="City Name", var_name="Score Type", value_name="Score")
-        fig_vuln = px.bar(
-            vuln_df, x="City Name", y="Score", color="Score Type", barmode="group",
-            text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
-            title="City Vulnerability Scores (Environmental vs Social)",
-            color_discrete_map={"EVS":"#1f77b4","SVS":"#ff7f0e"}
-        )
-        fig_vuln.update_traces(textposition="outside", hovertemplate="%{y:.1f}")
-        fig_vuln.update_layout(plot_bgcolor="#ffffff",paper_bgcolor="#ffffff",font_color="#000",xaxis_title=None,yaxis_title="Vulnerability Score (0–100)")
-        st.plotly_chart(fig_vuln, use_container_width=True)
-
+        fig_vuln = px.bar(vuln_df, x="City Name", y="Score", color="Score Type", barmode="group",
+                          text=vuln_df["Score"].apply(lambda x: f"{round(x,1)}"),
+                          color_discrete_map={"EVS":"#1f77b4","SVS":"#ff7f0e"})
+        fig_vuln.update_traces(textposition="outside")
+        st.plotly_chart(dark_layout(fig_vuln, "City Vulnerability Scores (Environmental vs Social)"), use_container_width=True)
 
 # ---------------------------
 # City Information Page
