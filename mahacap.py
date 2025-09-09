@@ -435,7 +435,7 @@ menu = st.session_state.menu
 
 
 # ---------------------------
-# Home Page: Maharashtra Dashboard
+# Home Page: Maharashtra Dashboard (Professional SaaS Look)
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
@@ -447,12 +447,12 @@ if menu == "Home":
     def render_card(col, label, value, is_input=False, bg_color="#34495E"):
         """
         Reusable card renderer for uniform styling.
-        - is_input: True for inputted values (highlighted in green, bold, larger).
+        - is_input: True for inputted values (highlighted in white, bold, larger font).
         """
         if is_input:
-            value_html = f"<b style='color:#00E676;font-size:20px;'>{value}</b>"
+            value_html = f"<b style='color:#FFFFFF;font-size:20px;'>{value}</b>"
         else:
-            value_html = f"<span style='font-size:15px;'>{value}</span>"
+            value_html = f"<span style='font-size:15px;color:#FFFFFF;'>{value}</span>"
 
         card_html = f"""
         <div style='
@@ -670,7 +670,7 @@ if menu == "Home":
                           color_discrete_map={"EVS":"#1f77b4","SVS":"#ff7f0e"})
         fig_vuln.update_traces(textposition="outside")
         st.plotly_chart(dark_layout(fig_vuln, "City Vulnerability Scores (Environmental vs Social)"), use_container_width=True)
-
+        
 # ---------------------------
 # City Information Page
 # ---------------------------
