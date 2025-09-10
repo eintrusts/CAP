@@ -999,8 +999,7 @@ if menu == "CAP Generation":
         admin_login()
     else:
         st.markdown("""
-        Collect detailed city-level raw data for generating a comprehensive GHG inventory.  
-        Use the tabs below to organize data entry by sector.
+        Collect detailed city-level raw data for generating a comprehensive GHG inventory.
         """)
 
         # ✅ Unique form key
@@ -1019,13 +1018,12 @@ if menu == "CAP Generation":
             with tabs[0]:
                 st.markdown("### General City Info")
                 city = st.selectbox("City Name", list(cities_districts.keys()))
-                state = st.text_input("State")
                 population = st.number_input("Population", min_value=0, value=0, step=1000)
                 area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
                 admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Other"])
                 inventory_year = st.number_input(
                     "Year of Inventory",
-                    min_value=2000,
+                    min_value=2019,
                     max_value=2100,
                     value=datetime.now().year
                 )
@@ -1042,8 +1040,6 @@ if menu == "CAP Generation":
                 purchased_heat_gj = st.number_input("Purchased Heat/Steam (GJ/year)", min_value=0, value=0, step=10)
 
                 diesel_gen_mwh = st.number_input("Diesel Generators (MWh/year)", min_value=0, value=0, step=10)
-                gas_turbine_mwh = st.number_input("Gas Turbines (MWh/year)", min_value=0, value=0, step=10)
-
                 solar_mwh = st.number_input("Solar Rooftops (MWh/year)", min_value=0, value=0, step=10)
                 wind_mwh = st.number_input("Wind Energy (MWh/year)", min_value=0, value=0, step=10)
                 biomass_mwh = st.number_input("Biomass (MWh/year)", min_value=0, value=0, step=10)
@@ -1086,7 +1082,7 @@ if menu == "CAP Generation":
                 incineration_frac = st.number_input("Fraction Incinerated (%)", min_value=0.0, max_value=100.0, value=0.0)
                 landfill_methane_capture = st.number_input("Landfill Methane Capture Rate (%)", min_value=0.0, max_value=100.0, value=0.0)
 
-                sewage_m3 = st.number_input("Sewage (m³/year)", min_value=0, value=0, step=1000)
+                sewage_m3 = st.number_input("WasteWater (m³/year)", min_value=0, value=0, step=1000)
                 treatment_type = st.selectbox("Treatment Type", ["Primary", "Secondary", "Tertiary"])
                 sludge_tons = st.number_input("Sludge Generated (tons/year)", min_value=0, value=0, step=10)
                 energy_wastewater_kwh = st.number_input("Energy Use in Treatment (kWh/year)", min_value=0, value=0, step=10)
@@ -1152,7 +1148,6 @@ if menu == "CAP Generation":
                     else:
                         raw_data = {
                             "City": city,
-                            "State": state,
                             "Population": population,
                             "Area_km2": area_km2,
                             "Admin_Type": admin_type,
@@ -1163,7 +1158,6 @@ if menu == "CAP Generation":
                             "Industrial_Electricity": industrial_electricity,
                             "Purchased_Heat_GJ": purchased_heat_gj,
                             "Diesel_Gen_MWh": diesel_gen_mwh,
-                            "Gas_Turbine_MWh": gas_turbine_mwh,
                             "Solar_MWh": solar_mwh,
                             "Wind_MWh": wind_mwh,
                             "Biomass_MWh": biomass_mwh,
@@ -1223,7 +1217,7 @@ if menu == "CAP Generation":
                         df_cap.to_csv(CAP_DATA_FILE, index=False)
 
                         st.success(f"Raw data for {city} submitted successfully! Redirecting to GHG Inventory dashboard...")
-                        st.session_state.menu = "GHG Inventory"
+                        st.session_state.menu = "Generate GHG Inventory"
                         st.rerun()
                 
 
@@ -1231,7 +1225,7 @@ if menu == "CAP Generation":
 # GHG Inventory Page
 # ---------------------------
 elif menu == "GHG Inventory":
-    st.header("City GHG Inventory Generation")
+    st.header("GHG Inventory")
 
     if not st.session_state.authenticated:
         admin_login()
