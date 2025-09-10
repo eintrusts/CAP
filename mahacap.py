@@ -441,7 +441,10 @@ if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
     st.markdown("Climate Action Plan Dashboard")
 
-    df = st.session_state.get("data", pd.DataFrame()).copy()
+    # ✅ Always use the session_state data (keeps Admin updates live)
+    if "data" not in st.session_state:
+        st.session_state.data = pd.read_csv(DATA_FILE)
+    df = st.session_state.data.copy()
 
     # ---------- Utility: Render Card ----------
     def render_card(col, label, value, is_input=False, bg_color="#34495E"):
