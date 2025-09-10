@@ -406,7 +406,7 @@ st.sidebar.image(
 # ---------------------------
 menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
 if st.session_state.authenticated:
-    menu_items.append(("CAP Generation", "Generate CAP"))
+    menu_items.append(("Generate CAP", "Generate CAP"))
 
 for label, page_name in menu_items:
     is_active = st.session_state.menu == page_name
@@ -972,7 +972,7 @@ from datetime import datetime
 
 CAP_DATA_FILE = "cap_raw_data.csv"   # ensure this matches your app-wide constant
 
-if menu == "CAP Generation":
+if menu == "Generate CAP":
     st.header("CAP Generation : Comprehensive Data Collection")
 
     # Require admin
@@ -980,8 +980,7 @@ if menu == "CAP Generation":
         admin_login()
     else:
         st.markdown(
-            "Collect detailed city-level raw data for generating a comprehensive GHG inventory. "
-            "Sectoral priority / vulnerability questions are embedded in each sector."
+            "Collect detailed city-level data for generating a comprehensive GHG inventory. "
         )
 
         # Load existing CAP data (if any)
