@@ -875,7 +875,7 @@ elif menu == "City Information":
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Dashboard")
-    
+
     if not st.session_state.get("authenticated", False):
         admin_login()  # your existing login function
     else:
@@ -887,60 +887,65 @@ elif menu == "Admin":
                 ["Maharashtra"] + list(cities_districts.keys())
             )
 
+            # ---------- Load existing data if available ----------
+            df_meta = st.session_state.data.copy()
+            existing_row = df_meta[df_meta["City Name"] == city].to_dict("records")
+            existing_data = existing_row[0] if existing_row else {}
+
             # ---------- Tabs for organized input ----------
             tabs = st.tabs(["Basic", "Environmental", "Social", "Contact"])
 
             # ---------- Basic Info ----------
             with tabs[0]:
                 st.markdown("### Basic Information")
-                population = st.number_input("Population (2011 Census)", min_value=0, step=1000)
-                area = st.number_input("Geographical Area (sq. km)", min_value=0.0, step=0.1)
-                ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"])
-                est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1)
-                
-                # CAP Status and Link
-                cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"])
-                cap_link = st.text_input("CAP Link")
+                population = st.number_input("Population (2011 Census)", min_value=0, step=1000, value=int(existing_data.get("Population", 0)))
+                area = st.number_input("Geographical Area (sq. km)", min_value=0.0, step=0.1, value=float(existing_data.get("Area (sq.km)", 0.0)))
+                ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"], index=["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"].index(existing_data.get("ULB Category", "Municipal Corporation")))
+                est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1, value=int(existing_data.get("Est. Year", 2000)))
+
+                cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(existing_data.get("CAP Status", "Not Started")))
+                cap_link = st.text_input("CAP Link", value=existing_data.get("CAP Link", ""))
 
             # ---------- Environmental Info ----------
             with tabs[1]:
                 st.markdown("### Environmental Information")
-                ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, step=100.0)
-                renewable_energy = st.number_input("Renewable Energy Generated (MWh/year)", min_value=0, step=10)
-                green_area = st.number_input("Urban Green Area (ha)", min_value=0, step=1)
-                solid_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0, step=10)
-                waste_landfilled = st.number_input("Waste Landfilled (%)", min_value=0.0, max_value=100.0, step=0.1)
-                waste_composted = st.number_input("Waste Composted (%)", min_value=0.0, max_value=100.0, step=0.1)
-                wastewater = st.number_input("Wastewater Treated (m³/year)", min_value=0, step=1000)
+                ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, step=100.0, value=float(existing_data.get("GHG Emissions", 0.0)))
+                renewable_energy = st.number_input("Renewable Energy Generated (MWh/year)", min_value=0, step=10, value=int(existing_data.get("Renewable Energy (MWh)", 0)))
+                green_area = st.number_input("Urban Green Area (ha)", min_value=0, step=1, value=int(existing_data.get("Urban Green Area (ha)", 0)))
+                solid_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0, step=10, value=int(existing_data.get("Municipal Solid Waste (tons)", 0)))
+                waste_landfilled = st.number_input("Waste Landfilled (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Waste Landfilled (%)", 0.0)))
+                waste_composted = st.number_input("Waste Composted (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Waste Composted (%)", 0.0)))
+                wastewater = st.number_input("Wastewater Treated (m³/year)", min_value=0, step=1000, value=int(existing_data.get("Wastewater Treated (m3)", 0)))
 
             # ---------- Social Info ----------
             with tabs[2]:
                 st.markdown("### Social Information")
-                males = st.number_input("Male Population", min_value=0, step=100)
-                females = st.number_input("Female Population", min_value=0, step=100)
-                children_m = st.number_input("Children (0–6 Male)", min_value=0, step=10)
-                children_f = st.number_input("Children (0–6 Female)", min_value=0, step=10)
-                literacy = st.number_input("Overall Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
-                literacy_m = st.number_input("Male Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
-                literacy_f = st.number_input("Female Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
-                bpl = st.number_input("BPL Households (%)", min_value=0.0, max_value=100.0, step=0.1)
-                migrant = st.number_input("Migrant Population (%)", min_value=0.0, max_value=100.0, step=0.1)
-                slum = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, step=0.1)
-                urban_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, step=0.1)
-                households = st.number_input("Total Households", min_value=0, step=100)
+                males = st.number_input("Male Population", min_value=0, step=100, value=int(existing_data.get("Males", 0)))
+                females = st.number_input("Female Population", min_value=0, step=100, value=int(existing_data.get("Females", 0)))
+                children_m = st.number_input("Children (0–6 Male)", min_value=0, step=10, value=int(existing_data.get("Children Male", 0)))
+                children_f = st.number_input("Children (0–6 Female)", min_value=0, step=10, value=int(existing_data.get("Children Female", 0)))
+                literacy = st.number_input("Overall Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Literacy (%)", 0.0)))
+                literacy_m = st.number_input("Male Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Male Literacy (%)", 0.0)))
+                literacy_f = st.number_input("Female Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Female Literacy (%)", 0.0)))
+                bpl = st.number_input("BPL Households (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("BPL Households (%)", 0.0)))
+                migrant = st.number_input("Migrant Population (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Migrant (%)", 0.0)))
+                slum = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Slum (%)", 0.0)))
+                urban_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(existing_data.get("Urbanization Rate (%)", 0.0)))
+                households = st.number_input("Total Households", min_value=0, step=100, value=int(existing_data.get("Households", 0)))
 
             # ---------- Contact Info ----------
             with tabs[3]:
                 st.markdown("### Contact Information")
-                dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"])
-                dept_name = st.text_input("Department Name")
-                dept_email = st.text_input("Department Email")
-                contact_number = st.text_input("Contact Number")
-                official_website = st.text_input("Official Website")
+                dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"], index=["Yes", "No"].index(existing_data.get("Department Exist", "No")))
+                dept_name = st.text_input("Department Name", value=existing_data.get("Department Name", ""))
+                dept_email = st.text_input("Department Email", value=existing_data.get("Email", ""))
+                contact_number = st.text_input("Contact Number", value=existing_data.get("Contact Number", ""))
+                official_website = st.text_input("Official Website", value=existing_data.get("Website", ""))
 
             submit_admin = st.form_submit_button("Save / Update")
 
             if submit_admin:
+                import datetime
                 new_row = {
                     "City Name": city,
                     "District": cities_districts.get(city, "Maharashtra") if city != "Maharashtra" else "State",
@@ -974,13 +979,14 @@ elif menu == "Admin":
                     "Email": dept_email,
                     "Contact Number": contact_number,
                     "Website": official_website,
+                    "Last Updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
 
-                df_meta = st.session_state.data.copy()
-                if city in df_meta["City Name"].values:
-                    df_meta.loc[df_meta["City Name"] == city, list(new_row.keys())[1:]] = list(new_row.values())[1:]
+                if existing_data:
+                    df_meta.loc[df_meta["City Name"] == city, :] = pd.Series(new_row)
                 else:
                     df_meta = pd.concat([df_meta, pd.DataFrame([new_row])], ignore_index=True)
+
                 st.session_state.data = df_meta
                 df_meta.to_csv(DATA_FILE, index=False)
                 st.success(f"{city} data updated successfully!")
