@@ -871,7 +871,7 @@ elif menu == "City Information":
                 render_card(col, label, value, is_input=False)
 
 # ---------------------------
-# Admin Panel
+# Admin Panel Page (Fully Fixed for Submit & Types)
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Dashboard")
@@ -884,7 +884,7 @@ elif menu == "Admin":
         # ---------- Load existing data ----------
         df_meta = st.session_state.data.copy()
 
-        # ---------- Session State function to update fields ----------
+        # ---------- City selection with auto-fill ----------
         def update_city():
             city = st.session_state.selected_city
             existing_row = df_meta[df_meta["City Name"] == city]
@@ -896,7 +896,6 @@ elif menu == "Admin":
         if 'update_city' not in st.session_state:
             st.session_state.update_city = update_city
 
-        # ---------- City selection ----------
         city = st.selectbox(
             "Select City",
             ["Maharashtra"] + list(cities_districts.keys()),
@@ -904,12 +903,11 @@ elif menu == "Admin":
             on_change=st.session_state.update_city
         )
 
-        # ---------- Load existing data if available ----------
         existing_row = df_meta[df_meta["City Name"] == city].to_dict("records")
         existing_data = existing_row[0] if existing_row else {}
 
+        # ---------- Admin Form ----------
         with st.form("admin_form", clear_on_submit=False):
-            # ---------- Tabs ----------
             tabs = st.tabs(["Basic", "Environmental", "Social", "Contact"])
 
             # ---------- Basic Info ----------
@@ -920,7 +918,7 @@ elif menu == "Admin":
                 ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"], index=["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"].index(st.session_state.get("ULB Category", existing_data.get("ULB Category", "Municipal Corporation"))), key="ULB Category")
                 est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1, value=int(st.session_state.get("Est. Year", existing_data.get("Est. Year", 2000) or 2000)), key="Est. Year")
                 cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(st.session_state.get("CAP Status", existing_data.get("CAP Status", "Not Started"))), key="CAP Status")
-                cap_link = st.text_input("CAP Link", value=st.session_state.get("CAP Link", existing_data.get("CAP Link", "")), key="CAP Link")
+                cap_link = st.text_input("CAP Link", value=str(st.session_state.get("CAP Link", existing_data.get("CAP Link", "") or "")), key="CAP Link")
 
             # ---------- Environmental Info ----------
             with tabs[1]:
@@ -953,12 +951,12 @@ elif menu == "Admin":
             with tabs[3]:
                 st.markdown("### Contact Information")
                 dept_exist = st.selectbox("Environment Department Exist?", ["Yes", "No"], index=["Yes", "No"].index(st.session_state.get("Department Exist", existing_data.get("Department Exist", "No"))), key="Department Exist")
-                dept_name = st.text_input("Department Name", value=st.session_state.get("Department Name", existing_data.get("Department Name", "")), key="Department Name")
-                dept_email = st.text_input("Department Email", value=st.session_state.get("Email", existing_data.get("Email", "")), key="Email")
-                contact_number = st.text_input("Contact Number", value=st.session_state.get("Contact Number", existing_data.get("Contact Number", "")), key="Contact Number")
-                official_website = st.text_input("Official Website", value=st.session_state.get("Website", existing_data.get("Website", "")), key="Website")
+                dept_name = st.text_input("Department Name", value=str(st.session_state.get("Department Name", existing_data.get("Department Name", ""))), key="Department Name")
+                dept_email = st.text_input("Department Email", value=str(st.session_state.get("Email", existing_data.get("Email", ""))), key="Email")
+                contact_number = st.text_input("Contact Number", value=str(st.session_state.get("Contact Number", existing_data.get("Contact Number", ""))), key="Contact Number")
+                official_website = st.text_input("Official Website", value=str(st.session_state.get("Website", existing_data.get("Website", ""))), key="Website")
 
-            # ---------- Submit Button (inside form) ----------
+            # ---------- Submit Button ----------
             submit_admin = st.form_submit_button("Save / Update")
 
             if submit_admin:
