@@ -159,6 +159,9 @@ def safe_get(row, col, default="—"):
 # ---------------------------
 # Dark / Professional SaaS CSS
 # ---------------------------
+# ---------------------------
+# Dark / Professional SaaS CSS
+# ---------------------------
 st.markdown("""
 <style>
 /* ------------------- Main App ------------------- */
