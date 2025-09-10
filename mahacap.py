@@ -831,15 +831,15 @@ elif menu == "City Information":
                 render_card(col, label, value, is_input=False)
 
 # ---------------------------
-# Admin Panel Page (Safe City Switching & Auto-Fill)
+# Admin Panel Page
 # ---------------------------
 elif menu == "Admin":
-    st.header("Admin Dashboard")
+    st.header("Admin Board")
 
     if not st.session_state.get("authenticated", False):
         admin_login()
     else:
-        st.subheader("Add / Update City / Maharashtra Data")
+        st.subheader("Update City / Maharashtra State Data")
 
         # ---------- Load existing data ----------
         df_meta = st.session_state.data.copy()
