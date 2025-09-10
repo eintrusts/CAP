@@ -871,7 +871,7 @@ elif menu == "City Information":
                 render_card(col, label, value, is_input=False)
 
 # ---------------------------
-# Admin Panel Page with Auto-Refresh
+# Admin Panel
 # ---------------------------
 elif menu == "Admin":
     st.header("Admin Dashboard")
@@ -915,39 +915,39 @@ elif menu == "Admin":
             # ---------- Basic Info ----------
             with tabs[0]:
                 st.markdown("### Basic Information")
-                population = st.number_input("Population (2011 Census)", min_value=0, step=1000, value=st.session_state.get("Population", existing_data.get("Population", 0)), key="Population")
-                area = st.number_input("Geographical Area (sq. km)", min_value=0.0, step=0.1, value=st.session_state.get("Area (sq.km)", existing_data.get("Area (sq.km)", 0.0)), key="Area (sq.km)")
+                population = st.number_input("Population (2011 Census)", min_value=0, step=1000, value=int(st.session_state.get("Population", existing_data.get("Population", 0) or 0)), key="Population")
+                area = st.number_input("Geographical Area (sq. km)", min_value=0.0, step=0.1, value=float(st.session_state.get("Area (sq.km)", existing_data.get("Area (sq.km)", 0.0) or 0.0)), key="Area (sq.km)")
                 ulb_category = st.selectbox("ULB Category", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"], index=["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "State"].index(st.session_state.get("ULB Category", existing_data.get("ULB Category", "Municipal Corporation"))), key="ULB Category")
-                est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1, value=st.session_state.get("Est. Year", existing_data.get("Est. Year", 2000)), key="Est. Year")
+                est_year = st.number_input("Year of Establishment of ULB", min_value=1800, max_value=2100, step=1, value=int(st.session_state.get("Est. Year", existing_data.get("Est. Year", 2000) or 2000)), key="Est. Year")
                 cap_status = st.selectbox("CAP Status", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(st.session_state.get("CAP Status", existing_data.get("CAP Status", "Not Started"))), key="CAP Status")
                 cap_link = st.text_input("CAP Link", value=st.session_state.get("CAP Link", existing_data.get("CAP Link", "")), key="CAP Link")
 
             # ---------- Environmental Info ----------
             with tabs[1]:
                 st.markdown("### Environmental Information")
-                ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, step=100.0, value=st.session_state.get("GHG Emissions", existing_data.get("GHG Emissions", 0.0)), key="GHG Emissions")
-                renewable_energy = st.number_input("Renewable Energy Generated (MWh/year)", min_value=0, step=10, value=st.session_state.get("Renewable Energy (MWh)", existing_data.get("Renewable Energy (MWh)", 0)), key="Renewable Energy (MWh)")
-                green_area = st.number_input("Urban Green Area (ha)", min_value=0, step=1, value=st.session_state.get("Urban Green Area (ha)", existing_data.get("Urban Green Area (ha)", 0)), key="Urban Green Area (ha)")
-                solid_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0, step=10, value=st.session_state.get("Municipal Solid Waste (tons)", existing_data.get("Municipal Solid Waste (tons)", 0)), key="Municipal Solid Waste (tons)")
-                waste_landfilled = st.number_input("Waste Landfilled (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Waste Landfilled (%)", existing_data.get("Waste Landfilled (%)", 0.0)), key="Waste Landfilled (%)")
-                waste_composted = st.number_input("Waste Composted (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Waste Composted (%)", existing_data.get("Waste Composted (%)", 0.0)), key="Waste Composted (%)")
-                wastewater = st.number_input("Wastewater Treated (m³/year)", min_value=0, step=1000, value=st.session_state.get("Wastewater Treated (m3)", existing_data.get("Wastewater Treated (m3)", 0)), key="Wastewater Treated (m3)")
+                ghg_val = st.number_input("Total GHG Emissions (tCO2e)", min_value=0.0, step=100.0, value=float(st.session_state.get("GHG Emissions", existing_data.get("GHG Emissions", 0.0) or 0.0)), key="GHG Emissions")
+                renewable_energy = st.number_input("Renewable Energy Generated (MWh/year)", min_value=0, step=10, value=int(st.session_state.get("Renewable Energy (MWh)", existing_data.get("Renewable Energy (MWh)", 0) or 0)), key="Renewable Energy (MWh)")
+                green_area = st.number_input("Urban Green Area (ha)", min_value=0, step=1, value=int(st.session_state.get("Urban Green Area (ha)", existing_data.get("Urban Green Area (ha)", 0) or 0)), key="Urban Green Area (ha)")
+                solid_waste = st.number_input("Municipal Solid Waste (tons/year)", min_value=0, step=10, value=int(st.session_state.get("Municipal Solid Waste (tons)", existing_data.get("Municipal Solid Waste (tons)", 0) or 0)), key="Municipal Solid Waste (tons)")
+                waste_landfilled = st.number_input("Waste Landfilled (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Waste Landfilled (%)", existing_data.get("Waste Landfilled (%)", 0.0) or 0.0)), key="Waste Landfilled (%)")
+                waste_composted = st.number_input("Waste Composted (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Waste Composted (%)", existing_data.get("Waste Composted (%)", 0.0) or 0.0)), key="Waste Composted (%)")
+                wastewater = st.number_input("Wastewater Treated (m³/year)", min_value=0, step=1000, value=int(st.session_state.get("Wastewater Treated (m3)", existing_data.get("Wastewater Treated (m3)", 0) or 0)), key="Wastewater Treated (m3)")
 
             # ---------- Social Info ----------
             with tabs[2]:
                 st.markdown("### Social Information")
-                males = st.number_input("Male Population", min_value=0, step=100, value=st.session_state.get("Males", existing_data.get("Males", 0)), key="Males")
-                females = st.number_input("Female Population", min_value=0, step=100, value=st.session_state.get("Females", existing_data.get("Females", 0)), key="Females")
-                children_m = st.number_input("Children (0–6 Male)", min_value=0, step=10, value=st.session_state.get("Children Male", existing_data.get("Children Male", 0)), key="Children Male")
-                children_f = st.number_input("Children (0–6 Female)", min_value=0, step=10, value=st.session_state.get("Children Female", existing_data.get("Children Female", 0)), key="Children Female")
-                literacy = st.number_input("Overall Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Literacy (%)", existing_data.get("Literacy (%)", 0.0)), key="Literacy (%)")
-                literacy_m = st.number_input("Male Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Male Literacy (%)", existing_data.get("Male Literacy (%)", 0.0)), key="Male Literacy (%)")
-                literacy_f = st.number_input("Female Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Female Literacy (%)", existing_data.get("Female Literacy (%)", 0.0)), key="Female Literacy (%)")
-                bpl = st.number_input("BPL Households (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("BPL Households (%)", existing_data.get("BPL Households (%)", 0.0)), key="BPL Households (%)")
-                migrant = st.number_input("Migrant Population (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Migrant (%)", existing_data.get("Migrant (%)", 0.0)), key="Migrant (%)")
-                slum = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Slum (%)", existing_data.get("Slum (%)", 0.0)), key="Slum (%)")
-                urban_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.get("Urbanization Rate (%)", existing_data.get("Urbanization Rate (%)", 0.0)), key="Urbanization Rate (%)")
-                households = st.number_input("Total Households", min_value=0, step=100, value=st.session_state.get("Households", existing_data.get("Households", 0)), key="Households")
+                males = st.number_input("Male Population", min_value=0, step=100, value=int(st.session_state.get("Males", existing_data.get("Males", 0) or 0)), key="Males")
+                females = st.number_input("Female Population", min_value=0, step=100, value=int(st.session_state.get("Females", existing_data.get("Females", 0) or 0)), key="Females")
+                children_m = st.number_input("Children (0–6 Male)", min_value=0, step=10, value=int(st.session_state.get("Children Male", existing_data.get("Children Male", 0) or 0)), key="Children Male")
+                children_f = st.number_input("Children (0–6 Female)", min_value=0, step=10, value=int(st.session_state.get("Children Female", existing_data.get("Children Female", 0) or 0)), key="Children Female")
+                literacy = st.number_input("Overall Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Literacy (%)", existing_data.get("Literacy (%)", 0.0) or 0.0)), key="Literacy (%)")
+                literacy_m = st.number_input("Male Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Male Literacy (%)", existing_data.get("Male Literacy (%)", 0.0) or 0.0)), key="Male Literacy (%)")
+                literacy_f = st.number_input("Female Literacy Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Female Literacy (%)", existing_data.get("Female Literacy (%)", 0.0) or 0.0)), key="Female Literacy (%)")
+                bpl = st.number_input("BPL Households (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("BPL Households (%)", existing_data.get("BPL Households (%)", 0.0) or 0.0)), key="BPL Households (%)")
+                migrant = st.number_input("Migrant Population (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Migrant (%)", existing_data.get("Migrant (%)", 0.0) or 0.0)), key="Migrant (%)")
+                slum = st.number_input("Slum Population (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Slum (%)", existing_data.get("Slum (%)", 0.0) or 0.0)), key="Slum (%)")
+                urban_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, step=0.1, value=float(st.session_state.get("Urbanization Rate (%)", existing_data.get("Urbanization Rate (%)", 0.0) or 0.0)), key="Urbanization Rate (%)")
+                households = st.number_input("Total Households", min_value=0, step=100, value=int(st.session_state.get("Households", existing_data.get("Households", 0) or 0)), key="Households")
 
             # ---------- Contact Info ----------
             with tabs[3]:
@@ -958,6 +958,7 @@ elif menu == "Admin":
                 contact_number = st.text_input("Contact Number", value=st.session_state.get("Contact Number", existing_data.get("Contact Number", "")), key="Contact Number")
                 official_website = st.text_input("Official Website", value=st.session_state.get("Website", existing_data.get("Website", "")), key="Website")
 
+            # ---------- Submit Button (inside form) ----------
             submit_admin = st.form_submit_button("Save / Update")
 
             if submit_admin:
