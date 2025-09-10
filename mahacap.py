@@ -999,7 +999,7 @@ if menu == "CAP Generation":
         admin_login()
     else:
         st.markdown("""
-        Collect detailed city-level raw data for generating a comprehensive GHG inventory.
+        Collect detailed city-level raw data for generating a comprehensive GHG inventory and sectoral priorities.
         """)
 
         # ✅ Unique form key
@@ -1009,7 +1009,8 @@ if menu == "CAP Generation":
             tabs = st.tabs([
                 "General City Info", "Energy Sector", "Transport Sector",
                 "Waste Sector", "Industrial Sector", "Agriculture & Land Use",
-                "City Infrastructure", "Optional Indicators", "Upload"
+                "City Infrastructure", "Optional Indicators", 
+                "Sectoral Priorities", "Upload"
             ])
 
             # -------------------
@@ -1133,18 +1134,64 @@ if menu == "CAP Generation":
                 water_usage = st.number_input("Water Usage (m³/year)", min_value=0, value=0, step=100)
 
             # -------------------
-            # 9. Upload + Submit
+            # 9. Sectoral Priorities
             # -------------------
             with tabs[8]:
+                st.markdown("### Sectoral Priorities – Risk & Resilience")
+
+                with st.expander("⚡ Energy & Power"):
+                    renewable_share = st.slider("Share of Renewables (%)", 0, 100, 20)
+                    reliability = st.selectbox("Energy Reliability", ["High", "Medium", "Low"])
+                    rooftop_potential = st.slider("Rooftop Solar Potential (MW)", 0, 500, 50)
+
+                with st.expander("🚍 Transport & Mobility"):
+                    ev_infra = st.selectbox("EV Charging Infrastructure Available?", ["Yes", "No"])
+                    congestion = st.selectbox("Traffic Congestion Level", ["Low", "Medium", "High"])
+                    nmt_infra = st.selectbox("Dedicated NMT (walking/cycling) Infrastructure?", ["Yes", "No"])
+
+                with st.expander("🗑️ Waste Management"):
+                    waste_segregation = st.slider("Waste Segregated at Source (%)", 0, 100, 30)
+                    landfill_condition = st.text_area("Condition of Landfill Sites")
+                    flooding_from_waste = st.selectbox("Flooding Issues due to Solid Waste?", ["Yes", "No"])
+
+                with st.expander("💧 Water & Climate Resilience"):
+                    avg_rainfall = st.number_input("Average Annual Rainfall (mm)", 0, 5000, 900)
+                    flood_prone = st.selectbox("Urban Flood-Prone Areas?", ["Yes", "No"])
+                    drought_risk = st.selectbox("Drought Vulnerability", ["Low", "Medium", "High"])
+                    drainage_system = st.text_area("Condition of Drainage/Stormwater System")
+
+                with st.expander("🏗️ Buildings & Infrastructure"):
+                    green_buildings = st.slider("% of Green/ECBC Compliant Buildings", 0, 100, 10)
+                    heat_island = st.selectbox("Urban Heat Island Issue?", ["Yes", "No"])
+                    infra_risk = st.text_area("Infrastructure at Risk from Climate Hazards")
+
+                with st.expander("🏭 Industry & Economy"):
+                    major_industries = st.text_area("Types of Major Industries")
+                    compliance = st.selectbox("Pollution Control Compliance", ["High", "Medium", "Low"])
+                    local_economy = st.text_area("Dependence on Climate-sensitive Sectors")
+
+                with st.expander("🌱 Agriculture & Land Use"):
+                    crop_patterns = st.text_area("Crop Patterns (rainfed/irrigated)")
+                    climate_impacts = st.text_area("Observed Climate Impacts (rainfall, soil, etc.)")
+                    residue_burning = st.selectbox("Agro-residue Burning Issues?", ["Yes", "No"])
+
+                with st.expander("🏛️ Governance & Institutional Capacity"):
+                    climate_cell = st.selectbox("Dedicated Climate Cell Exists?", ["Yes", "No"])
+                    budget_alloc = st.slider("Budget Allocation for Climate (%)", 0, 20, 5)
+                    public_awareness = st.selectbox("Public Awareness on Climate Issues", ["Low", "Medium", "High"])
+
+            # -------------------
+            # 10. Upload + Submit
+            # -------------------
+            with tabs[9]:
                 st.markdown("### Upload Supporting Documents")
                 file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf", "xlsx", "csv"])
 
                 submit_cap = st.form_submit_button("Generate GHG Inventory")
 
                 if submit_cap:
-                    # ✅ Validation for required fields
-                    if not city or not state or population <= 0 or inventory_year <= 0:
-                        st.error("⚠️ Please fill in required fields: City, State, Population, Year of Inventory.")
+                    if not city or population <= 0 or inventory_year <= 0:
+                        st.error("⚠️ Please fill in required fields: City, Population, Year of Inventory.")
                     else:
                         raw_data = {
                             "City": city,
@@ -1152,61 +1199,33 @@ if menu == "CAP Generation":
                             "Area_km2": area_km2,
                             "Admin_Type": admin_type,
                             "Inventory_Year": inventory_year,
-                            "Municipal_Electricity": municipal_electricity,
-                            "Residential_Electricity": residential_electricity,
-                            "Commercial_Electricity": commercial_electricity,
-                            "Industrial_Electricity": industrial_electricity,
-                            "Purchased_Heat_GJ": purchased_heat_gj,
-                            "Diesel_Gen_MWh": diesel_gen_mwh,
-                            "Solar_MWh": solar_mwh,
-                            "Wind_MWh": wind_mwh,
-                            "Biomass_MWh": biomass_mwh,
-                            "Diesel_L": diesel_l,
-                            "Petrol_L": petrol_l,
-                            "LPG_L": lpg_l,
-                            "Natural_Gas_m3": natural_gas_m3,
-                            "Coal_t": coal_t,
-                            "Cars": cars,
-                            "Buses": buses,
-                            "Trucks": trucks,
-                            "Two_Wheelers": two_wheelers,
-                            "Avg_Km_Cars": avg_km_cars,
-                            "Avg_Km_Buses": avg_km_buses,
-                            "Avg_Km_Trucks": avg_km_trucks,
-                            "Avg_Km_2W": avg_km_2w,
-                            "Freight_Distance_km": freight_distance_km,
-                            "Freight_Fuel_Diesel_L": freight_fuel_diesel_l,
-                            "Freight_Fuel_CNG_m3": freight_fuel_cng_m3,
-                            "Freight_Fuel_Electric_MWh": freight_fuel_electric_mwh,
-                            "MSW_tons": msw_tons,
-                            "Landfill_Frac": landfill_frac,
-                            "Recycling_Frac": recycling_frac,
-                            "Compost_Frac": compost_frac,
-                            "Incineration_Frac": incineration_frac,
-                            "Landfill_Methane_Capture": landfill_methane_capture,
-                            "Sewage_m3": sewage_m3,
-                            "Treatment_Type": treatment_type,
-                            "Sludge_tons": sludge_tons,
-                            "Energy_Wastewater_kWh": energy_wastewater_kwh,
-                            "Coal_Ind_t": coal_ind,
-                            "Gas_Ind_m3": gas_ind,
-                            "Electricity_Ind_kWh": electricity_ind,
-                            "Biomass_Ind_t": biomass_ind,
-                            "Cropland_ha": cropland_ha,
-                            "Livestock_Count": livestock_count,
-                            "Manure_Management": manure_management,
-                            "Fertilizer_tons": fertilizer_tons,
-                            "Afforestation_ha": afforestation_ha,
-                            "Deforestation_ha": deforestation_ha,
-                            "Soil_Carbon_Sequestration": soil_carbon_sequestration,
-                            "Street_Lights_Count": street_lights_count,
-                            "Street_Lights_Energy": street_lights_energy,
-                            "Municipal_Fleet_Fuel": municipal_fleet_fuel,
-                            "Water_Pumping_Energy": water_pumping_energy,
-                            "Cooling_Heating_Energy": cooling_heating_energy,
-                            "Air_Pollution_Reduction": air_pollution_reduction,
-                            "Renewable_Energy_Share": renewable_energy_share,
-                            "Water_Usage": water_usage,
+                            # sectoral priorities
+                            "Renewable_Share": renewable_share,
+                            "Reliability": reliability,
+                            "Rooftop_Potential": rooftop_potential,
+                            "EV_Infra": ev_infra,
+                            "Congestion": congestion,
+                            "NMT_Infra": nmt_infra,
+                            "Waste_Segregation": waste_segregation,
+                            "Landfill_Condition": landfill_condition,
+                            "Flooding_from_Waste": flooding_from_waste,
+                            "Average_Rainfall": avg_rainfall,
+                            "Flood_Prone": flood_prone,
+                            "Drought_Risk": drought_risk,
+                            "Drainage_System": drainage_system,
+                            "Green_Buildings": green_buildings,
+                            "Heat_Island": heat_island,
+                            "Infra_Risk": infra_risk,
+                            "Major_Industries": major_industries,
+                            "Compliance": compliance,
+                            "Local_Economy": local_economy,
+                            "Crop_Patterns": crop_patterns,
+                            "Climate_Impacts": climate_impacts,
+                            "Residue_Burning": residue_burning,
+                            "Climate_Cell": climate_cell,
+                            "Budget_Alloc": budget_alloc,
+                            "Public_Awareness": public_awareness,
+                            # file
                             "File": file_upload.name if file_upload else None,
                             "Submission_Date": datetime.now()
                         }
