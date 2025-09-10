@@ -438,7 +438,7 @@ menu = st.session_state.menu
 
 
 # ---------------------------
-# Home Page: Maharashtra Dashboard (Professional SaaS Look)
+# Home Page: Maharashtra Dashboard
 # ---------------------------
 if menu == "Home":
     st.header("Maharashtra's Net Zero Journey")
@@ -546,7 +546,7 @@ if menu == "Home":
         cols = st.columns(4)
         render_card(cols[0], "CAP Status", cap_status, is_input=True,
                     bg_color={"completed":"#28A745","in progress":"#FFA500","not started":"#FF3B3B"}.get(str(cap_status).lower(), "#34495E"))
-        render_card(cols[1], "CAP Link", f"<a href='{cap_link}' target='_blank' style='color:#ECEFF1;text-decoration:underline;'>Open Document</a>" if cap_link else "—")
+        render_card(cols[1], "Link", f"<a href='{cap_link}' target='_blank' style='color:#ECEFF1;text-decoration:underline;'>View CAP</a>" if cap_link else "—")
         render_card(cols[2], "GHG Emissions (tCO2e)", format_indian_number(ghg_total), is_input=True)
         render_card(cols[3], "Estimated GHG by Population", format_indian_number(est_ghg), is_input=True)
 
