@@ -311,7 +311,7 @@ def admin_login():
                 st.error("Incorrect password")
 
 # ---------------------------
-# Sidebar (Premium SaaS Dark Gradient Style)
+# Sidebar
 # ---------------------------
 st.markdown("""
 <style>
@@ -406,7 +406,7 @@ st.sidebar.image(
 # ---------------------------
 menu_items = [("Home", "Home"), ("City Information", "City Information"), ("Admin", "Admin")]
 if st.session_state.authenticated:
-    menu_items.append(("CAP Generation", "CAP Generation"))
+    menu_items.append(("CAP Generation", "Generate CAP"))
 
 for label, page_name in menu_items:
     is_active = st.session_state.menu == page_name
