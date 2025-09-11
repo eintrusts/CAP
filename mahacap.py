@@ -1453,7 +1453,6 @@ if st.button("View Actions / Goals to Achieve Net-Zero by 2050"):
 
 
 
-
 # ---------------------------
 # Actions
 # ---------------------------
