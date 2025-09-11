@@ -1246,174 +1246,164 @@ if menu == "Generate CAP":
 
                 
 # ---------------------------
-# GHG Inventory Page
+# GHG Inventory Page (Professional Layout)
 # ---------------------------
+
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
-import locale
 
-# --- Indian number format ---
-try:
-    locale.setlocale(locale.LC_ALL, 'en_IN.UTF-8')
-except:
-    locale.setlocale(locale.LC_ALL, '')
+# --- Helper: Indian number format ---
+def inr_format(num):
+    if pd.isna(num):
+        return "N/A"
+    return "{:,.0f}".format(num)
 
-# --- Page Config ---
-st.set_page_config(page_title="GHG Inventory", layout="wide")
+# --- Function to calculate emissions ---
+def calculate_emissions(cap_row):
+    # Section-wise totals
+    emissions = {}
 
-# --- Admin check ---
-if not st.session_state.get("authenticated", False):
-    st.warning("Please login to access this page.")
-else:
-    st.header("🌍 GHG Inventory Dashboard")
+    # Energy sector
+    emissions['Energy'] = (
+        cap_row.get("Residential Electricity (MWh)",0)+
+        cap_row.get("Commercial Electricity (MWh)",0)+
+        cap_row.get("Industrial Electricity (MWh)",0)+
+        cap_row.get("Municipal Electricity (MWh)",0)+
+        cap_row.get("Purchased Heat (GJ)",0)*0.073+
+        cap_row.get("Diesel Gen (L/year)",0)*0.00268+
+        cap_row.get("Gas Turbine Fuel (m3/year)",0)*1.95
+    )
 
-    # --- Load CAP data (auto pull latest submission) ---
-    cap_df = st.session_state.get("cap_data", pd.DataFrame())
+    # Green Cover / Urban forestry
+    emissions['Green Cover'] = (
+        cap_row.get("Urban Green Area (ha)",0)*0.01 +  # Dummy factor for CO2 storage
+        cap_row.get("Tree Canopy (%)",0)*0.02
+    )
 
-    if cap_df.empty:
-        st.warning("No CAP data found. Submit from CAP Generation first.")
-    else:
-        city_data = cap_df.iloc[-1]
-        city_name = city_data.get("City Name", "Unknown City")
+    # Mobility / Transport
+    emissions['Mobility'] = (
+        cap_row.get("Cars",0)*cap_row.get("Avg Km Cars",0)*0.00024 +
+        cap_row.get("Buses",0)*cap_row.get("Avg Km Buses",0)*0.00027 +
+        cap_row.get("Trucks",0)*cap_row.get("Avg Km Trucks",0)*0.00035 +
+        cap_row.get("Two Wheelers",0)*cap_row.get("Avg Km 2W",0)*0.00012
+    )
 
-        # --- 1. Calculate Emissions ---
-        # Emission Factors (IPCC / NPC India)
-        EF_electricity = 0.82
-        EF_diesel = 2.68 / 1000
-        EF_gas = 2.0 / 1000
-        EF_waste = 0.5 / 1000
-        EF_water = 0.0005
-        EF_transport_diesel = 2.68 / 1000
-        EF_transport_electricity = 0.82 / 1000
+    # Water (energy for pumping / treatment, flood adaptation)
+    emissions['Water'] = (
+        cap_row.get("Planned Water Storage (m3)",0)*0.001 +  # Dummy factor
+        cap_row.get("Percent Flood Prone (%)",0)*0.01
+    )
 
-        # Energy
-        energy_sub = {
-            "Residential": city_data.get("Residential Electricity (MWh)",0)*EF_electricity,
-            "Commercial": city_data.get("Commercial Electricity (MWh)",0)*EF_electricity,
-            "Industrial": city_data.get("Industrial Electricity (MWh)",0)*EF_electricity,
-            "Municipal": city_data.get("Municipal Electricity (MWh)",0)*EF_electricity,
-            "Diesel Gen": city_data.get("Diesel Gen (L/year)",0)*EF_diesel,
-            "Gas Turbine": city_data.get("Gas Turbine Fuel (m3/year)",0)*EF_gas
-        }
-        energy_emissions = sum(energy_sub.values())
+    # Waste
+    emissions['Waste'] = cap_row.get("MSW (tons/year)",0)*0.25
 
-        # Mobility
-        mobility_sub = {
-            "Freight Diesel": city_data.get("Freight Diesel (L)",0)*EF_transport_diesel,
-            "Freight Electricity": city_data.get("Freight Electricity (MWh)",0)*EF_transport_electricity
-        }
-        mobility_emissions = sum(mobility_sub.values())
+    # Total
+    emissions['Total'] = sum(emissions.values())
+    return emissions
 
-        # Water
-        water_sub = {"Water Energy": city_data.get("Energy for Water (kWh)",0)*EF_water}
-        water_emissions = sum(water_sub.values())
+# --- PDF Report Generation ---
+def generate_pdf(cap_row, emissions, sector_charts):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0,10,f"GHG Inventory Report - {cap_row['City Name']}",ln=True,align='C')
+    pdf.ln(5)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0,10,f"Date: {datetime.now().strftime('%d-%m-%Y')}",ln=True)
+    pdf.ln(5)
 
-        # Waste
-        waste_sub = {"MSW": city_data.get("MSW (tons/year)",0)*1000*EF_waste}
-        waste_emissions = sum(waste_sub.values())
+    pdf.cell(0,10,"--- Emissions Summary (tCO2e) ---",ln=True)
+    for k,v in emissions.items():
+        pdf.cell(0,8,f"{k}: {inr_format(v)}",ln=True)
+    pdf.ln(10)
+    pdf.cell(0,10,"--- Sectional Charts ---",ln=True)
 
-        # Green Cover
-        green_sub = {"Green Cover": 0}
-        green_emissions = 0
+    for title, fig in sector_charts.items():
+        img_bytes = fig.to_image(format="png")
+        img_file = BytesIO(img_bytes)
+        pdf.image(img_file, w=180)
+        pdf.ln(10)
 
-        # Total
-        total_emissions = energy_emissions + mobility_emissions + water_emissions + waste_emissions + green_emissions
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+    return pdf_output
 
-        # --- 2. Top Metrics Block ---
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-        col1.metric("Total Emissions (tCO2e)", locale.format_string("%.2f", total_emissions, grouping=True))
-        col2.metric("Energy", locale.format_string("%.2f", energy_emissions, grouping=True))
-        col3.metric("Mobility", locale.format_string("%.2f", mobility_emissions, grouping=True))
-        col4.metric("Water", locale.format_string("%.2f", water_emissions, grouping=True))
-        col5.metric("Waste", locale.format_string("%.2f", waste_emissions, grouping=True))
-        col6.metric("Green Cover", locale.format_string("%.2f", green_emissions, grouping=True))
-        st.markdown("---")
+# --- Main Page ---
+st.header("GHG Inventory Dashboard")
 
-        # --- 3. Sector Pie Chart ---
-        pie_df = pd.DataFrame({
-            "Sector": ["Energy","Mobility","Water","Waste","Green Cover"],
-            "Emissions": [energy_emissions, mobility_emissions, water_emissions, waste_emissions, green_emissions]
-        })
-        fig_pie = px.pie(pie_df, names="Sector", values="Emissions",
-                         title="Sector-wise Emissions Share", template="plotly_dark")
-        st.plotly_chart(fig_pie, use_container_width=True)
-        st.markdown("---")
+# Load CAP data from session_state
+cap_df = st.session_state.get("cap_data", pd.DataFrame())
+if cap_df.empty:
+    st.warning("No CAP data found. Please submit CAP Generation data first.")
+    st.stop()
 
-        # --- 4. Sectoral Bar Charts ---
-        def plot_bar(sub_dict, title):
-            fig = px.bar(x=list(sub_dict.keys()), y=list(sub_dict.values()),
-                         title=title, template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
-            return fig
+cap_row = cap_df.iloc[-1]  # latest submission
+emissions = calculate_emissions(cap_row)
 
-        fig_energy = plot_bar(energy_sub, "Energy Sector Emissions (tCO2e)")
-        fig_mobility = plot_bar(mobility_sub, "Mobility Sector Emissions (tCO2e)")
-        fig_water = plot_bar(water_sub, "Water Sector Emissions (tCO2e)")
-        fig_waste = plot_bar(waste_sub, "Waste Sector Emissions (tCO2e)")
+# --- Top Block: Section-wise + Total Emissions ---
+st.subheader("Section-wise Emissions")
+cols = st.columns(6)
+sections = ['Energy','Green Cover','Mobility','Water','Waste','Total']
+for i,col in enumerate(cols):
+    col.metric(label=sections[i], value=inr_format(emissions[sections[i]]) + " tCO2e")
 
-        st.markdown("---")
+# --- Section-wise Bar Chart ---
+bar_fig = px.bar(
+    x=['Energy','Green Cover','Mobility','Water','Waste'],
+    y=[emissions['Energy'],emissions['Green Cover'],emissions['Mobility'],emissions['Water'],emissions['Waste']],
+    text=[inr_format(emissions['Energy']),inr_format(emissions['Green Cover']),inr_format(emissions['Mobility']),
+          inr_format(emissions['Water']),inr_format(emissions['Waste'])],
+    labels={"x":"Section","y":"tCO2e"},
+    title="Section-wise GHG Emissions"
+)
+bar_fig.update_layout(template="plotly_dark")
+st.plotly_chart(bar_fig, use_container_width=True)
 
-        # --- 5. Radar Chart ---
-        radar_categories = ["Energy","Green Cover","Mobility","Water","Waste"]
-        radar_values = [energy_emissions, green_emissions, mobility_emissions, water_emissions, waste_emissions]
+# --- Section-wise Pie Chart ---
+pie_fig = px.pie(
+    names=['Energy','Green Cover','Mobility','Water','Waste'],
+    values=[emissions['Energy'],emissions['Green Cover'],emissions['Mobility'],emissions['Water'],emissions['Waste']],
+    title="Emission Share by Section"
+)
+pie_fig.update_layout(template="plotly_dark")
+st.plotly_chart(pie_fig, use_container_width=True)
 
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(
-            r=radar_values,
-            theta=radar_categories,
-            fill='toself',
-            name=city_name
-        ))
-        fig_radar.update_layout(
-            polar=dict(radialaxis=dict(visible=True)),
-            showlegend=False,
-            template="plotly_dark",
-            title="Sectoral Emissions Radar Chart"
-        )
-        st.plotly_chart(fig_radar, use_container_width=True)
-        st.markdown("---")
+# --- Radar Chart for priorities ---
+radar_labels = ["Flood-prone %","Rooftop Solar Potential MW","Tree Canopy %","EV Penetration %","Waste Segregation %"]
+radar_values = [
+    cap_row.get("Percent Flood Prone (%)",0),
+    cap_row.get("Rooftop Solar Potential (MW)",0),
+    cap_row.get("Tree Canopy (%)",0),
+    cap_row.get("EV Penetration (%)",0),
+    cap_row.get("Percent Recycled (%)",0)
+]
 
-        # --- 6. PDF Export ---
-        def generate_pdf():
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", "B", 16)
-            pdf.cell(0, 10, f"GHG Inventory Report: {city_name}", ln=True, align="C")
-            pdf.ln(10)
-            pdf.set_font("Arial", "", 12)
-            pdf.cell(0, 10, f"Total Emissions (tCO2e): {locale.format_string('%.2f', total_emissions, grouping=True)}", ln=True)
-            pdf.ln(5)
-            for sector, val in zip(pie_df["Sector"], pie_df["Emissions"]):
-                pdf.cell(0, 10, f"{sector}: {locale.format_string('%.2f', val, grouping=True)} tCO2e", ln=True)
+radar_fig = go.Figure()
+radar_fig.add_trace(go.Scatterpolar(r=radar_values, theta=radar_labels, fill='toself', name=cap_row['City Name']))
+radar_fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0,100])), template="plotly_dark",
+                        title="Sectoral Priorities Radar Chart")
+st.plotly_chart(radar_fig, use_container_width=True)
 
-            # Charts
-            for fig in [fig_pie, fig_energy, fig_mobility, fig_water, fig_waste, fig_radar]:
-                img = BytesIO()
-                fig.write_image(img, format="png")
-                img.seek(0)
-                pdf.image(img, x=10, w=pdf.w-20)
+# --- PDF Export ---
+sector_charts = {'Bar Chart':bar_fig,'Pie Chart':pie_fig,'Radar Chart':radar_fig}
+st.markdown("---")
+st.subheader("Export PDF Report")
+if st.button("Generate PDF Report"):
+    pdf_data = generate_pdf(cap_row, emissions, sector_charts)
+    st.download_button("Download GHG Inventory PDF", data=pdf_data, file_name=f"GHG_Report_{cap_row['City Name']}.pdf", mime="application/pdf")
 
-            pdf_output = BytesIO()
-            pdf.output(pdf_output)
-            pdf_output.seek(0)
-            return pdf_output
-
-        st.download_button(
-            label="Download CAP Summary Report",
-            data=generate_pdf(),
-            file_name=f"{city_name}_GHG_Inventory.pdf",
-            mime="application/pdf"
-        )
-
-        # --- 7. View Actions Button ---
-        if st.button("View Actions / Goals"):
-            st.session_state.menu = "Actions"
-            st.experimental_rerun()
+# --- View Actions Button ---
+st.markdown("---")
+if st.button("View Actions / Goals to Achieve Net-Zero by 2050"):
+    st.session_state.menu = "Actions"
+    st.experimental_rerun()
 
 
 
