@@ -1847,20 +1847,12 @@ def render_ghg_inventory():
     # --- View Actions button (redirect to Actions / Goals) ---
     st.markdown("---")
     if st.button("View Actions / Goals"):
-        st.session_state.menu = "Actions / Goals"
+        st.session_state.menu = "Actions"
         st.experimental_rerun()
 
 # When imported, render_ghg_inventory is available. Call from your main file:
 # from ghg_inventory import render_ghg_inventory
 # if menu == "GHG Inventory": render_ghg_inventory()
-
-
-    # -------------------------
-    # View Actions Button
-    # -------------------------
-    if st.button("➡️ View Actions"):
-        st.session_state["menu"] = "Actions"
-        st.experimental_rerun()
 
 
 
