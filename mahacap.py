@@ -986,7 +986,6 @@ if menu == "Generate CAP":
             # -------------------
             with st.expander("1. Basic City Information", expanded=True):
                 city = st.selectbox("City Name", list(cities_districts.keys()))
-                state = st.text_input("State / Province", value="")
                 population = st.number_input("Total Population", min_value=0, value=0, step=1000)
                 households = st.number_input("Number of Households", min_value=0, value=0, step=100)
                 area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
@@ -1138,7 +1137,6 @@ if menu == "Generate CAP":
                         # Build single standardized record (column names chosen to be consistent)
                         raw_data = {
                             "City Name": city,
-                            "State": state,
                             "Population": population,
                             "Households": households,
                             "Area_km2": area_km2,
