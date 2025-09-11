@@ -1407,7 +1407,7 @@ else:
     # -------------------
     st.markdown("---")
     if st.button("View Actions / Goals to Achieve Net-Zero by 2050"):
-        st.session_state.menu = "Actions / Goals"
+        st.session_state.menu = "Actions"
         st.experimental_rerun()
 
 
