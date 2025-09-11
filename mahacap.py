@@ -1573,8 +1573,8 @@ with col_nav:
     if st.button("← Back to CAP Generation"):
         st.session_state.menu = "CAP Generation"
         st.experimental_rerun()
-    if st.button("View Actions / Goals"):
-        st.session_state.menu = "Actions / Goals"
+    if st.button("View Actions"):
+        st.session_state.menu = "Actions"
         st.experimental_rerun()
 
 # End of page
@@ -1583,7 +1583,7 @@ with col_nav:
 # ---------------------------
 # Actions
 # ---------------------------
-elif menu == "Actions / Goals":
+elif menu == "Actions":
     st.header("City Climate Action Goals for Net Zero by 2050")
     st.markdown("""
     This page summarizes **sector-wise short, mid, and long-term goals** for achieving net-zero emissions by 2050.
