@@ -1128,7 +1128,7 @@ if menu == "Generate CAP":
                 notes = st.text_area("Any additional notes / clarifications (optional)", value="", height=120)
 
                 # Submit button
-                submit_cap = st.form_submit_button("Save & Generate GHG Inventory")
+                submit_cap = st.form_submit_button("Generate GHG Inventory")
 
                 if submit_cap:
                     # Basic validation: require minimal key fields (optional: make all optional if you prefer)
