@@ -1248,6 +1248,91 @@ if menu == "Generate CAP":
 # ---------------------------
 # GHG Inventory Page
 # ---------------------------
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+from io import BytesIO
+from fpdf import FPDF
+
+# --- Helper: Indian number format ---
+def inr_format(num):
+    if pd.isna(num):
+        return "N/A"
+    return "{:,.0f}".format(num)
+
+# --- Function to calculate emissions ---
+def calculate_emissions(cap_row):
+    # Section-wise totals
+    emissions = {}
+
+    # Energy sector
+    emissions['Energy'] = (
+        cap_row.get("Residential Electricity (MWh)",0)+
+        cap_row.get("Commercial Electricity (MWh)",0)+
+        cap_row.get("Industrial Electricity (MWh)",0)+
+        cap_row.get("Municipal Electricity (MWh)",0)+
+        cap_row.get("Purchased Heat (GJ)",0)*0.073+
+        cap_row.get("Diesel Gen (L/year)",0)*0.00268+
+        cap_row.get("Gas Turbine Fuel (m3/year)",0)*1.95
+    )
+
+    # Green Cover / Urban forestry
+    emissions['Green Cover'] = (
+        cap_row.get("Urban Green Area (ha)",0)*0.01 +  # Dummy factor for CO2 storage
+        cap_row.get("Tree Canopy (%)",0)*0.02
+    )
+
+    # Mobility / Transport
+    emissions['Mobility'] = (
+        cap_row.get("Cars",0)*cap_row.get("Avg Km Cars",0)*0.00024 +
+        cap_row.get("Buses",0)*cap_row.get("Avg Km Buses",0)*0.00027 +
+        cap_row.get("Trucks",0)*cap_row.get("Avg Km Trucks",0)*0.00035 +
+        cap_row.get("Two Wheelers",0)*cap_row.get("Avg Km 2W",0)*0.00012
+    )
+
+    # Water (energy for pumping / treatment, flood adaptation)
+    emissions['Water'] = (
+        cap_row.get("Planned Water Storage (m3)",0)*0.001 +  # Dummy factor
+        cap_row.get("Percent Flood Prone (%)",0)*0.01
+    )
+
+    # Waste
+    emissions['Waste'] = cap_row.get("MSW (tons/year)",0)*0.25
+
+    # Total
+    emissions['Total'] = sum(emissions.values())
+    return emissions
+
+# --- PDF Report Generation ---
+def generate_pdf(cap_row, emissions, sector_charts):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0,10,f"GHG Inventory Report - {cap_row['City Name']}",ln=True,align='C')
+    pdf.ln(5)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0,10,f"Date: {datetime.now().strftime('%d-%m-%Y')}",ln=True)
+    pdf.ln(5)
+
+    pdf.cell(0,10,"--- Emissions Summary (tCO2e) ---",ln=True)
+    for k,v in emissions.items():
+        pdf.cell(0,8,f"{k}: {inr_format(v)}",ln=True)
+    pdf.ln(10)
+    pdf.cell(0,10,"--- Sectional Charts ---",ln=True)
+
+    for title, fig in sector_charts.items():
+        img_bytes = fig.to_image(format="png")
+        img_file = BytesIO(img_bytes)
+        pdf.image(img_file, w=180)
+        pdf.ln(10)
+
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+    return pdf_output
 
 def ghg_inventory_page():
     st.header("GHG Inventory Dashboard")
