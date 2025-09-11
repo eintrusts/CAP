@@ -1247,388 +1247,165 @@ if menu == "Generate CAP":
                 
 
 # ---------------------------
-# GHG Inventory Page 
+# GHG Inventory Page
 # ---------------------------
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
-import io
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
+import os
+from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
 
-st.set_page_config(page_title="GHG Inventory", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="GHG Inventory", page_icon="🌍", layout="wide")
 
-# ---------- Dark theme CSS for page consistency ----------
-st.markdown(
-    """
-    <style>
-    .stApp { background-color: #151523; color: #E6E6E6; }
-    .block-title { color: #CFD8DC; font-weight:600; }
-    .small-note { color:#B0BEC5; font-size:12px; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ---------- Helper: Indian number format (no decimals) ----------
-def format_indian_number(x):
-    try:
-        n = int(round(float(x)))
-        s = str(n)[::-1]
-        parts = [s[:3]]
-        s = s[3:]
-        while s:
-            parts.append(s[:2])
-            s = s[2:]
-        return ','.join(parts)[::-1]
-    except:
-        return str(x)
-
-# ---------- Check cap_data availability ----------
-if "cap_data" not in st.session_state or st.session_state.get("cap_data") is None or st.session_state["cap_data"].empty:
-    st.warning("No CAP raw data found in session. Please submit raw data in 'CAP Generation' (admin) first.")
-    if st.button("Go to CAP Generation"):
-        st.session_state.menu = "CAP Generation"
-        st.experimental_rerun()
+# ---------------------------
+# Load CAP Data
+# ---------------------------
+if "cap_data" not in st.session_state or st.session_state.cap_data is None:
+    st.error("⚠️ No CAP raw data found. Please complete CAP Generation first.")
     st.stop()
 
-# Use last submitted record (most recent)
-cap_df = st.session_state["cap_data"].copy()
-# Ensure uniform column names (strip)
-cap_df.columns = [c.strip() for c in cap_df.columns]
-record = cap_df.iloc[-1].to_dict()  # pick latest entry; modify if want selection
+df = st.session_state.cap_data.copy()
 
-city_name = record.get("City Name") or record.get("City") or "Selected City"
-st.title(f"GHG Inventory — {city_name}")
-st.caption("Generated from CAP raw inputs (session). Emission factors aligned to IPCC / NPC-India guidance (see notes).")
+# ---------------------------
+# Helper: Save Plot as PNG
+# ---------------------------
+def save_plot(fig, filename):
+    path = os.path.join("charts", filename)
+    os.makedirs("charts", exist_ok=True)
+    fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="#1E1E2F")
+    plt.close(fig)
+    return path
 
-# ---------- Emission factors & conversion notes ----------
-# NOTE: These are illustrative commonly-used factors. For audit-level work, replace with official NPC/India tables.
-efs = {
-    # electricity: tCO2 per MWh (grid average). Replace with year-specific grid EF if available.
-    "EF_electricity_tCO2_per_MWh": 0.82,
-    # fuels: tCO2 per kL (i.e., per 1000 L). We'll convert liters -> kL by dividing by 1000.
-    "EF_diesel_tCO2_per_kL": 2.68,
-    "EF_petrol_tCO2_per_kL": 2.31,
-    # natural gas (approx. tCO2 / m3)
-    "EF_natural_gas_tCO2_per_m3": 0.0019,
-    # LPG: using tCO2 per tonne ~2.98 tCO2/t and density ~0.54 kg/L -> per L = 2.98 * 0.001 /0.54 ≈ 0.00552? 
-    # To avoid large errors we use an approximate per-L EF below (conservative); replace with exact if available.
-    "EF_lpg_tCO2_per_L": 0.0016,
-    # coal per tonne
-    "EF_coal_tCO2_per_t": 2.40,
-    # wastewater / landfill: very approximate methane potential per ton of waste (tCO2e/t)
-    "EF_landfill_tCO2e_per_t": 0.1,   # conservative simplified proxy; replace with IPCC methane calcs for accuracy
-    "EF_sludge_tCO2e_per_t": 0.02
+# ---------------------------
+# Emission Factor References (IPCC/NPC India aligned)
+# ---------------------------
+emission_factors = {
+    "Electricity": 0.82,   # kgCO2/kWh (India CEA 2023)
+    "Petrol": 2.32,        # kgCO2/litre
+    "Diesel": 2.68,        # kgCO2/litre
+    "LPG": 2.98,           # kgCO2/kg
+    "Waste": 1.2,          # tCO2/tonne (avg MSW)
+    "Water": 0.34          # kgCO2/m³ treated (pumping + treatment)
 }
 
-# ---------- Default vehicle fuel economy assumptions (used only if fuels not provided) ----------
-defaults = {
-    "car_km_per_l": 15.0,      # km per litre (petrol)
-    "two_wheeler_km_per_l": 45.0,
-    "bus_km_per_l": 3.0,
-    "truck_km_per_l": 3.0
-}
+# ---------------------------
+# GHG Calculations
+# ---------------------------
+def calculate_emissions(df):
+    emissions = {}
+    try:
+        emissions["Electricity"] = df.get("Electricity Consumption (MWh)", 0) * 1000 * emission_factors["Electricity"] / 1000
+        emissions["Petrol"] = df.get("Petrol Consumption (litres)", 0) * emission_factors["Petrol"] / 1000
+        emissions["Diesel"] = df.get("Diesel Consumption (litres)", 0) * emission_factors["Diesel"] / 1000
+        emissions["LPG"] = df.get("LPG Consumption (kg)", 0) * emission_factors["LPG"] / 1000
+        emissions["Waste"] = df.get("Waste Generated (tonnes)", 0) * emission_factors["Waste"]
+        emissions["Water"] = df.get("Wastewater Treated (MLD)", 0) * 365 * 1000 * emission_factors["Water"] / 1000
+    except Exception as e:
+        st.warning(f"Calculation error: {e}")
+        return {}
+    return emissions
 
-assumptions_used = []
+emissions = calculate_emissions(df)
 
-# ---------- Utility to safely fetch numeric fields from record ----------
-def getnum(key, unit_multiplier=1.0):
-    """Return float value or 0. Accepts multiple likely keys."""
-    v = 0
-    if key in record:
-        try:
-            v = float(record.get(key) if record.get(key) != "" else 0)
-        except:
-            v = 0
-    return v * unit_multiplier
+# ---------------------------
+# Charts Section
+# ---------------------------
+st.title("GHG Inventory Dashboard")
 
-# ---------- Sector emission calculations ----------
-sector_emissions = {}
+col1, col2 = st.columns(2)
 
-# 1) Energy (electricity + stationary fuels + on-site generation)
-# Electricity consumption fields in CAP form (MWh)
-elec_fields = [
-    ("Municipal Electricity (MWh)", "Municipal Electricity (MWh)"),
-    ("Residential Electricity (MWh)", "Residential Electricity (MWh)"),
-    ("Commercial Electricity (MWh)", "Commercial Electricity (MWh)"),
-    ("Industrial Electricity (MWh)", "Industrial Electricity (MWh)"),
-    ("Rooftop Solar (MWh)", "Rooftop Solar (MWh)"),
-    ("Utility Solar (MWh)", "Utility Solar (MWh)")
-]
+# 1. Emissions Breakdown Pie
+with col1:
+    if emissions:
+        fig1, ax1 = plt.subplots(figsize=(5, 5), facecolor="#1E1E2F")
+        ax1.pie(emissions.values(), labels=emissions.keys(), autopct="%1.1f%%", textprops={"color": "white"})
+        ax1.set_title("Sectoral Emission Contribution", color="white")
+        st.pyplot(fig1)
+        emissions_pie_path = save_plot(fig1, "emissions_pie.png")
 
-total_electricity_mwh = 0.0
-for k, _ in elec_fields:
-    total_electricity_mwh += getnum(k)
+# 2. Sectoral Priorities Radar
+with col2:
+    priorities = {
+        "Flood-prone Area %": df.get("Flood Prone %", 0),
+        "Rooftop Solar Potential (MW)": df.get("Rooftop Solar Potential (MW)", 0),
+        "Green Cover %": df.get("Green Cover %", 0),
+        "Public Transport Share %": df.get("Public Transport Share %", 0),
+        "Waste Segregation %": df.get("Waste Segregation %", 0),
+        "Non-revenue Water %": df.get("Non-Revenue Water %", 0),
+    }
+    labels = list(priorities.keys())
+    values = list(priorities.values())
+    values += values[:1]  # close loop
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    angles += angles[:1]
 
-# On-site generator fuels (L/year)
-diesel_L = getnum("Diesel (L)") or getnum("Diesel_L") or getnum("Diesel Gen (L/year)")
-petrol_L = getnum("Petrol (L)") or getnum("Petrol_L")
-lpg_L = getnum("LPG (L)") or getnum("LPG_L")
+    fig2, ax2 = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True), facecolor="#1E1E2F")
+    ax2.plot(angles, values, color="lime", linewidth=2)
+    ax2.fill(angles, values, color="lime", alpha=0.25)
+    ax2.set_yticklabels([])
+    ax2.set_xticks(angles[:-1])
+    ax2.set_xticklabels(labels, color="white")
+    ax2.set_title("Sectoral Resilience Priorities", color="white")
+    st.pyplot(fig2)
+    radar_path = save_plot(fig2, "radar.png")
 
-# Natural gas m3, coal tons
-natural_gas_m3 = getnum("Natural Gas (m3)") or getnum("Natural_Gas_m3") or getnum("Gas_Ind_m3")
-coal_t = getnum("Coal (tons)") or getnum("Coal_t") or getnum("Coal_Ind_t")
+# ---------------------------
+# PDF Report Generator
+# ---------------------------
+def generate_pdf(df, emissions, charts):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
 
-# Compute electricity emissions
-elec_emissions = total_electricity_mwh * efs["EF_electricity_tCO2_per_MWh"]
-sector_emissions["Energy & Buildings (electricity)"] = elec_emissions
+    story.append(Paragraph("<b>City Climate Action Plan - GHG Inventory</b>", styles["Title"]))
+    story.append(Spacer(1, 12))
 
-# Compute stationary fuel emissions (convert liters -> kL)
-diesel_kL = diesel_L / 1000.0
-petrol_kL = petrol_L / 1000.0
-diesel_em = diesel_kL * efs["EF_diesel_tCO2_per_kL"]
-petrol_em = petrol_kL * efs["EF_petrol_tCO2_per_kL"]
+    # City info
+    story.append(Paragraph("<b>City Information:</b>", styles["Heading2"]))
+    for col in ["City Name", "Population", "Area (sq.km)", "Baseline Year"]:
+        if col in df:
+            story.append(Paragraph(f"{col}: {df[col]}", styles["Normal"]))
+    story.append(Spacer(1, 12))
 
-# LPG estimate (per L)
-lpg_em = lpg_L * efs["EF_lpg_tCO2_per_L"]
-ng_em = natural_gas_m3 * efs["EF_natural_gas_tCO2_per_m3"]
-coal_em = coal_t * efs["EF_coal_tCO2_per_t"]
+    # Emissions summary
+    story.append(Paragraph("<b>GHG Emissions (tCO₂e):</b>", styles["Heading2"]))
+    for k, v in emissions.items():
+        story.append(Paragraph(f"{k}: {v:,.2f}", styles["Normal"]))
+    story.append(Spacer(1, 12))
 
-stationary_emissions = diesel_em + petrol_em + lpg_em + ng_em + coal_em
-sector_emissions["Energy & Buildings (stationary fuels)"] = stationary_emissions
+    # Add charts
+    for chart in charts:
+        story.append(Image(chart, width=400, height=300))
+        story.append(Spacer(1, 12))
 
-# Total Energy sector
-sector_emissions["Energy & Buildings (total)"] = elec_emissions + stationary_emissions
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
-# 2) Transport sector
-# If explicit fuel volumes provided, use them; else estimate fuel from vehicle counts + km + defaults.
-transport_emissions = 0.0
+charts = [emissions_pie_path, radar_path]
+pdf_buffer = generate_pdf(df, emissions, charts)
 
-# Try to fetch fuel volumes used in CAP form for freight/transport
-freight_diesel_L = getnum("Freight Fuel Diesel (L)") or getnum("Freight_Fuel_Diesel_L") or getnum("Freight Diesel (L/year)")
-transport_diesel_L = 0.0
-transport_petrol_L = 0.0
-
-# vehicle counts & km
-cars = int(getnum("Cars") or getnum("cars") or 0)
-buses = int(getnum("Buses") or getnum("buses") or 0)
-trucks = int(getnum("Trucks") or getnum("trucks") or 0)
-two_wheelers = int(getnum("Two Wheelers") or getnum("Two_Wheelers") or 0)
-
-avg_km_cars = getnum("Avg Km Cars") or getnum("Avg_Km_Cars") or getnum("Average km/year per Car")
-avg_km_buses = getnum("Avg Km Buses") or getnum("Avg_Km_Buses") or getnum("Average km/year per Bus")
-avg_km_trucks = getnum("Avg Km Trucks") or getnum("Avg_Km_Trucks") or getnum("Average km/year per Truck")
-avg_km_2w = getnum("Avg Km 2W") or getnum("Avg_Km_2W") or getnum("Average km/year per 2/3-Wheeler")
-
-# If explicit fuel volumes for transport present, use them
-transport_diesel_L += freight_diesel_L
-
-# If no explicit transport fuel volumes present, estimate using km and default fuel economies
-if transport_diesel_L == 0 and (cars or buses or trucks or two_wheelers):
-    # assume car = petrol, buses/trucks = diesel, 2W = petrol
-    # compute litres = km / (km per L) * count
-    car_l = (avg_km_cars / defaults["car_km_per_l"]) * cars if avg_km_cars and cars else 0
-    bus_l = (avg_km_buses / defaults["bus_km_per_l"]) * buses if avg_km_buses and buses else 0
-    truck_l = (avg_km_trucks / defaults["truck_km_per_l"]) * trucks if avg_km_trucks and trucks else 0
-    two_w_l = (avg_km_2w / defaults["two_wheeler_km_per_l"]) * two_wheelers if avg_km_2w and two_wheelers else 0
-
-    transport_petrol_L += car_l + two_w_l
-    transport_diesel_L += bus_l + truck_l
-
-    assumptions_used.append("Used default fuel-economy assumptions to estimate transport fuel from vehicle counts + avg km.")
-
-# calculate transport emissions from liters -> kL
-transport_diesel_kL = transport_diesel_L / 1000.0
-transport_petrol_kL = transport_petrol_L / 1000.0
-transport_emissions = (transport_diesel_kL * efs["EF_diesel_tCO2_per_kL"] +
-                       transport_petrol_kL * efs["EF_petrol_tCO2_per_kL"])
-
-sector_emissions["Transport (total)"] = transport_emissions
-
-# 3) Waste sector
-msw_tons = getnum("MSW (tons/year)") or getnum("Municipal Solid Waste (tons)") or getnum("Municipal Solid Waste (tons/year)") or getnum("MSW_tons")
-percent_landfilled = getnum("Percent Landfilled (%)") or getnum("Landfill_Frac") or 0.0
-waste_to_landfill_t = msw_tons * (percent_landfilled/100.0)
-waste_em = waste_to_landfill_t * efs["EF_landfill_tCO2e_per_t"]
-sector_emissions["Waste (landfill CH4 proxy)"] = waste_em
-
-# 4) Water sector (energy for pumping + treatment)
-water_energy_kwh = getnum("Energy for Water (kWh)") or getnum("Energy for Water (kWh)") or 0
-water_energy_mwh = water_energy_kwh / 1000.0
-water_em = water_energy_mwh * efs["EF_electricity_tCO2_per_MWh"]
-sector_emissions["Water (pumping & treatment)"] = water_em
-
-# 5) Industrial process & fugitive (if text inputs exist, we can't compute numerically, show placeholders)
-process_em = getnum("Industrial Process Emissions") or getnum("Industrial Process Emissions (cement, chemical, metal)") or 0
-fugitive_em = getnum("Fugitive Emissions") or 0
-sector_emissions["Industrial Processes (reported)"] = process_em
-sector_emissions["Industrial Fugitive (reported)"] = fugitive_em
-
-# Aggregate totals
-total_emissions = sum([v for v in sector_emissions.values() if isinstance(v, (int, float))])
-sector_emissions["Total (sum of above)"] = total_emissions
-
-# ---------- Build DataFrame for plotting ----------
-plot_df = pd.DataFrame([
-    {"Sector": k, "Emissions_tCO2e": v}
-    for k, v in sector_emissions.items()
-    if v is not None and (isinstance(v, (int, float)) and v >= 0)
-])
-
-# Re-order sensible sectors for presentation
-order = [
-    "Energy & Buildings (total)",
-    "Energy & Buildings (electricity)",
-    "Energy & Buildings (stationary fuels)",
-    "Transport (total)",
-    "Industrial Processes (reported)",
-    "Industrial Fugitive (reported)",
-    "Waste (landfill CH4 proxy)",
-    "Water (pumping & treatment)",
-    "Total (sum of above)"
-]
-plot_df["order_rank"] = plot_df["Sector"].apply(lambda s: order.index(s) if s in order else 99)
-plot_df = plot_df.sort_values(["order_rank"]).drop(columns=["order_rank"])
-
-# ---------- Display top metrics ----------
-col1, col2, col3 = st.columns([2,2,2])
-col1.metric("Total GHG (tCO2e)", format_indian_number(total_emissions))
-col2.metric("Electricity Emissions (tCO2e)", format_indian_number(elec_emissions))
-col3.metric("Transport Emissions (tCO2e)", format_indian_number(transport_emissions))
-
-st.markdown("### Sectoral Emissions")
-fig = px.bar(
-    plot_df[plot_df["Sector"] != "Total (sum of above)"],
-    x="Sector",
-    y="Emissions_tCO2e",
-    text=plot_df[plot_df["Sector"] != "Total (sum of above)"]["Emissions_tCO2e"].apply(lambda x: format_indian_number(x)),
-    title="Sectoral emissions (tCO2e)",
-    template="plotly_dark",
-    color="Sector"
+st.download_button(
+    label="Download CAP Summary (PDF)",
+    data=pdf_buffer,
+    file_name="CAP_Report.pdf",
+    mime="application/pdf"
 )
-fig.update_layout(plot_bgcolor="#151523", paper_bgcolor="#151523", legend_title_text=None)
-fig.update_traces(textposition="outside", hovertemplate="%{y:.2f} tCO2e")
-st.plotly_chart(fig, use_container_width=True)
 
-# Donut chart for share
-pie_df = plot_df[plot_df["Sector"] != "Total (sum of above)"].copy()
-if pie_df["Emissions_tCO2e"].sum() > 0:
-    fig_pie = px.pie(pie_df, values="Emissions_tCO2e", names="Sector", hole=0.4, title="Emissions share by sector", template="plotly_dark")
-    fig_pie.update_layout(plot_bgcolor="#151523", paper_bgcolor="#151523")
-    st.plotly_chart(fig_pie, use_container_width=True)
-
-# ---------- Sectoral priorities radar charts ----------
-st.markdown("---")
-st.subheader("Sectoral Priorities — radar comparison (priority/resilience indicators)")
-
-# Radar indicators we will plot (normalize to 0-100 where needed)
-radar_items = {
-    "Rooftop Solar Potential (MW)": getnum("Rooftop Solar Potential (MW)") or getnum("Rooftop Solar Potential (MW)"),
-    "Percent Flood Prone (%)": getnum("Percent Flood Prone (%)") or getnum("Percent Flood Prone (%)"),
-    "Tree Canopy (%)": getnum("Tree Canopy (%)") or getnum("Tree Canopy (%)"),
-    "Percent Recycled (%)": getnum("Percent Recycled (%)") or getnum("Percent Recycled (%)"),
-    "Percent Composted (%)": getnum("Percent Composted (%)") or getnum("Percent Composted (%)"),
-    "EV Penetration (%)": getnum("EV Penetration (%)") or getnum("EV Penetration (%)"),
-    "Heat Vulnerability Index": getnum("Heat Vulnerability Index") or getnum("Heat Vulnerability Index"),
-    "Groundwater Overdraft (%)": getnum("Groundwater Overdraft (%)") or getnum("Groundwater Overdraft (%)")
-}
-
-# Prepare radar values normalized to 0-100 for plotting (some are already %)
-radar_labels = []
-radar_values = []
-for k, v in radar_items.items():
-    radar_labels.append(k)
-    # Simple normalization rules:
-    if "MW" in k:
-        # rooftop solar potential: convert to % of some city-scale benchmark (e.g., 100 MW) -> clamp 0-100
-        norm = min(100.0, (v / (100.0 + 1e-9)) * 100.0)  # 100 MW -> 100%
-    else:
-        # assume v is percentage-like or index 0-100; clamp
-        try:
-            norm = max(0.0, min(100.0, float(v)))
-        except:
-            norm = 0.0
-    radar_values.append(norm)
-
-# If all zeros, notify
-if sum(radar_values) == 0:
-    st.info("No sectoral priority indicators found to plot radar. Provide values in CAP Generation for rooftop solar, flood prone %, tree canopy %, recycling %, EV penetration %, heat vulnerability, groundwater overdraft, etc.")
-else:
-    radar_fig = go.Figure()
-    radar_fig.add_trace(go.Scatterpolar(r=radar_values, theta=radar_labels, fill='toself', name=city_name))
-    radar_fig.update_layout(
-        polar=dict(
-            bgcolor="#151523",
-            radialaxis=dict(visible=True, range=[0,100], showticklabels=True, gridcolor="#2B2B3B")
-        ),
-        showlegend=False,
-        template="plotly_dark",
-        paper_bgcolor="#151523",
-        plot_bgcolor="#151523",
-        title="Sectoral priorities & resilience (normalized 0-100)"
-    )
-    st.plotly_chart(radar_fig, use_container_width=True)
-
-# ---------- Priority table (raw values) ----------
-st.markdown("#### Raw priority indicators (from CAP form)")
-priority_df = pd.DataFrame([
-    {"Indicator": k, "Value (raw)": v}
-    for k, v in radar_items.items()
-])
-st.dataframe(priority_df.style.format({"Value (raw)": lambda x: format_indian_number(x) if isinstance(x, (int,float)) else x}))
-
-# ---------- Assumptions & emission factors shown for auditability ----------
-with st.expander("Emission factors & assumptions (for auditability)", expanded=False):
-    ef_df = pd.DataFrame([
-        {"Parameter": "EF electricity (tCO2/MWh)", "Value": efs["EF_electricity_tCO2_per_MWh"]},
-        {"Parameter": "EF diesel (tCO2/kL)", "Value": efs["EF_diesel_tCO2_per_kL"]},
-        {"Parameter": "EF petrol (tCO2/kL)", "Value": efs["EF_petrol_tCO2_per_kL"]},
-        {"Parameter": "EF natural gas (tCO2/m3)", "Value": efs["EF_natural_gas_tCO2_per_m3"]},
-        {"Parameter": "EF LPG (tCO2/L approx.)", "Value": efs["EF_lpg_tCO2_per_L"]},
-        {"Parameter": "Default car km/l", "Value": defaults["car_km_per_l"]},
-        {"Parameter": "Default 2W km/l", "Value": defaults["two_wheeler_km_per_l"]},
-        {"Parameter": "Default bus km/l", "Value": defaults["bus_km_per_l"]},
-        {"Parameter": "Default truck km/l", "Value": defaults["truck_km_per_l"]}
-    ])
-    st.table(ef_df)
-
-    if assumptions_used:
-        st.markdown("**Assumptions used**")
-        for a in assumptions_used:
-            st.markdown(f"- {a}")
-
-# ---------- Download consolidated CAP + GHG Inventory (Excel) ----------
-def build_report_bytes(record, sector_emissions, cap_df):
-    out = io.BytesIO()
-    with pd.ExcelWriter(out, engine="xlsxwriter") as writer:
-        # raw CAP table
-        cap_df.to_excel(writer, sheet_name="CAP Raw Data", index=False)
-        # sector emissions
-        pd.DataFrame([{"Sector": k, "Emissions_tCO2e": v} for k, v in sector_emissions.items()]).to_excel(writer, sheet_name="Sector Emissions", index=False)
-        # priority indicators
-        priority_df.to_excel(writer, sheet_name="Priority Indicators", index=False)
-        # metadata / notes
-        meta = pd.DataFrame([{"City": city_name, "Generated On": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}])
-        meta.to_excel(writer, sheet_name="Report Meta", index=False)
-        writer.save()
-    return out.getvalue()
-
-st.markdown("---")
-col_l, col_r = st.columns([1,3])
-with col_l:
-    if st.button("Back to CAP Generation"):
-        st.session_state.menu = "CAP Generation"
-        st.experimental_rerun()
-
-    report_bytes = build_report_bytes(record, sector_emissions, cap_df)
-    st.download_button(
-        "Download consolidated GHG Inventory (Excel)",
-        data=report_bytes,
-        file_name=f"GHG_Inventory_{city_name}_{datetime.now().strftime('%Y%m%d')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-with col_r:
-    st.info("Tip: Review emission factors under 'Emission factors & assumptions' and replace with official NPC/India values if available for audit-grade reporting.")
-
-# End of GHG Inventory page
-
+# ---------------------------
+# Navigation
+# ---------------------------
+if st.button("View Actions"):
+    st.switch_page("pages/Actions.py")
 
 
 # ---------------------------
-# Actions / Goals Page (Professional)
+# Actions
 # ---------------------------
 elif menu == "Actions / Goals":
     st.header("City Climate Action Goals for Net Zero by 2050")
