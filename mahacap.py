@@ -963,386 +963,288 @@ elif menu == "Admin":
                 
 
 # ---------------------------
-# CAP Generation Page
+# CAP Generation Page (7 expandable sections)
 # ---------------------------
-import streamlit as st
-import pandas as pd
-import os
-from datetime import datetime
-
-CAP_DATA_FILE = "cap_raw_data.csv"   # ensure this matches your app-wide constant
-
-if menu == "Generate CAP":
+if menu == "CAP Generation":
     st.header("CAP Generation : Comprehensive Data Collection")
 
-    # Require admin
+    # Admin check
     if not st.session_state.get("authenticated", False):
         admin_login()
     else:
-        st.markdown(
-            "Collect detailed city-level data for generating a comprehensive GHG inventory. "
-        )
+        st.markdown("""
+        Collect detailed city-level raw data for generating a comprehensive GHG inventory.
+        Use each section to provide available activity data and sectoral priority/resilience inputs.
+        Fields are optional — submit what you have. Data will be saved and used to generate the GHG inventory.
+        """)
 
-        # Load existing CAP data (if any)
-        if os.path.exists(CAP_DATA_FILE):
-            try:
-                cap_df = pd.read_csv(CAP_DATA_FILE)
-            except Exception:
-                cap_df = pd.DataFrame()
-        else:
-            cap_df = pd.DataFrame()
-
-        # Unique form key to avoid duplicate form error
-        with st.form("cap_comprehensive_form_v3", clear_on_submit=False):
+        # Unique form key to avoid duplicate form errors
+        with st.form("cap_generation_form_v2", clear_on_submit=False):
 
             # -------------------
-            # 1. General City Info
+            # 1. BASIC CITY INFORMATION
             # -------------------
-            with st.expander("1. General City Info", expanded=True):
-                city_name = st.selectbox("City Name", [""] + list(cities_districts.keys()))
-                state = st.text_input("State / Province")
+            with st.expander("1. Basic City Information", expanded=True):
+                city = st.selectbox("City Name", list(cities_districts.keys()))
+                state = st.text_input("State / Province", value="")
                 population = st.number_input("Total Population", min_value=0, value=0, step=1000)
-                households = st.number_input("Total Households (optional)", min_value=0, value=0, step=100)
-                area_km2 = st.number_input("Area (sq.km)", min_value=0.0, value=0.0, step=0.1)
+                households = st.number_input("Number of Households", min_value=0, value=0, step=100)
+                area_km2 = st.number_input("Area (km²)", min_value=0.0, value=0.0, step=0.1)
                 admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "Other"])
                 inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100, value=datetime.now().year)
-                climate_zone = st.selectbox("Climate Zone (for priority analysis)", ["Tropical", "Arid", "Temperate", "Coastal", "Mountain", "Other"])
                 urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                notes_general = st.text_area("Notes / Local context (optional)", value="", height=80)
+
+                # Priority / resilience flags (basic)
+                coastal_city = st.selectbox("Coastal City?", ["No", "Yes"])
+                has_airport = st.selectbox("Has Airport within city boundary?", ["No", "Yes"])
+                major_industrial_hub = st.selectbox("Major industrial zone inside city?", ["No", "Yes"])
 
             # -------------------
-            # 2. Energy Sector
+            # 2. ENERGY & GREEN BUILDING
             # -------------------
-            with st.expander("2. Energy Sector (Electricity, Heat, Stationary Fuels)", expanded=False):
-                st.subheader("Electricity & Heat Consumption")
-                municipal_electricity_mwh = st.number_input("Municipal buildings (MWh/year)", min_value=0, value=0, step=10)
-                residential_electricity_mwh = st.number_input("Residential (MWh/year)", min_value=0, value=0, step=10)
-                commercial_electricity_mwh = st.number_input("Commercial (MWh/year)", min_value=0, value=0, step=10)
-                industrial_electricity_mwh = st.number_input("Industrial (MWh/year)", min_value=0, value=0, step=10)
+            with st.expander("2. Energy & Green Building"):
+                st.subheader("Electricity & Heat (MWh or kWh)")
+                municipal_electricity_mwh = st.number_input("Municipal buildings energy (MWh/year)", min_value=0, value=0, step=10)
+                residential_electricity_mwh = st.number_input("Residential electricity (MWh/year)", min_value=0, value=0, step=10)
+                commercial_electricity_mwh = st.number_input("Commercial electricity (MWh/year)", min_value=0, value=0, step=10)
+                industrial_electricity_mwh = st.number_input("Industrial electricity (MWh/year)", min_value=0, value=0, step=10)
                 purchased_heat_gj = st.number_input("Purchased heat/steam (GJ/year)", min_value=0, value=0, step=10)
 
-                st.subheader("On-site generation & stationary fuels")
-                diesel_gen_l = st.number_input("Diesel generators (litres/year or specify units)", min_value=0, value=0, step=10)
-                gas_turbine_fuel_m3 = st.number_input("Gas turbine fuel (m³/year)", min_value=0, value=0, step=10)
-                stationary_diesel_l = st.number_input("Stationary diesel (L/year)", min_value=0, value=0, step=10)
-                stationary_petrol_l = st.number_input("Stationary petrol (L/year)", min_value=0, value=0, step=10)
-                stationary_lpg_l = st.number_input("LPG (L/year)", min_value=0, value=0, step=10)
-                stationary_natgas_m3 = st.number_input("Natural gas (m³/year)", min_value=0, value=0, step=10)
-                stationary_coal_t = st.number_input("Coal (tons/year)", min_value=0, value=0, step=1)
+                st.subheader("On-site generation & backup")
+                diesel_gen_l = st.number_input("Diesel generator fuel (litres/year)", min_value=0, value=0, step=10)
+                gas_turbine_m3 = st.number_input("Gas turbine fuel (m³/year)", min_value=0, value=0, step=10)
 
-                st.subheader("Renewable energy")
-                solar_rooftop_mwh = st.number_input("Solar rooftops (MWh/year)", min_value=0, value=0, step=10)
+                st.subheader("Renewable energy & potential")
+                rooftop_solar_mw_potential = st.number_input("Estimated rooftop solar potential (MW)", min_value=0.0, value=0.0, step=0.1)
+                rooftop_solar_mwh = st.number_input("Rooftop solar generation (MWh/year)", min_value=0, value=0, step=10)
                 utility_scale_solar_mwh = st.number_input("Utility-scale solar (MWh/year)", min_value=0, value=0, step=10)
                 wind_mwh = st.number_input("Wind (MWh/year)", min_value=0, value=0, step=10)
                 biomass_mwh = st.number_input("Biomass (MWh/year)", min_value=0, value=0, step=10)
 
-                # --- Energy Sector: Sectoral priorities / contextual questions
-                st.markdown("**Priorities & context — Energy**")
-                grid_reliability = st.selectbox("Grid reliability (priority)", ["Low", "Medium", "High"])
-                rooftop_potential_pct = st.number_input("Estimated rooftop solar potential (%) (approx.)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                critical_infra_backup = st.selectbox("Critical municipal infrastructure backup available?", ["None", "Partial", "Full"])
-                diesel_dependency_priority = st.selectbox("Is diesel backup a priority to replace?", ["No", "Low", "Medium", "High"])
-                energy_efficiency_programs = st.selectbox("Existing energy efficiency programs?", ["None", "Pilot", "Established"])
-                notes_energy_priorities = st.text_area("Energy priorities notes (optional)", value="", height=80)
+                st.subheader("Green buildings & efficiency")
+                percent_buildings_energy_audited = st.number_input("% of public/commercial buildings energy audited", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                retrofittable_building_area_m2 = st.number_input("Estimated retrofittable building area (m²)", min_value=0, value=0, step=100)
+                planned_building_efficiency_program = st.selectbox("Planned building retrofit program?", ["No", "Yes"])
+
+                # Priority / resilience (energy)
+                critical_facilities_on_microgrid = st.selectbox("Critical facilities with backup renewables (hospitals, water)?", ["No", "Yes"])
+                energy_security_risk_level = st.selectbox("Energy security risk (low/medium/high)", ["Low","Medium","High"])
 
             # -------------------
-            # 3. Transport Sector
+            # 3. URBAN GREEN COVER & BIODIVERSITY
             # -------------------
-            with st.expander("3. Transport Sector", expanded=False):
-                st.subheader("Vehicle fleet & activity")
-                vehicles_cars = st.number_input("Cars (number)", min_value=0, value=0, step=1)
-                vehicles_buses = st.number_input("Buses (number)", min_value=0, value=0, step=1)
-                vehicles_trucks = st.number_input("Trucks (number)", min_value=0, value=0, step=1)
-                vehicles_2w = st.number_input("2/3-wheelers (number)", min_value=0, value=0, step=1)
-                avg_km_per_car = st.number_input("Avg km per car / year", min_value=0, value=0, step=100)
-                avg_km_per_bus = st.number_input("Avg km per bus / year", min_value=0, value=0, step=100)
-                avg_km_per_truck = st.number_input("Avg km per truck / year", min_value=0, value=0, step=100)
-                avg_km_per_2w = st.number_input("Avg km per 2/3-wheeler / year", min_value=0, value=0, step=100)
+            with st.expander("3. Urban Green Cover & Biodiversity"):
+                urban_green_area_ha = st.number_input("Urban green area (ha)", min_value=0, value=0, step=1)
+                percent_tree_canopy = st.number_input("Tree canopy cover (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                number_parks = st.number_input("Number of parks/public gardens", min_value=0, value=0, step=1)
+                community_gardens = st.selectbox("Community gardens / urban farms present?", ["No","Yes"])
 
-                st.subheader("Public transport & freight")
-                public_transport_mode_share_pct = st.number_input("Public transport modal share (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                public_transport_energy_mwh = st.number_input("Public transport energy (MWh/year)", min_value=0, value=0, step=10)
-                freight_km_year = st.number_input("Freight activity (vehicle-km/year)", min_value=0, value=0, step=1000)
+                st.subheader("Biodiversity & land")
+                protected_areas_ha = st.number_input("Protected natural area within city (ha)", min_value=0, value=0, step=1)
+                urban_forest_program = st.selectbox("Active urban forestry program?", ["No","Yes"])
 
-                # --- Transport priorities
-                st.markdown("**Priorities & context — Transport**")
-                congestion_level = st.selectbox("Traffic congestion level", ["Low", "Medium", "High"])
-                ev_charging_infrastructure = st.selectbox("EV charging network readiness", ["None", "Sparse", "Moderate", "Extensive"])
-                last_mile_connectivity_priority = st.selectbox("Last-mile connectivity (priority)", ["Low", "Medium", "High"])
-                freight_hub_presence = st.selectbox("Freight consolidation / logistics hubs present?", ["None", "Partial", "Yes"])
-                non_motorized_infrastructure = st.selectbox("Bicycle / pedestrian infrastructure (quality)", ["Poor", "Fair", "Good", "Excellent"])
-                notes_transport_priorities = st.text_area("Transport priorities notes (optional)", value="", height=80)
+                # Resilience / priority items
+                heat_vulnerability_index = st.number_input("Urban heat vulnerability index (0-100)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                priority_afforestation_ha = st.number_input("Planned afforestation area (ha)", min_value=0, value=0, step=1)
 
             # -------------------
-            # 4. Waste Sector
+            # 4. SUSTAINABLE MOBILITY
             # -------------------
-            with st.expander("4. Waste Sector", expanded=False):
-                st.subheader("Solid waste")
-                municipal_solid_waste_tons = st.number_input("Municipal solid waste generated (tons/year)", min_value=0, value=0, step=10)
-                waste_collection_coverage_pct = st.number_input("Collection coverage (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                fraction_landfilled_pct = st.number_input("Fraction landfilled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                fraction_recycled_pct = st.number_input("Fraction recycled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                fraction_composted_pct = st.number_input("Fraction composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                landfill_capacity_years = st.number_input("Remaining landfill capacity (years, est.)", min_value=0.0, value=0.0, step=0.1)
+            with st.expander("4. Sustainable Mobility"):
+                st.subheader("Vehicle Fleet & Activity")
+                cars = st.number_input("Number of cars", min_value=0, value=0, step=10)
+                buses = st.number_input("Number of buses", min_value=0, value=0, step=1)
+                trucks = st.number_input("Number of trucks", min_value=0, value=0, step=1)
+                two_wheelers = st.number_input("Number of 2/3-wheelers", min_value=0, value=0, step=10)
 
-                st.subheader("Wastewater")
+                avg_km_cars = st.number_input("Average km/year per car", min_value=0, value=0, step=100)
+                avg_km_buses = st.number_input("Average km/year per bus", min_value=0, value=0, step=100)
+                avg_km_trucks = st.number_input("Average km/year per truck", min_value=0, value=0, step=100)
+                avg_km_2w = st.number_input("Average km/year per 2/3-wheeler", min_value=0, value=0, step=100)
+
+                st.subheader("Public transport & active travel")
+                public_transport_ridership = st.number_input("Annual public transport ridership (passenger-km)", min_value=0, value=0, step=1000)
+                public_transport_modes = st.multiselect("Public transport modes present", ["Bus","Metro","Suburban Rail","Tram","BRT"])
+                km_cycle_tracks = st.number_input("Total dedicated cycle lane length (km)", min_value=0.0, value=0.0, step=0.1)
+                pedestrian_zone_km = st.number_input("Pedestrian-only zone length (km)", min_value=0.0, value=0.0, step=0.1)
+
+                st.subheader("Freight & logistics")
+                freight_km = st.number_input("Annual goods vehicle km (estimated)", min_value=0, value=0, step=1000)
+                freight_fuel_diesel_l = st.number_input("Freight diesel (L/year)", min_value=0, value=0, step=10)
+                freight_electric_mwh = st.number_input("Freight electricity (MWh/year)", min_value=0, value=0, step=10)
+
+                # Mobility priorities / resilience
+                electric_vehicle_penetration_pct = st.number_input("EV penetration in fleet (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                congestion_hotspots_count = st.number_input("Number of major congestion hotspots", min_value=0, value=0, step=1)
+                transport_emergency_routes_exist = st.selectbox("Designated emergency transport corridors?", ["No","Yes"])
+
+            # -------------------
+            # 5. WATER RESOURCE MANAGEMENT
+            # -------------------
+            with st.expander("5. Water Resource Management"):
+                st.subheader("Water supply & treatment")
+                water_supply_m3 = st.number_input("Total water supplied (m³/year)", min_value=0, value=0, step=1000)
+                water_loss_fraction = st.number_input("Distribution loss / NRW (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                energy_for_water_kwh = st.number_input("Energy for water pumping & treatment (kWh/year)", min_value=0, value=0, step=100)
                 wastewater_treated_m3 = st.number_input("Wastewater treated (m³/year)", min_value=0, value=0, step=1000)
-                wastewater_treatment_level = st.selectbox("Treatment level", ["None", "Primary", "Secondary", "Tertiary"])
-                sludge_generated_tons = st.number_input("Sludge generated (tons/year)", min_value=0, value=0, step=1)
-                wastewater_energy_kwh = st.number_input("Energy used in wastewater treatment (kWh/year)", min_value=0, value=0, step=10)
+                wastewater_treatment_level = st.selectbox("Wastewater treatment level", ["None","Primary","Secondary","Tertiary"])
 
-                # --- Waste priorities
-                st.markdown("**Priorities & context — Waste**")
-                segregation_at_source_status = st.selectbox("Source segregation status", ["Poor", "Partial", "Good"])
-                informal_sector_dependency = st.selectbox("Informal recycling/scavenging dependency", ["None", "Low", "Medium", "High"])
-                methane_capture_pct = st.number_input("Existing landfill methane capture (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                composting_infrastructure = st.selectbox("Composting infrastructure availability", ["None", "Pilot", "City-wide"])
-                notes_waste_priorities = st.text_area("Waste priorities notes (optional)", value="", height=80)
+                st.subheader("Flooding / drought & climate risk")
+                percent_area_flood_prone = st.number_input("Percent of city area flood-prone (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                has_urban_flood_management_plan = st.selectbox("Urban flood management plan?", ["No","Yes"])
+                drought_risk_level = st.selectbox("Drought risk (Low/Medium/High)", ["Low","Medium","High"])
+                stormwater_infrastructure_capacity = st.selectbox("Stormwater infrastructure adequate?", ["No","Partially","Yes"])
 
-            # -------------------
-            # 5. Industrial Sector
-            # -------------------
-            with st.expander("5. Industrial Sector", expanded=False):
-                coal_ind_t = st.number_input("Industrial coal consumption (tons/year)", min_value=0, value=0, step=1)
-                industrial_gas_m3 = st.number_input("Industrial natural gas (m³/year)", min_value=0, value=0, step=10)
-                industrial_electricity_kwh = st.number_input("Industrial electricity (kWh/year)", min_value=0, value=0, step=100)
-                industrial_biomass_t = st.number_input("Industrial biomass (tons/year)", min_value=0, value=0, step=1)
-                industrial_process_emissions_notes = st.text_area("Industrial process emissions (details)", value="", height=80)
-                fugitive_emissions_notes = st.text_area("Fugitive emissions (refrigerants, leaks)", value="", height=80)
-
-                # --- Industrial priorities
-                st.markdown("**Priorities & context — Industry**")
-                presence_of_heavy_industry = st.selectbox("Presence of heavy industry / clusters", ["None", "Light", "Moderate", "Heavy"])
-                process_emissions_high_priority = st.selectbox("Process emissions monitoring needed?", ["No", "Low", "Medium", "High"])
-                energy_intensity_reduction_priority = st.selectbox("Energy intensity / efficiency priority", ["Low", "Medium", "High"])
-                notes_industry_priorities = st.text_area("Industry priorities notes (optional)", value="", height=80)
+                # Water priorities
+                planned_reservoirs_m3 = st.number_input("Planned additional water storage (m³)", min_value=0, value=0, step=1000)
+                groundwater_overdraft_pct = st.number_input("Estimated groundwater overdraft (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
             # -------------------
-            # 6. Agriculture & Land Use
+            # 6. WASTE MANAGEMENT
             # -------------------
-            with st.expander("6. Agriculture & Land Use", expanded=False):
-                cropland_ha = st.number_input("Cropland (ha)", min_value=0, value=0, step=1)
-                livestock_count = st.number_input("Livestock (number)", min_value=0, value=0, step=1)
-                fertilizer_use_tons = st.number_input("Fertilizer use (tons/year)", min_value=0, value=0, step=1)
-                crop_residue_burning_prevalence = st.selectbox("Crop residue burning prevalence", ["None", "Occasional", "Frequent"])
-                manure_management_practice = st.selectbox("Manure management", ["Field applied", "Stored & treated", "Biogas", "Other"])
+            with st.expander("6. Waste Management"):
+                st.subheader("Solid waste")
+                msw_tons = st.number_input("Municipal solid waste generated (tons/year)", min_value=0, value=0, step=10)
+                percent_landfilled = st.number_input("Fraction landfilled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                percent_recycled = st.number_input("Fraction recycled (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                percent_composted = st.number_input("Fraction composted (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+                landfill_methane_capture = st.number_input("Landfill methane capture rate (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
 
-                # --- Agriculture & land use priorities
-                st.markdown("**Priorities & context — Agriculture & LULUCF**")
-                afforestation_opportunities_ha = st.number_input("Afforestation potential (ha)", min_value=0, value=0, step=1)
-                deforestation_risk_level = st.selectbox("Deforestation risk", ["Low", "Medium", "High"])
-                soil_carbon_sequestration_potential = st.number_input("Soil carbon sequestration (tons/yr estimate)", min_value=0, value=0, step=1)
-                notes_agri_priorities = st.text_area("Agri & LULUCF priority notes (optional)", value="", height=80)
+                st.subheader("Wastewater & sludge")
+                sludge_tons = st.number_input("Sludge generated (tons/year)", min_value=0, value=0, step=10)
+                energy_wastewater_kwh = st.number_input("Energy use in wastewater treatment (kWh/year)", min_value=0, value=0, step=10)
+                planned_waste_to_energy = st.selectbox("Planned waste-to-energy projects?", ["No","Yes"])
 
-            # -------------------
-            # 7. City Infrastructure
-            # -------------------
-            with st.expander("7. City Infrastructure", expanded=False):
-                streetlights_count = st.number_input("Streetlights count", min_value=0, value=0, step=10)
-                streetlights_energy_kwh = st.number_input("Streetlights energy (kWh/year)", min_value=0, value=0, step=10)
-                municipal_fleet_fuel = st.text_input("Municipal fleet fuel / composition (text)")
-                water_pumping_energy_kwh = st.number_input("Water pumping & treatment energy (kWh/year)", min_value=0, value=0, step=10)
-                municipal_buildings_cooling_heating_kwh = st.number_input("Cooling/heating in municipal buildings (kWh/year)", min_value=0, value=0, step=10)
-
-                # --- Infrastructure priorities
-                st.markdown("**Priorities & context — Infrastructure**")
-                drainage_capacity_status = st.selectbox("Stormwater drainage capacity", ["Inadequate", "Partial", "Adequate"])
-                critical_facilities_backup = st.selectbox("Backup power for hospitals/critical facilities", ["No", "Partial", "Yes"])
-                streetlight_led_pct = st.number_input("Share of LED streetlights (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                notes_infra_priorities = st.text_area("Infrastructure priorities notes (optional)", value="", height=80)
+                # Waste priorities
+                circular_economy_programs = st.selectbox("Circular economy programs active?", ["No","Yes"])
+                commercial_waste_audit_done = st.selectbox("Commercial waste audits done?", ["No","Yes"])
 
             # -------------------
-            # 8. Hazard, Climate Risks & Vulnerability
+            # 7. UPLOAD & SUBMIT
             # -------------------
-            with st.expander("8. Hazard / Climate Risks & Vulnerability", expanded=False):
-                st.subheader("Flood, Drought, Heat & Related Risks")
-                flood_risk_level = st.selectbox("Urban flood risk", ["Low", "Medium", "High"])
-                stormwater_infra_status = st.selectbox("Stormwater infrastructure status", ["Poor", "Fair", "Good"])
-                drought_vulnerability = st.selectbox("Drought vulnerability", ["Low", "Medium", "High"])
-                heatwave_vulnerability = st.selectbox("Heatwave vulnerability", ["Low", "Medium", "High"])
-                coastal_erosion_risk = st.selectbox("Coastal erosion / sea-level risk (if applicable)", ["None", "Low", "Medium", "High"])
-                emergency_response_capacity = st.selectbox("Emergency response capacity", ["Weak", "Moderate", "Strong"])
-                notes_hazard_vuln = st.text_area("Hazards / Vulnerability notes (optional)", value="", height=80)
+            with st.expander("7. Upload & Submit"):
+                st.markdown("### Attach supporting documents (maps, reports, energy bills, surveys)")
+                file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf","xlsx","csv"])
+                notes = st.text_area("Any additional notes / clarifications (optional)", value="", height=120)
 
-            # -------------------
-            # 9. Optional Co-benefit Indicators & Policy context
-            # -------------------
-            with st.expander("9. Optional Co-benefit Indicators & Policy Context", expanded=False):
-                renewable_energy_share_pct = st.number_input("Renewable energy share (city electricity, %)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-                air_quality_index = st.number_input("Typical annual AQI (approx.)", min_value=0, value=0, step=1)
-                water_usage_m3 = st.number_input("Total water use (m³/year)", min_value=0, value=0, step=100)
-                climate_policy_documents = st.selectbox("Existing climate policy / CAP document?", ["None", "Draft", "Adopted"])
-                notes_cobenefits = st.text_area("Co-benefits / policy notes (optional)", value="", height=80)
+                # Submit button
+                submit_cap = st.form_submit_button("Save & Generate GHG Inventory")
 
-            # -------------------
-            # 10. Upload Supporting Documents
-            # -------------------
-            with st.expander("10. Upload Supporting Documents", expanded=False):
-                support_files = st.file_uploader("Attach supporting documents (PDF / XLSX / CSV). You can upload multiple - upload them one by one.", type=["pdf", "xlsx", "csv"], accept_multiple_files=True)
-
-            # -------------------
-            # Submit Button
-            # -------------------
-            submit_cap = st.form_submit_button("Save CAP Raw Data & Proceed")
-
-            if submit_cap:
-                # Minimal validation (city name required)
-                if not city_name:
-                    st.error("Please select a City Name before submitting.")
-                else:
-                    # Build raw_data row (keys are column names saved to CSV)
-                    raw_data = {
-                        "City Name": city_name,
-                        "State": state,
-                        "Population": population,
-                        "Households": households,
-                        "Area (sq.km)": area_km2,
-                        "Administrative Type": admin_type,
-                        "Year of Inventory": inventory_year,
-                        "Climate Zone": climate_zone,
-                        "Urbanization Rate (%)": urbanization_rate,
-                        "Notes_General": notes_general,
-
-                        # Energy
-                        "Municipal Electricity (MWh)": municipal_electricity_mwh,
-                        "Residential Electricity (MWh)": residential_electricity_mwh,
-                        "Commercial Electricity (MWh)": commercial_electricity_mwh,
-                        "Industrial Electricity (MWh)": industrial_electricity_mwh,
-                        "Purchased Heat (GJ)": purchased_heat_gj,
-                        "Diesel Gen (L)": diesel_gen_l,
-                        "Gas Turbine Fuel (m3)": gas_turbine_fuel_m3,
-                        "Stationary Diesel (L)": stationary_diesel_l,
-                        "Stationary Petrol (L)": stationary_petrol_l,
-                        "Stationary LPG (L)": stationary_lpg_l,
-                        "Stationary NatGas (m3)": stationary_natgas_m3,
-                        "Stationary Coal (t)": stationary_coal_t,
-                        "Solar Rooftop (MWh)": solar_rooftop_mwh,
-                        "Utility Solar (MWh)": utility_scale_solar_mwh,
-                        "Wind (MWh)": wind_mwh,
-                        "Biomass (MWh)": biomass_mwh,
-                        "Grid Reliability": grid_reliability,
-                        "Rooftop Potential (%)": rooftop_potential_pct,
-                        "Critical Infra Backup": critical_infra_backup,
-                        "Diesel Dependency Priority": diesel_dependency_priority,
-                        "Energy Efficiency Programs": energy_efficiency_programs,
-                        "Notes_Energy": notes_energy_priorities,
-
-                        # Transport
-                        "Vehicles_Cars": vehicles_cars,
-                        "Vehicles_Buses": vehicles_buses,
-                        "Vehicles_Trucks": vehicles_trucks,
-                        "Vehicles_2W": vehicles_2w,
-                        "Avg_km_per_Car": avg_km_per_car,
-                        "Avg_km_per_Bus": avg_km_per_bus,
-                        "Avg_km_per_Truck": avg_km_per_truck,
-                        "Avg_km_per_2W": avg_km_per_2w,
-                        "Public Transport Share (%)": public_transport_mode_share_pct,
-                        "Public Transport Energy (MWh)": public_transport_energy_mwh,
-                        "Freight Vehicle-km": freight_km_year,
-                        "Congestion Level": congestion_level,
-                        "EV Charging Readiness": ev_charging_infrastructure,
-                        "Last Mile Priority": last_mile_connectivity_priority,
-                        "Freight Hub Present": freight_hub_presence,
-                        "NMT Infrastructure Quality": non_motorized_infrastructure,
-                        "Notes_Transport": notes_transport_priorities,
-
-                        # Waste
-                        "MSW (tons/year)": municipal_solid_waste_tons,
-                        "Collection Coverage (%)": waste_collection_coverage_pct,
-                        "Fraction Landfilled (%)": fraction_landfilled_pct,
-                        "Fraction Recycled (%)": fraction_recycled_pct,
-                        "Fraction Composted (%)": fraction_composted_pct,
-                        "Landfill Capacity (years)": landfill_capacity_years,
-                        "Wastewater Treated (m3)": wastewater_treated_m3,
-                        "Wastewater Treatment Level": wastewater_treatment_level,
-                        "Sludge (tons/year)": sludge_generated_tons,
-                        "Wastewater Energy (kWh)": wastewater_energy_kwh,
-                        "Segregation Status": segregation_at_source_status,
-                        "Informal Sector Dependency": informal_sector_dependency,
-                        "Methane Capture (%)": methane_capture_pct,
-                        "Composting Infrastructure": composting_infrastructure,
-                        "Notes_Waste": notes_waste_priorities,
-
-                        # Industry
-                        "Industrial Coal (t/yr)": coal_ind_t,
-                        "Industrial Gas (m3/yr)": industrial_gas_m3,
-                        "Industrial Electricity (kWh/yr)": industrial_electricity_kwh,
-                        "Industrial Biomass (t/yr)": industrial_biomass_t,
-                        "Industrial Process Emissions Notes": industrial_process_emissions_notes,
-                        "Fugitive Emissions Notes": fugitive_emissions_notes,
-                        "Presence Heavy Industry": presence_of_heavy_industry,
-                        "Process Emissions Priority": process_emissions_high_priority,
-                        "Industry Efficiency Priority": energy_intensity_reduction_priority,
-                        "Notes_Industry": notes_industry_priorities,
-
-                        # Agriculture & LULUCF
-                        "Cropland (ha)": cropland_ha,
-                        "Livestock_Count": livestock_count,
-                        "Fertilizer (t/yr)": fertilizer_use_tons,
-                        "Crop Residue Burning": crop_residue_burning_prevalence,
-                        "Manure Management": manure_management_practice,
-                        "Afforestation Potential (ha)": afforestation_opportunities_ha,
-                        "Deforestation Risk": deforestation_risk_level,
-                        "Soil Carbon Potential (t/yr)": soil_carbon_sequestration_potential,
-                        "Notes_Agri": notes_agri_priorities,
-
-                        # Infrastructure
-                        "Streetlights Count": streetlights_count,
-                        "Streetlights Energy (kWh/yr)": streetlights_energy_kwh,
-                        "Municipal Fleet Fuel": municipal_fleet_fuel,
-                        "Water Pumping Energy (kWh/yr)": water_pumping_energy_kwh,
-                        "Municipal Cooling/Heating (kWh/yr)": municipal_buildings_cooling_heating_kwh,
-                        "Drainage Capacity": drainage_capacity_status,
-                        "Critical Facilities Backup": critical_facilities_backup,
-                        "Streetlight LED (%)": streetlight_led_pct,
-                        "Notes_Infrastructure": notes_infra_priorities,
-
-                        # Hazards & Vulnerability
-                        "Flood Risk": flood_risk_level,
-                        "Stormwater Infrastructure": stormwater_infra_status,
-                        "Drought Vulnerability": drought_vulnerability,
-                        "Heatwave Vulnerability": heatwave_vulnerability,
-                        "Coastal Risk": coastal_erosion_risk,
-                        "Emergency Response Capacity": emergency_response_capacity,
-                        "Notes_Hazards": notes_hazard_vuln,
-
-                        # Co-benefits & policy
-                        "Renewable Share (%)": renewable_energy_share_pct,
-                        "AQI (approx)": air_quality_index,
-                        "Total Water Usage (m3/yr)": water_usage_m3,
-                        "Climate Policy Status": climate_policy_documents,
-                        "Notes_CoBenefits": notes_cobenefits,
-
-                        # Uploads & metadata
-                        "File_Names": ";".join([f.name for f in support_files]) if support_files else None,
-                        "Submission Date": datetime.now().isoformat()
-                    }
-
-                    # Update existing row for city OR append
-                    if not cap_df.empty and "City Name" in cap_df.columns and city_name in cap_df["City Name"].astype(str).values:
-                        # Update - replace existing row
-                        cap_df.loc[cap_df["City Name"].astype(str) == city_name, list(raw_data.keys())] = list(raw_data.values())
-                        saved_df = cap_df
+                if submit_cap:
+                    # Basic validation: require minimal key fields (optional: make all optional if you prefer)
+                    if not city or population <= 0 or inventory_year <= 0:
+                        st.error("Please provide minimum required fields: City, Population and Year of Inventory.")
                     else:
-                        saved_df = pd.concat([cap_df, pd.DataFrame([raw_data])], ignore_index=True)
+                        # Build single standardized record (column names chosen to be consistent)
+                        raw_data = {
+                            "City Name": city,
+                            "State": state,
+                            "Population": population,
+                            "Households": households,
+                            "Area_km2": area_km2,
+                            "Administrative Type": admin_type,
+                            "Year of Inventory": inventory_year,
+                            "Urbanization Rate (%)": urbanization_rate,
+                            "Coastal City": coastal_city,
+                            "Has Airport": has_airport,
+                            "Major Industrial Hub": major_industrial_hub,
 
-                    # Save to CSV and session state
-                    try:
-                        saved_df.to_csv(CAP_DATA_FILE, index=False)
-                        st.session_state.cap_data = saved_df
-                        st.success(f"Raw data for **{city_name}** saved successfully.")
-                    except Exception as e:
-                        st.error(f"Failed to save CAP data: {e}")
-                        st.session_state.cap_data = saved_df  # still set in session
+                            # Energy
+                            "Municipal Electricity (MWh)": municipal_electricity_mwh,
+                            "Residential Electricity (MWh)": residential_electricity_mwh,
+                            "Commercial Electricity (MWh)": commercial_electricity_mwh,
+                            "Industrial Electricity (MWh)": industrial_electricity_mwh,
+                            "Purchased Heat (GJ)": purchased_heat_gj,
+                            "Diesel Gen (L/year)": diesel_gen_l,
+                            "Gas Turbine Fuel (m3/year)": gas_turbine_m3,
+                            "Rooftop Solar Potential (MW)": rooftop_solar_mw_potential,
+                            "Rooftop Solar (MWh)": rooftop_solar_mwh,
+                            "Utility Solar (MWh)": utility_scale_solar_mwh,
+                            "Wind (MWh)": wind_mwh,
+                            "Biomass (MWh)": biomass_mwh,
+                            "Percent Buildings Audited (%)": percent_buildings_energy_audited,
+                            "Retrofittable Area (m2)": retrofittable_building_area_m2,
+                            "Retrofitting Program Planned": planned_building_efficiency_program,
+                            "Critical Facilities on Microgrid": critical_facilities_on_microgrid,
+                            "Energy Security Risk": energy_security_risk_level,
 
-                    # Attempt to redirect to GHG Inventory (safe-guarded)
-                    st.info("You can now go to the **GHG Inventory** page to generate the inventory using this raw data.")
-                    st.session_state.menu = "GHG Inventory"
-                    try:
+                            # Green cover & biodiversity
+                            "Urban Green Area (ha)": urban_green_area_ha,
+                            "Tree Canopy (%)": percent_tree_canopy,
+                            "Number of Parks": number_parks,
+                            "Community Gardens": community_gardens,
+                            "Protected Areas (ha)": protected_areas_ha,
+                            "Urban Forest Program": urban_forest_program,
+                            "Heat Vulnerability Index": heat_vulnerability_index,
+                            "Planned Afforestation (ha)": priority_afforestation_ha,
+
+                            # Transport
+                            "Cars": cars,
+                            "Buses": buses,
+                            "Trucks": trucks,
+                            "Two Wheelers": two_wheelers,
+                            "Avg Km Cars": avg_km_cars,
+                            "Avg Km Buses": avg_km_buses,
+                            "Avg Km Trucks": avg_km_trucks,
+                            "Avg Km 2W": avg_km_2w,
+                            "Public Transport Ridership (pkm)": public_transport_ridership,
+                            "Public Transport Modes": ",".join(public_transport_modes) if public_transport_modes else "",
+                            "Cycle Lane km": km_cycle_tracks,
+                            "Pedestrian Zone km": pedestrian_zone_km,
+                            "Freight km": freight_km,
+                            "Freight Diesel (L)": freight_fuel_diesel_l,
+                            "Freight Electricity (MWh)": freight_electric_mwh,
+                            "EV Penetration (%)": electric_vehicle_penetration_pct,
+                            "Congestion Hotspots": congestion_hotspots_count,
+                            "Emergency Transport Routes": transport_emergency_routes_exist,
+
+                            # Water
+                            "Water Supplied (m3)": water_supply_m3,
+                            "Water Loss (%)": water_loss_fraction,
+                            "Energy for Water (kWh)": energy_for_water_kwh,
+                            "Wastewater Treated (m3)": wastewater_treated_m3,
+                            "Wastewater Treatment Level": wastewater_treatment_level,
+                            "Percent Flood Prone (%)": percent_area_flood_prone,
+                            "Urban Flood Plan": has_urban_flood_management_plan,
+                            "Drought Risk": drought_risk_level,
+                            "Stormwater Capacity": stormwater_infrastructure_capacity,
+                            "Planned Water Storage (m3)": planned_reservoirs_m3,
+                            "Groundwater Overdraft (%)": groundwater_overdraft_pct,
+
+                            # Waste
+                            "MSW (tons/year)": msw_tons,
+                            "Percent Landfilled (%)": percent_landfilled,
+                            "Percent Recycled (%)": percent_recycled,
+                            "Percent Composted (%)": percent_composted,
+                            "Landfill Methane Capture (%)": landfill_methane_capture,
+                            "Sludge (tons/year)": sludge_tons,
+                            "Energy Wastewater (kWh)": energy_wastewater_kwh,
+                            "Waste-to-Energy Planned": planned_waste_to_energy,
+                            "Circular Economy Programs": circular_economy_programs,
+                            "Commercial Waste Audit Done": commercial_waste_audit_done,
+
+                            # Files & metadata
+                            "Attachments": file_upload.name if file_upload else None,
+                            "Notes": notes,
+                            "Submission Date": datetime.now()
+                        }
+
+                        # Append to session-state dataframe and save
+                        df_cap = st.session_state.get("cap_data", pd.DataFrame())
+                        # Normalize columns if new DF is empty
+                        if df_cap.empty:
+                            df_cap = pd.DataFrame(columns=list(raw_data.keys()))
+                        # Append
+                        df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
+                        st.session_state.cap_data = df_cap
+                        try:
+                            df_cap.to_csv(CAP_DATA_FILE, index=False)
+                        except Exception as e:
+                            st.warning(f"Could not write CAP file: {e}")
+
+                        st.success(f"Raw data for {city} submitted successfully. Redirecting to GHG Inventory...")
+                        st.session_state.menu = "GHG Inventory"
                         st.experimental_rerun()
-                    except Exception:
-                        # Some hosting environments disallow experimental_rerun in this context.
-                        st.write("Data saved. Please click `GHG Inventory` in the sidebar/menu to continue.")
                 
 
 # ---------------------------
