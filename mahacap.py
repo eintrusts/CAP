@@ -963,9 +963,9 @@ elif menu == "Admin":
                 
 
 # ---------------------------
-# CAP Generation Page (7 expandable sections)
+# CAP Generation Page 
 # ---------------------------
-if menu == "CAP Generation":
+if menu == "Generate CAP":
     st.header("CAP Generation : Comprehensive Data Collection")
 
     # Admin check
@@ -973,7 +973,7 @@ if menu == "CAP Generation":
         admin_login()
     else:
         st.markdown("""
-        Collect detailed city-level raw data for generating a comprehensive GHG inventory.
+        Collect detailed city-level data for generating a comprehensive GHG inventory.
         Use each section to provide available activity data and sectoral priority/resilience inputs.
         Fields are optional — submit what you have. Data will be saved and used to generate the GHG inventory.
         """)
