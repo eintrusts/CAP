@@ -1257,7 +1257,7 @@ from io import BytesIO
 from fpdf import FPDF
 import locale
 
-# Set Indian locale
+# --- Indian number format ---
 try:
     locale.setlocale(locale.LC_ALL, 'en_IN.UTF-8')
 except:
@@ -1266,22 +1266,23 @@ except:
 # --- Page Config ---
 st.set_page_config(page_title="GHG Inventory", layout="wide")
 
-# Admin check
+# --- Admin check ---
 if not st.session_state.get("authenticated", False):
-    admin_login()
+    st.warning("Please login to access this page.")
 else:
     st.header("🌍 GHG Inventory Dashboard")
 
-    # Load CAP data
+    # --- Load CAP data (auto pull latest submission) ---
     cap_df = st.session_state.get("cap_data", pd.DataFrame())
 
     if cap_df.empty:
         st.warning("No CAP data found. Submit from CAP Generation first.")
     else:
         city_data = cap_df.iloc[-1]
-        city_name = city_data["City Name"]
+        city_name = city_data.get("City Name", "Unknown City")
 
-        # --- 1. Calculate Emissions (IPCC/NPC India factors) ---
+        # --- 1. Calculate Emissions ---
+        # Emission Factors (IPCC / NPC India)
         EF_electricity = 0.82
         EF_diesel = 2.68 / 1000
         EF_gas = 2.0 / 1000
@@ -1316,14 +1317,14 @@ else:
         waste_sub = {"MSW": city_data.get("MSW (tons/year)",0)*1000*EF_waste}
         waste_emissions = sum(waste_sub.values())
 
-        # Green Cover (assume 0 tCO2e)
+        # Green Cover
         green_sub = {"Green Cover": 0}
         green_emissions = 0
 
         # Total
         total_emissions = energy_emissions + mobility_emissions + water_emissions + waste_emissions + green_emissions
 
-        # --- 2. Top Block ---
+        # --- 2. Top Metrics Block ---
         col1, col2, col3, col4, col5, col6 = st.columns(6)
         col1.metric("Total Emissions (tCO2e)", locale.format_string("%.2f", total_emissions, grouping=True))
         col2.metric("Energy", locale.format_string("%.2f", energy_emissions, grouping=True))
@@ -1333,39 +1334,31 @@ else:
         col6.metric("Green Cover", locale.format_string("%.2f", green_emissions, grouping=True))
         st.markdown("---")
 
-        # --- 3. Pie Chart: Sector Emissions ---
+        # --- 3. Sector Pie Chart ---
         pie_df = pd.DataFrame({
             "Sector": ["Energy","Mobility","Water","Waste","Green Cover"],
             "Emissions": [energy_emissions, mobility_emissions, water_emissions, waste_emissions, green_emissions]
         })
-        fig_pie = px.pie(pie_df, names="Sector", values="Emissions", title="Sector-wise Emissions Share", template="plotly_dark")
+        fig_pie = px.pie(pie_df, names="Sector", values="Emissions",
+                         title="Sector-wise Emissions Share", template="plotly_dark")
         st.plotly_chart(fig_pie, use_container_width=True)
         st.markdown("---")
 
         # --- 4. Sectoral Bar Charts ---
-        # Energy
-        fig_energy = px.bar(x=list(energy_sub.keys()), y=list(energy_sub.values()),
-                            title="Energy Sector Emissions (tCO2e)", template="plotly_dark")
-        st.plotly_chart(fig_energy, use_container_width=True)
+        def plot_bar(sub_dict, title):
+            fig = px.bar(x=list(sub_dict.keys()), y=list(sub_dict.values()),
+                         title=title, template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True)
+            return fig
 
-        # Mobility
-        fig_mobility = px.bar(x=list(mobility_sub.keys()), y=list(mobility_sub.values()),
-                              title="Mobility Sector Emissions (tCO2e)", template="plotly_dark")
-        st.plotly_chart(fig_mobility, use_container_width=True)
-
-        # Water
-        fig_water = px.bar(x=list(water_sub.keys()), y=list(water_sub.values()),
-                           title="Water Sector Emissions (tCO2e)", template="plotly_dark")
-        st.plotly_chart(fig_water, use_container_width=True)
-
-        # Waste
-        fig_waste = px.bar(x=list(waste_sub.keys()), y=list(waste_sub.values()),
-                           title="Waste Sector Emissions (tCO2e)", template="plotly_dark")
-        st.plotly_chart(fig_waste, use_container_width=True)
+        fig_energy = plot_bar(energy_sub, "Energy Sector Emissions (tCO2e)")
+        fig_mobility = plot_bar(mobility_sub, "Mobility Sector Emissions (tCO2e)")
+        fig_water = plot_bar(water_sub, "Water Sector Emissions (tCO2e)")
+        fig_waste = plot_bar(waste_sub, "Waste Sector Emissions (tCO2e)")
 
         st.markdown("---")
 
-        # --- 5. Radar Chart: Sectoral Priority / Emissions ---
+        # --- 5. Radar Chart ---
         radar_categories = ["Energy","Green Cover","Mobility","Water","Waste"]
         radar_values = [energy_emissions, green_emissions, mobility_emissions, water_emissions, waste_emissions]
 
@@ -1398,7 +1391,7 @@ else:
             for sector, val in zip(pie_df["Sector"], pie_df["Emissions"]):
                 pdf.cell(0, 10, f"{sector}: {locale.format_string('%.2f', val, grouping=True)} tCO2e", ln=True)
 
-            # Charts as PNG
+            # Charts
             for fig in [fig_pie, fig_energy, fig_mobility, fig_water, fig_waste, fig_radar]:
                 img = BytesIO()
                 fig.write_image(img, format="png")
@@ -1421,6 +1414,7 @@ else:
         if st.button("View Actions / Goals"):
             st.session_state.menu = "Actions"
             st.experimental_rerun()
+
 
 
 # ---------------------------
