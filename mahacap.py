@@ -1062,44 +1062,44 @@ if st.session_state.get('authenticated'):
             programs_list = ['Audits','Retrofits','LED streetlights','Efficient Pumps']
             programs_active = st.multiselect('Active programs', programs_list)
 
-# ---------------------------
-# Tab 3: Green Cover & Biodiversity
-# ---------------------------
-with tabs[2]:
-st.subheader('Green Cover')
-total_green_area_ha = st.number_input('Total Green Cover Area (ha)', min_value=0, step=1)
-green_cover_percent = st.number_input('Green Cover (%)', min_value=0.0, max_value=100.0, step=0.1)
-num_parks = st.number_input('Number of Parks/Playgrounds/Gardens', min_value=0, step=1)
-parks_details_file = st.file_uploader('Upload Parks/Gardens Inventory', type=['csv','xlsx','pdf'])
+        # ---------------------------
+        # Tab 3: Green Cover & Biodiversity
+        # ---------------------------
+        with tabs[2]:
+            st.subheader('Green Cover')
+            total_green_area_ha = st.number_input('Total Green Cover Area (ha)', min_value=0, step=1)
+            green_cover_percent = st.number_input('Green Cover (%)', min_value=0.0, max_value=100.0, step=0.1)
+            num_parks = st.number_input('Number of Parks/Playgrounds/Gardens', min_value=0, step=1)
+            parks_details_file = st.file_uploader('Upload Parks/Gardens Inventory', type=['csv','xlsx','pdf'])
 
 
-st.subheader('Water Bodies & Biodiversity')
-wetlands_rivers_lakes = st.text_area('List wetlands, rivers, lakes with ecological status & threats')
-tree_plantation_data = st.text_area('Tree plantation data: number, species, survival rate, maintenance')
-nbs_implemented = st.text_area('Nature-based solutions implemented/planned')
+            st.subheader('Water Bodies & Biodiversity')
+            wetlands_rivers_lakes = st.text_area('List wetlands, rivers, lakes with ecological status & threats')
+            tree_plantation_data = st.text_area('Tree plantation data: number, species, survival rate, maintenance')
+            nbs_implemented = st.text_area('Nature-based solutions implemented/planned')
 
 
-# ---------------------------
-# Tab 4: Sustainable Mobility
-# ---------------------------
-with tabs[3]:
-st.subheader('Registered Vehicles')
-vehicle_types = ['2W','3W','4W','Buses','Trucks']
-fuel_types = ['Petrol','Diesel','CNG','EV']
-vehicles_data = {v: {f: st.number_input(f'{v} ({f})', min_value=0, step=1, format='%d') for f in fuel_types} for v in vehicle_types}
+        # ---------------------------
+        # Tab 4: Sustainable Mobility
+        # ---------------------------
+        with tabs[3]:
+            st.subheader('Registered Vehicles')
+            vehicle_types = ['2W','3W','4W','Buses','Trucks']
+            fuel_types = ['Petrol','Diesel','CNG','EV']
+            vehicles_data = {v: {f: st.number_input(f'{v} ({f})', min_value=0, step=1, format='%d') for f in fuel_types} for v in vehicle_types}
 
 
-st.subheader('Public Transport')
-daily_ridership = st.number_input('Daily Public Transport Ridership', min_value=0, step=1000, format='%d')
-public_transport_modes = st.multiselect('Public Transport Modes', ['Bus','Metro','Shared Mobility','Tram','BRT'])
+            st.subheader('Public Transport')
+            daily_ridership = st.number_input('Daily Public Transport Ridership', min_value=0, step=1000, format='%d')
+            public_transport_modes = st.multiselect('Public Transport Modes', ['Bus','Metro','Shared Mobility','Tram','BRT'])
 
 
-st.subheader('Non-Motorized Transport & EVs')
-footpaths_km = st.number_input('Footpath Length (km)', min_value=0.0, step=0.1)
-cycle_tracks_km = st.number_input('Cycle Tracks Length (km)', min_value=0.0, step=0.1)
-pedestrian_zones_km = st.number_input('Pedestrian Zones (km)', min_value=0.0, step=0.1)
-ev_adoption = st.number_input('EV Adoption (Number of EVs)', min_value=0, step=1, format='%d')
-ev_charging_stations = st.number_input('EV Charging Stations', min_value=0, step=1)
+            st.subheader('Non-Motorized Transport & EVs')
+            footpaths_km = st.number_input('Footpath Length (km)', min_value=0.0, step=0.1)
+            cycle_tracks_km = st.number_input('Cycle Tracks Length (km)', min_value=0.0, step=0.1)
+            pedestrian_zones_km = st.number_input('Pedestrian Zones (km)', min_value=0.0, step=0.1)
+            ev_adoption = st.number_input('EV Adoption (Number of EVs)', min_value=0, step=1, format='%d')
+            ev_charging_stations = st.number_input('EV Charging Stations', min_value=0, step=1)
         
         # ---------------------------
         # Tab 5: Water Resource Management
