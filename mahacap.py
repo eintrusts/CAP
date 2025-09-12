@@ -965,11 +965,9 @@ elif menu == "Admin":
 # ---------------------------
 # CAP Generation Page
 # ---------------------------
-
 if menu == "Generate CAP":
     st.header("CAP Generation : Comprehensive Data Collection")
 
-    # Admin check
     if not st.session_state.get("authenticated", False):
         admin_login()
     else:
@@ -979,187 +977,9 @@ if menu == "Generate CAP":
         Fields are optional — submit what you have. Data will be saved and used to generate the GHG inventory.
         """)
 
-        # Load existing CAP data from session
+        # Retrieve previously saved CAP data
         df_cap = st.session_state.get("cap_data", pd.DataFrame())
 
-        # Unique form key to avoid duplicate form errors
-        with st.form("cap_generation_form_v2", clear_on_submit=False):
-
-            # ---------- Helper function ----------
-            def get_prefill(key, default=0):
-                if df_cap.empty or key not in df_cap.columns:
-                    return default
-                return df_cap[df_cap["City Name"] == city][key].values[0] if city in df_cap["City Name"].values else default
-
-            # ---------- Sections & fields ----------
-            sections = [
-                ("1. Basic City Information", [
-                    ("City Name", "selectbox", list(cities_districts.keys())),
-                    ("Population", "number", 0, 0, 1000),
-                    ("Households", "number", 0, 0, 100),
-                    ("Area (km²)", "number", 0.0, 0.0, 0.1),
-                    ("Administrative Type", "selectbox", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "Other"]),
-                    ("Year of Inventory", "number", datetime.now().year, 2000, 2100, 1),
-                    ("Urbanization Rate (%)", "number", 0.0, 0.0, 100.0, 0.1),
-                    ("Coastal City?", "selectbox", ["No","Yes"]),
-                    ("Has Airport within city boundary?", "selectbox", ["No","Yes"]),
-                    ("Major industrial zone inside city?", "selectbox", ["No","Yes"])
-                ]),
-                ("2. Energy & Green Building", [
-                    ("Municipal buildings energy (MWh/year)", "number", 0, 0, 10),
-                    ("Residential electricity (MWh/year)", "number",0,0,10),
-                    ("Commercial electricity (MWh/year)", "number",0,0,10),
-                    ("Industrial electricity (MWh/year)", "number",0,0,10),
-                    ("Purchased heat/steam (GJ/year)","number",0,0,10),
-                    ("Diesel generator fuel (litres/year)","number",0,0,10),
-                    ("Gas turbine fuel (m³/year)","number",0,0,10),
-                    ("Estimated rooftop solar potential (MW)","number",0.0,0.0,0.1),
-                    ("Rooftop solar generation (MWh/year)","number",0,0,10),
-                    ("Utility-scale solar (MWh/year)","number",0,0,10),
-                    ("Wind (MWh/year)","number",0,0,10),
-                    ("Biomass (MWh/year)","number",0,0,10),
-                    ("% of public/commercial buildings energy audited","number",0.0,0.0,0.1),
-                    ("Estimated retrofittable building area (m²)","number",0,0,100),
-                    ("Planned building retrofit program?","selectbox",["No","Yes"]),
-                    ("Critical facilities with backup renewables (hospitals, water)?","selectbox",["No","Yes"]),
-                    ("Energy security risk (low/medium/high)","selectbox",["Low","Medium","High"])
-                ]),
-                ("3. Urban Green Cover & Biodiversity", [
-                    ("Urban green area (ha)","number",0,0,1),
-                    ("Tree canopy cover (%)","number",0.0,0.0,0.1),
-                    ("Number of parks/public gardens","number",0,0,1),
-                    ("Community gardens / urban farms present?","selectbox",["No","Yes"]),
-                    ("Protected natural area within city (ha)","number",0,0,1),
-                    ("Active urban forestry program?","selectbox",["No","Yes"]),
-                    ("Urban heat vulnerability index (0-100)","number",0.0,0.0,0.1),
-                    ("Planned afforestation area (ha)","number",0,0,1)
-                ]),
-                ("4. Sustainable Mobility", [
-                    ("Number of cars","number",0,0,10),
-                    ("Number of buses","number",0,0,1),
-                    ("Number of trucks","number",0,0,1),
-                    ("Number of 2/3-wheelers","number",0,0,10),
-                    ("Average km/year per car","number",0,0,100),
-                    ("Average km/year per bus","number",0,0,100),
-                    ("Average km/year per truck","number",0,0,100),
-                    ("Average km/year per 2/3-wheeler","number",0,0,100),
-                    ("Annual public transport ridership (passenger-km)","number",0,0,1000),
-                    ("Public transport modes present","multiselect",["Bus","Metro","Suburban Rail","Tram","BRT"]),
-                    ("Total dedicated cycle lane length (km)","number",0.0,0.0,0.1),
-                    ("Pedestrian-only zone length (km)","number",0.0,0.0,0.1),
-                    ("Annual goods vehicle km (estimated)","number",0,0,1000),
-                    ("Freight diesel (L/year)","number",0,0,10),
-                    ("Freight electricity (MWh/year)","number",0,0,10),
-                    ("EV penetration in fleet (%)","number",0.0,0.0,0.1),
-                    ("Number of major congestion hotspots","number",0,0,1),
-                    ("Designated emergency transport corridors?","selectbox",["No","Yes"])
-                ]),
-                ("5. Water Resource Management", [
-                    ("Total water supplied (m³/year)","number",0,0,1000),
-                    ("Distribution loss / NRW (%)","number",0.0,0.0,0.1),
-                    ("Energy for water pumping & treatment (kWh/year)","number",0,0,100),
-                    ("Wastewater treated (m³/year)","number",0,0,1000),
-                    ("Wastewater treatment level", "selectbox",["None","Primary","Secondary","Tertiary"]),
-                    ("Percent of city area flood-prone (%)","number",0.0,0.0,0.1),
-                    ("Urban flood management plan?","selectbox",["No","Yes"]),
-                    ("Drought risk (Low/Medium/High)","selectbox",["Low","Medium","High"]),
-                    ("Stormwater infrastructure adequate?","selectbox",["No","Partially","Yes"]),
-                    ("Planned additional water storage (m³)","number",0,0,1000),
-                    ("Estimated groundwater overdraft (%)","number",0.0,0.0,0.1)
-                ]),
-                ("6. Waste Management", [
-                    ("Municipal solid waste generated (tons/year)","number",0,0,10),
-                    ("Fraction landfilled (%)","number",0.0,0.0,0.1),
-                    ("Fraction recycled (%)","number",0.0,0.0,0.1),
-                    ("Fraction composted (%)","number",0.0,0.0,0.1),
-                    ("Landfill methane capture rate (%)","number",0.0,0.0,0.1),
-                    ("Sludge generated (tons/year)","number",0,0,10),
-                    ("Energy use in wastewater treatment (kWh/year)","number",0,0,10),
-                    ("Planned waste-to-energy projects?","selectbox",["No","Yes"]),
-                    ("Circular economy programs active?","selectbox",["No","Yes"]),
-                    ("Commercial waste audits done?","selectbox",["No","Yes"])
-                ])
-            ]
-
-            # ---------- Generate Inputs Dynamically ----------
-            inputs = {}
-            for sec_name, fields in sections:
-                with st.expander(sec_name, expanded=True):
-                    for field in fields:
-                        key = field[0]
-                        if field[1] == "number":
-                            min_val = field[2]
-                            default = get_prefill(key, min_val)
-                            step = field[4] if len(field) > 4 else 1
-                            inputs[key] = st.number_input(key, min_value=min_val, value=default, step=step)
-                        elif field[1] == "selectbox":
-                            options = field[2]
-                            default = get_prefill(key, options[0])
-                            inputs[key] = st.selectbox(key, options, index=options.index(default) if default in options else 0)
-                        elif field[1] == "multiselect":
-                            options = field[2]
-                            default = get_prefill(key, [])
-                            inputs[key] = st.multiselect(key, options, default=default if isinstance(default, list) else [])
-
-            # ---------- Upload & Submit ----------
-            with st.expander("7. Upload & Submit"):
-                file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf","xlsx","csv"])
-                notes = st.text_area("Any additional notes / clarifications (optional)", height=120)
-
-            submit_cap = st.form_submit_button("Generate GHG Inventory")
-
-            if submit_cap:
-                if not inputs.get("City Name") or inputs.get("Population",0) <= 0:
-                    st.error("Please provide minimum required fields: City and Population.")
-                else:
-                    raw_data = {**inputs, "Attachments": file_upload.name if file_upload else None, "Notes": notes, "Submission Date": datetime.now()}
-                    if df_cap.empty or inputs["City Name"] not in df_cap["City Name"].values:
-                        df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
-                    else:
-                        df_cap.loc[df_cap["City Name"] == inputs["City Name"]] = pd.Series(raw_data)
-                    st.session_state["cap_data"] = df_cap
-                    st.success(f"CAP data for {inputs['City Name']} saved successfully.")
-                    st.balloons()
-                    
-# ---------------------------
-# CAP Generation Page (Safe Version)
-# ---------------------------
-if menu == "Generate CAP":
-    st.header("CAP Generation : Comprehensive Data Collection")
-
-    # Initialize session state for CAP_city
-    if "CAP_city" not in st.session_state:
-        st.session_state["CAP_city"] = None
-
-    # Admin check
-    if not st.session_state.get("authenticated", False):
-        admin_login()
-    else:
-        st.markdown("""
-        Collect detailed city-level raw data for generating a comprehensive GHG inventory.  
-        Use each section to provide available activity data and sectoral priority/resilience inputs.  
-        Fields are optional — submit what you have. Data will be saved and used to generate the GHG inventory.
-        """)
-
-        # Safe prefill function
-        def get_prefill(key, default):
-            df_cap = st.session_state.get("cap_data", pd.DataFrame())
-            city = st.session_state.get("CAP_city")
-
-            if (
-                city 
-                and not df_cap.empty 
-                and "City Name" in df_cap.columns 
-                and key in df_cap.columns
-            ):
-                city_data = df_cap[df_cap["City Name"] == city]
-                if not city_data.empty:
-                    return city_data.iloc[0][key]
-            return default
-
-        # -------------------
-        # CAP FORM
-        # -------------------
         with st.form("cap_generation_form_v2", clear_on_submit=False):
 
             # -------------------
@@ -1167,105 +987,181 @@ if menu == "Generate CAP":
             # -------------------
             with st.expander("1. Basic City Information", expanded=True):
                 city = st.selectbox("City Name", list(cities_districts.keys()))
-                st.session_state["CAP_city"] = city  # update in session state
+                city_data = df_cap[df_cap["City Name"] == city].squeeze() if not df_cap.empty else None
 
-                population = st.number_input(
-                    "Total Population", 
-                    min_value=0, 
-                    value=get_prefill("Population", 0), 
-                    step=1000
-                )
-                households = st.number_input(
-                    "Number of Households", 
-                    min_value=0, 
-                    value=get_prefill("Households", 0), 
-                    step=100
-                )
-                area_km2 = st.number_input(
-                    "Area (km²)", 
-                    min_value=0.0, 
-                    value=get_prefill("Area_km2", 0.0), 
-                    step=0.1
-                )
-                admin_type = st.selectbox(
-                    "Administrative Type", 
-                    ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "Other"]
-                )
-                inventory_year = st.number_input(
-                    "Year of Inventory", 
-                    min_value=2000, 
-                    max_value=2100, 
-                    value=datetime.now().year
-                )
+                population = st.number_input("Total Population", min_value=0, value=int(city_data.get("Population", 0)) if city_data is not None else 0, step=1000)
+                households = st.number_input("Number of Households", min_value=0, value=int(city_data.get("Households", 0)) if city_data is not None else 0, step=100)
+                area_km2 = st.number_input("Area (km²)", min_value=0.0, value=float(city_data.get("Area_km2", 0.0)) if city_data is not None else 0.0, step=0.1)
+                admin_type = st.selectbox("Administrative Type", ["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "Other"],
+                                          index=["Municipal Corporation", "Municipal Council", "Nagar Panchayat", "Other"].index(city_data.get("Administrative Type", "Municipal Corporation")) if city_data is not None else 0)
+                inventory_year = st.number_input("Year of Inventory", min_value=2000, max_value=2100,
+                                                 value=int(city_data.get("Year of Inventory", datetime.now().year)) if city_data is not None else datetime.now().year)
+                urbanization_rate = st.number_input("Urbanization Rate (%)", min_value=0.0, max_value=100.0,
+                                                   value=float(city_data.get("Urbanization Rate (%)", 0.0)) if city_data is not None else 0.0, step=0.1)
+                coastal_city = st.selectbox("Coastal City?", ["No", "Yes"], index=["No","Yes"].index(city_data.get("Coastal City", "No")) if city_data is not None else 0)
+                has_airport = st.selectbox("Has Airport within city boundary?", ["No", "Yes"], index=["No","Yes"].index(city_data.get("Has Airport", "No")) if city_data is not None else 0)
+                major_industrial_hub = st.selectbox("Major industrial zone inside city?", ["No", "Yes"], index=["No","Yes"].index(city_data.get("Major Industrial Hub", "No")) if city_data is not None else 0)
 
             # -------------------
-            # 2–6. REMAINING SECTIONS
-            # (unchanged, same as your code)
+            # 2. ENERGY & GREEN BUILDING
             # -------------------
             with st.expander("2. Energy & Green Building"):
                 st.subheader("Electricity & Heat (MWh or kWh)")
-                municipal_electricity_mwh = st.number_input(
-                    "Municipal buildings energy (MWh/year)", min_value=0, value=0, step=10
-                )
-                # (keep all your existing inputs here – unchanged)
+                municipal_electricity_mwh = st.number_input("Municipal buildings energy (MWh/year)", min_value=0, value=int(city_data.get("Municipal Electricity (MWh)",0)) if city_data is not None else 0, step=10)
+                residential_electricity_mwh = st.number_input("Residential electricity (MWh/year)", min_value=0, value=int(city_data.get("Residential Electricity (MWh)",0)) if city_data is not None else 0, step=10)
+                commercial_electricity_mwh = st.number_input("Commercial electricity (MWh/year)", min_value=0, value=int(city_data.get("Commercial Electricity (MWh)",0)) if city_data is not None else 0, step=10)
+                industrial_electricity_mwh = st.number_input("Industrial electricity (MWh/year)", min_value=0, value=int(city_data.get("Industrial Electricity (MWh)",0)) if city_data is not None else 0, step=10)
+                purchased_heat_gj = st.number_input("Purchased heat/steam (GJ/year)", min_value=0, value=int(city_data.get("Purchased Heat (GJ)",0)) if city_data is not None else 0, step=10)
 
-            with st.expander("3. Urban Green Cover & Biodiversity"):
-                urban_green_area_ha = st.number_input("Urban green area (ha)", min_value=0, value=0, step=1)
-                # (rest intact)
+                st.subheader("On-site generation & backup")
+                diesel_gen_l = st.number_input("Diesel generator fuel (litres/year)", min_value=0, value=int(city_data.get("Diesel Gen (L/year)",0)) if city_data is not None else 0, step=10)
+                gas_turbine_m3 = st.number_input("Gas turbine fuel (m³/year)", min_value=0, value=int(city_data.get("Gas Turbine Fuel (m3/year)",0)) if city_data is not None else 0, step=10)
 
-            with st.expander("4. Sustainable Mobility"):
-                cars = st.number_input("Number of cars", min_value=0, value=0, step=10)
-                # (rest intact)
+                st.subheader("Renewable energy & potential")
+                rooftop_solar_mw_potential = st.number_input("Estimated rooftop solar potential (MW)", min_value=0.0, value=float(city_data.get("Rooftop Solar Potential (MW)",0.0)) if city_data is not None else 0.0, step=0.1)
+                rooftop_solar_mwh = st.number_input("Rooftop solar generation (MWh/year)", min_value=0, value=int(city_data.get("Rooftop Solar (MWh)",0)) if city_data is not None else 0, step=10)
+                utility_scale_solar_mwh = st.number_input("Utility-scale solar (MWh/year)", min_value=0, value=int(city_data.get("Utility Solar (MWh)",0)) if city_data is not None else 0, step=10)
+                wind_mwh = st.number_input("Wind (MWh/year)", min_value=0, value=int(city_data.get("Wind (MWh)",0)) if city_data is not None else 0, step=10)
+                biomass_mwh = st.number_input("Biomass (MWh/year)", min_value=0, value=int(city_data.get("Biomass (MWh)",0)) if city_data is not None else 0, step=10)
 
-            with st.expander("5. Water Resource Management"):
-                water_supply_m3 = st.number_input("Total water supplied (m³/year)", min_value=0, value=0, step=1000)
-                # (rest intact)
+                st.subheader("Green buildings & efficiency")
+                percent_buildings_energy_audited = st.number_input("% of public/commercial buildings energy audited", min_value=0.0, max_value=100.0, value=float(city_data.get("Percent Buildings Audited (%)",0.0)) if city_data is not None else 0.0, step=0.1)
+                retrofittable_building_area_m2 = st.number_input("Estimated retrofittable building area (m²)", min_value=0, value=int(city_data.get("Retrofittable Area (m2)",0)) if city_data is not None else 0, step=100)
+                planned_building_efficiency_program = st.selectbox("Planned building retrofit program?", ["No", "Yes"], index=["No","Yes"].index(city_data.get("Retrofitting Program Planned","No")) if city_data is not None else 0)
 
-            with st.expander("6. Waste Management"):
-                msw_tons = st.number_input("Municipal solid waste generated (tons/year)", min_value=0, value=0, step=10)
-                # (rest intact)
+                critical_facilities_on_microgrid = st.selectbox("Critical facilities with backup renewables (hospitals, water)?", ["No","Yes"], index=["No","Yes"].index(city_data.get("Critical Facilities on Microgrid","No")) if city_data is not None else 0)
+                energy_security_risk_level = st.selectbox("Energy security risk (low/medium/high)", ["Low","Medium","High"], index=["Low","Medium","High"].index(city_data.get("Energy Security Risk","Low")) if city_data is not None else 0)
 
             # -------------------
-            # 7. UPLOAD & SUBMIT
+            # 3. URBAN GREEN COVER & BIODIVERSITY
+            # -------------------
+            with st.expander("3. Urban Green Cover & Biodiversity"):
+                urban_green_area_ha = st.number_input("Urban green area (ha)", min_value=0, value=int(city_data.get("Urban Green Area (ha)",0)) if city_data is not None else 0, step=1)
+                percent_tree_canopy = st.number_input("Tree canopy cover (%)", min_value=0.0, max_value=100.0, value=float(city_data.get("Tree Canopy (%)",0.0)) if city_data is not None else 0.0, step=0.1)
+                number_parks = st.number_input("Number of parks/public gardens", min_value=0, value=int(city_data.get("Number of Parks",0)) if city_data is not None else 0, step=1)
+                community_gardens = st.selectbox("Community gardens / urban farms present?", ["No","Yes"], index=["No","Yes"].index(city_data.get("Community Gardens","No")) if city_data is not None else 0)
+                protected_areas_ha = st.number_input("Protected natural area within city (ha)", min_value=0, value=int(city_data.get("Protected Areas (ha)",0)) if city_data is not None else 0, step=1)
+                urban_forest_program = st.selectbox("Active urban forestry program?", ["No","Yes"], index=["No","Yes"].index(city_data.get("Urban Forest Program","No")) if city_data is not None else 0)
+                heat_vulnerability_index = st.number_input("Urban heat vulnerability index (0-100)", min_value=0.0, max_value=100.0, value=float(city_data.get("Heat Vulnerability Index",0.0)) if city_data is not None else 0.0, step=0.1)
+                priority_afforestation_ha = st.number_input("Planned afforestation area (ha)", min_value=0, value=int(city_data.get("Planned Afforestation (ha)",0)) if city_data is not None else 0, step=1)
+
+            # -------------------
+            # 4. SUSTAINABLE MOBILITY
+            # -------------------
+            with st.expander("4. Sustainable Mobility"):
+                cars = st.number_input("Number of cars", min_value=0, value=int(city_data.get("Cars",0)) if city_data is not None else 0, step=10)
+                buses = st.number_input("Number of buses", min_value=0, value=int(city_data.get("Buses",0)) if city_data is not None else 0, step=1)
+                trucks = st.number_input("Number of trucks", min_value=0, value=int(city_data.get("Trucks",0)) if city_data is not None else 0, step=1)
+                two_wheelers = st.number_input("Number of 2/3-wheelers", min_value=0, value=int(city_data.get("Two Wheelers",0)) if city_data is not None else 0, step=10)
+
+                avg_km_cars = st.number_input("Average km/year per car", min_value=0, value=int(city_data.get("Avg Km Cars",0)) if city_data is not None else 0, step=100)
+                avg_km_buses = st.number_input("Average km/year per bus", min_value=0, value=int(city_data.get("Avg Km Buses",0)) if city_data is not None else 0, step=100)
+                avg_km_trucks = st.number_input("Average km/year per truck", min_value=0, value=int(city_data.get("Avg Km Trucks",0)) if city_data is not None else 0, step=100)
+                avg_km_2w = st.number_input("Average km/year per 2/3-wheeler", min_value=0, value=int(city_data.get("Avg Km 2W",0)) if city_data is not None else 0, step=100)
+
+                public_transport_ridership = st.number_input("Annual public transport ridership (passenger-km)", min_value=0, value=int(city_data.get("Public Transport Ridership (pkm)",0)) if city_data is not None else 0, step=1000)
+                public_transport_modes = st.multiselect("Public transport modes present", ["Bus","Metro","Suburban Rail","Tram","BRT"], default=city_data.get("Public Transport Modes","").split(",") if city_data is not None else [])
+                km_cycle_tracks = st.number_input("Total dedicated cycle lane length (km)", min_value=0.0, value=float(city_data.get("Cycle Lane km",0.0)) if city_data is not None else 0.0, step=0.1)
+                pedestrian_zone_km = st.number_input("Pedestrian-only zone length (km)", min_value=0.0, value=float(city_data.get("Pedestrian Zone km",0.0)) if city_data is not None else 0.0, step=0.1)
+
+                freight_km = st.number_input("Annual goods vehicle km (estimated)", min_value=0, value=int(city_data.get("Freight km",0)) if city_data is not None else 0, step=1000)
+                electric_vehicle_incentive = st.selectbox("EV promotion scheme active?", ["No","Yes"], index=["No","Yes"].index(city_data.get("EV Scheme","No")) if city_data is not None else 0)
+
+            # -------------------
+            # 5. WASTE MANAGEMENT
+            # -------------------
+            with st.expander("5. Waste Management"):
+                msw_generated_tpd = st.number_input("Municipal Solid Waste generated (TPD)", min_value=0.0, value=float(city_data.get("MSW TPD",0.0)) if city_data is not None else 0.0, step=1.0)
+                msw_collected_percent = st.number_input("Percent waste collected", min_value=0.0, max_value=100.0, value=float(city_data.get("MSW Collected %",0.0)) if city_data is not None else 0.0, step=0.1)
+                msw_landfilled_percent = st.number_input("Percent waste landfilled", min_value=0.0, max_value=100.0, value=float(city_data.get("MSW Landfilled %",0.0)) if city_data is not None else 0.0, step=0.1)
+                msw_recycled_percent = st.number_input("Percent waste recycled", min_value=0.0, max_value=100.0, value=float(city_data.get("MSW Recycled %",0.0)) if city_data is not None else 0.0, step=0.1)
+                composted_percent = st.number_input("Percent waste composted", min_value=0.0, max_value=100.0, value=float(city_data.get("MSW Composted %",0.0)) if city_data is not None else 0.0, step=0.1)
+                waste_to_energy_mwh = st.number_input("Waste-to-energy generated (MWh/year)", min_value=0.0, value=float(city_data.get("Waste to Energy (MWh)",0.0)) if city_data is not None else 0.0, step=1.0)
+
+            # -------------------
+            # 6. WATER & WASTEWATER
+            # -------------------
+            with st.expander("6. Water & Wastewater"):
+                water_supply_mld = st.number_input("Water supplied (MLD)", min_value=0.0, value=float(city_data.get("Water Supplied MLD",0.0)) if city_data is not None else 0.0, step=1.0)
+                water_consumption_mld = st.number_input("Water consumed (MLD)", min_value=0.0, value=float(city_data.get("Water Consumed MLD",0.0)) if city_data is not None else 0.0, step=1.0)
+                treated_wastewater_mld = st.number_input("Treated wastewater (MLD)", min_value=0.0, value=float(city_data.get("Treated WW MLD",0.0)) if city_data is not None else 0.0, step=1.0)
+                reused_wastewater_mld = st.number_input("Reused wastewater (MLD)", min_value=0.0, value=float(city_data.get("Reused WW MLD",0.0)) if city_data is not None else 0.0, step=1.0)
+                water_loss_percent = st.number_input("Distribution losses (%)", min_value=0.0, max_value=100.0, value=float(city_data.get("Water Loss %",0.0)) if city_data is not None else 0.0, step=0.1)
+                water_treatment_efficiency = st.number_input("Water treatment efficiency (%)", min_value=0.0, max_value=100.0, value=float(city_data.get("Water Treatment Efficiency %",0.0)) if city_data is not None else 0.0, step=0.1)
+
+            # -------------------
+            # 7. Upload & Submit
             # -------------------
             with st.expander("7. Upload & Submit"):
-                file_upload = st.file_uploader(
-                    "Attach supporting documents (optional)", type=["pdf","xlsx","csv"]
-                )
-                notes = st.text_area("Any additional notes / clarifications (optional)", value="", height=120)
+                st.markdown("### Attach supporting documents (maps, reports, energy bills, surveys)")
+                file_upload = st.file_uploader("Attach supporting documents (optional)", type=["pdf","xlsx","csv"])
+                notes = st.text_area("Any additional notes / clarifications (optional)", value=city_data.get("Notes", "") if city_data is not None else "", height=120)
 
-            # Submit Button (must be inside the form)
-            submit_cap = st.form_submit_button("Generate GHG Inventory")
+                submit_cap = st.form_submit_button("Generate GHG Inventory")
 
-            if submit_cap:
-                if not city or population <= 0 or inventory_year <= 0:
-                    st.error("Please provide minimum required fields: City, Population and Year of Inventory.")
-                else:
-                    # Build raw_data dictionary
-                    raw_data = {
-                        "City Name": city,
-                        "Population": population,
-                        "Households": households,
-                        "Area_km2": area_km2,
-                        "Administrative Type": admin_type,
-                        "Year of Inventory": inventory_year,
-                        "Attachments": file_upload.name if file_upload else None,
-                        "Notes": notes,
-                        "Submission Date": datetime.now()
-                    }
+                if submit_cap:
+                    if not city or population <= 0 or inventory_year <= 0:
+                        st.error("Please provide minimum required fields: City, Population and Year of Inventory.")
+                    else:
+                        raw_data = {
+                            "City Name": city, "Population": population, "Households": households,
+                            "Area_km2": area_km2, "Administrative Type": admin_type,
+                            "Year of Inventory": inventory_year, "Urbanization Rate (%)": urbanization_rate,
+                            "Coastal City": coastal_city, "Has Airport": has_airport,
+                            "Major Industrial Hub": major_industrial_hub, "Notes": notes,
 
-                    # Append to session-state dataframe
-                    df_cap = st.session_state.get("cap_data", pd.DataFrame())
-                    if df_cap.empty:
-                        df_cap = pd.DataFrame(columns=list(raw_data.keys()))
-                    df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
-                    st.session_state.cap_data = df_cap
+                            # Energy & Buildings
+                            "Municipal Electricity (MWh)": municipal_electricity_mwh,
+                            "Residential Electricity (MWh)": residential_electricity_mwh,
+                            "Commercial Electricity (MWh)": commercial_electricity_mwh,
+                            "Industrial Electricity (MWh)": industrial_electricity_mwh,
+                            "Purchased Heat (GJ)": purchased_heat_gj,
+                            "Diesel Gen (L/year)": diesel_gen_l,
+                            "Gas Turbine Fuel (m3/year)": gas_turbine_m3,
+                            "Rooftop Solar Potential (MW)": rooftop_solar_mw_potential,
+                            "Rooftop Solar (MWh)": rooftop_solar_mwh,
+                            "Utility Solar (MWh)": utility_scale_solar_mwh,
+                            "Wind (MWh)": wind_mwh,
+                            "Biomass (MWh)": biomass_mwh,
+                            "Percent Buildings Audited (%)": percent_buildings_energy_audited,
+                            "Retrofittable Area (m2)": retrofittable_building_area_m2,
+                            "Retrofitting Program Planned": planned_building_efficiency_program,
+                            "Critical Facilities on Microgrid": critical_facilities_on_microgrid,
+                            "Energy Security Risk": energy_security_risk_level,
 
-                    try:
-                        df_cap.to_csv(CAP_DATA_FILE, index=False)
-                    except Exception as e:
-                        st.warning(f"Could not write CAP file: {e}")
+                            # Urban Green
+                            "Urban Green Area (ha)": urban_green_area_ha,
+                            "Tree Canopy (%)": percent_tree_canopy,
+                            "Number of Parks": number_parks,
+                            "Community Gardens": community_gardens,
+                            "Protected Areas (ha)": protected_areas_ha,
+                            "Urban Forest Program": urban_forest_program,
+                            "Heat Vulnerability Index": heat_vulnerability_index,
+                            "Planned Afforestation (ha)": priority_afforestation_ha,
 
-                    st.success(f"Raw data for {city} submitted successfully. Redirecting to GHG Inventory...")
-                    st.session_state.menu = "GHG Inventory"
-                    st.experimental_rerun()
+                            # Mobility
+                            "Cars": cars, "Buses": buses, "Trucks": trucks, "Two Wheelers": two_wheelers,
+                            "Avg Km Cars": avg_km_cars, "Avg Km Buses": avg_km_buses, "Avg Km Trucks": avg_km_trucks, "Avg Km 2W": avg_km_2w,
+                            "Public Transport Ridership (pkm)": public_transport_ridership,
+                            "Public Transport Modes": ",".join(public_transport_modes),
+                            "Cycle Lane km": km_cycle_tracks, "Pedestrian Zone km": pedestrian_zone_km,
+                            "Freight km": freight_km, "EV Scheme": electric_vehicle_incentive,
+
+                            # Waste
+                            "MSW TPD": msw_generated_tpd, "MSW Collected %": msw_collected_percent,
+                            "MSW Landfilled %": msw_landfilled_percent, "MSW Recycled %": msw_recycled_percent,
+                            "MSW Composted %": composted_percent, "Waste to Energy (MWh)": waste_to_energy_mwh,
+
+                            # Water
+                            "Water Supplied MLD": water_supply_mld, "Water Consumed MLD": water_consumption_mld,
+                            "Treated WW MLD": treated_wastewater_mld, "Reused WW MLD": reused_wastewater_mld,
+                            "Water Loss %": water_loss_percent, "Water Treatment Efficiency %": water_treatment_efficiency
+                        }
+
+                        if not df_cap.empty and city in df_cap["City Name"].values:
+                            df_cap.loc[df_cap["City Name"] == city] = pd.Series(raw_data)
+                        else:
+                            df_cap = pd.concat([df_cap, pd.DataFrame([raw_data])], ignore_index=True)
+
+                        st.session_state["cap_data"] = df_cap
+                        st.success(f"CAP data for {city} saved successfully!")
