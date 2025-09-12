@@ -1062,14 +1062,142 @@ if st.session_state.get('authenticated'):
             programs_list = ['Audits','Retrofits','LED streetlights','Efficient Pumps']
             programs_active = st.multiselect('Active programs', programs_list)
 
-        # ---------------------------
-        # Tab 3–11: Placeholder for all remaining questions
-        # For brevity, repeat pattern of input fields (numbers, text, files, multiselects, radios)
-        # ---------------------------
-        for i in range(2,11):
-            with tabs[i]:
-                st.info(f'Inputs for Tab {i+1} to be added here similar to previous tabs with number/text/multiselect/file inputs')
+# ---------------------------
+# Tab 3: Green Cover & Biodiversity
+# ---------------------------
+with tabs[2]:
+st.subheader('Green Cover')
+total_green_area_ha = st.number_input('Total Green Cover Area (ha)', min_value=0, step=1)
+green_cover_percent = st.number_input('Green Cover (%)', min_value=0.0, max_value=100.0, step=0.1)
+num_parks = st.number_input('Number of Parks/Playgrounds/Gardens', min_value=0, step=1)
+parks_details_file = st.file_uploader('Upload Parks/Gardens Inventory', type=['csv','xlsx','pdf'])
 
+
+st.subheader('Water Bodies & Biodiversity')
+wetlands_rivers_lakes = st.text_area('List wetlands, rivers, lakes with ecological status & threats')
+tree_plantation_data = st.text_area('Tree plantation data: number, species, survival rate, maintenance')
+nbs_implemented = st.text_area('Nature-based solutions implemented/planned')
+
+
+# ---------------------------
+# Tab 4: Sustainable Mobility
+# ---------------------------
+with tabs[3]:
+st.subheader('Registered Vehicles')
+vehicle_types = ['2W','3W','4W','Buses','Trucks']
+fuel_types = ['Petrol','Diesel','CNG','EV']
+vehicles_data = {v: {f: st.number_input(f'{v} ({f})', min_value=0, step=1, format='%d') for f in fuel_types} for v in vehicle_types}
+
+
+st.subheader('Public Transport')
+daily_ridership = st.number_input('Daily Public Transport Ridership', min_value=0, step=1000, format='%d')
+public_transport_modes = st.multiselect('Public Transport Modes', ['Bus','Metro','Shared Mobility','Tram','BRT'])
+
+
+st.subheader('Non-Motorized Transport & EVs')
+footpaths_km = st.number_input('Footpath Length (km)', min_value=0.0, step=0.1)
+cycle_tracks_km = st.number_input('Cycle Tracks Length (km)', min_value=0.0, step=0.1)
+pedestrian_zones_km = st.number_input('Pedestrian Zones (km)', min_value=0.0, step=0.1)
+ev_adoption = st.number_input('EV Adoption (Number of EVs)', min_value=0, step=1, format='%d')
+ev_charging_stations = st.number_input('EV Charging Stations', min_value=0, step=1)
+        
+        # ---------------------------
+        # Tab 5: Water Resource Management
+        # ---------------------------
+        with tabs[4]:
+            st.subheader('Water Supply & Usage')
+            sources = ['Surface Water','Groundwater','Bulk Purchase']
+            water_supply_mld = {s: st.number_input(f'{s} Supply (MLD)', min_value=0, step=1) for s in sources}
+            per_capita_supply = st.number_input('Per Capita Supply (LPCD)', min_value=0, step=1)
+            nrw_percent = st.number_input('Non-Revenue Water (%)', min_value=0.0, max_value=100.0, step=0.1)
+            leak_points_file = st.file_uploader('Upload Leak Points / Metering Coverage', type=['pdf','xlsx','csv'])
+
+            st.subheader('Wastewater & Flood Management')
+            wastewater_mld = st.number_input('Wastewater Generation (MLD)', min_value=0, step=1)
+            stp_capacity_mld = st.number_input('STP Capacity (MLD)', min_value=0, step=1)
+            percent_treated = st.number_input('% Wastewater Treated', min_value=0.0, max_value=100.0, step=0.1)
+            percent_reused = st.number_input('% Reused', min_value=0.0, max_value=100.0, step=0.1)
+            stormwater_maps = st.file_uploader('Upload Stormwater Maps / Flood Records', type=['pdf','xlsx','csv'])
+            groundwater_data = st.text_area('Groundwater Levels, Over-extraction Areas, Recharge Initiatives')
+
+        # ---------------------------
+        # Tab 6: Waste Management
+        # ---------------------------
+        with tabs[5]:
+            st.subheader('Solid Waste Management')
+            msw_mt_day = st.number_input('Municipal Solid Waste (MT/day)', min_value=0, step=1)
+            swm_composition = st.text_area('Composition (% Organic, Recyclable, Inert, Hazardous)')
+            perc_household_segregation = st.number_input('Household Segregation (%)', min_value=0.0, max_value=100.0, step=0.1)
+            treatment_facilities = st.text_area('Treatment Facilities: Composting, Biomethanation, Incineration, Recycling, Landfill')
+            cdw_info = st.text_area('C&D Waste: Generation, Processing Capacity, % Recycled')
+            biomedical_info = st.text_area('Biomedical/Hazardous Waste: Generation, Collection, Treatment, Compliance')
+
+        # ---------------------------
+        # Tab 7: Climate & Environmental Data
+        # ---------------------------
+        with tabs[6]:
+            st.subheader('Historical Climate Data')
+            temperature_data_file = st.file_uploader('Upload 30-year Temperature Data', type=['csv','xlsx','pdf'])
+            rainfall_data_file = st.file_uploader('Upload 30-year Rainfall Data', type=['csv','xlsx','pdf'])
+            extreme_events_file = st.file_uploader('Upload Historical Extreme Events (Floods/Droughts/Storms)', type=['csv','xlsx','pdf'])
+
+            st.subheader('Air Quality & Heat Data')
+            air_quality_file = st.file_uploader('Upload Air Quality Data (PM2.5, PM10, NOx, SOx, O3, CO)', type=['csv','xlsx','pdf'])
+            uhi_data_file = st.file_uploader('Urban Heat Island Data (Maps/Heatwave Frequency)', type=['pdf','xlsx','csv'])
+
+        # ---------------------------
+        # Tab 8: Vulnerability & Risk Assessment
+        # ---------------------------
+        with tabs[7]:
+            st.subheader('Exposure & Vulnerable Population')
+            hazard_wards_file = st.file_uploader('Upload Wards Exposure Maps (Flood/Drought/Heat/Landslide)', type=['pdf','xlsx','geojson'])
+            vulnerable_population_file = st.file_uploader('Upload Vulnerable Population Distribution (Slums, Elderly, Women, Migrants, Disabled)', type=['csv','xlsx','pdf'])
+
+            st.subheader('Critical Infrastructure Vulnerability')
+            critical_infra_file = st.file_uploader('Hospitals, Power Plants, Water Plants, Schools Vulnerability Data', type=['csv','xlsx','pdf'])
+            backup_redundancy_info = st.text_area('Backup/Redundancy Details of Critical Infrastructure')
+
+        # ---------------------------
+        # Tab 9: Disaster Management & Risk Reduction
+        # ---------------------------
+        with tabs[8]:
+            st.subheader('Disaster Plans & Early Warning')
+            disaster_plan_file = st.file_uploader('Upload Disaster Management Plan & Hazard Maps', type=['pdf','xlsx','kml'])
+            early_warning_systems = st.text_area('Early Warning Systems & Monitoring Details')
+
+            st.subheader('Emergency Shelters & Response')
+            emergency_shelters_file = st.file_uploader('Upload Shelter Capacity & Accessibility Data', type=['csv','xlsx','pdf'])
+            emergency_response_info = st.text_area('Ambulances, Relief Stock, Evacuation Routes, Drills Conducted')
+
+        # ---------------------------
+        # Tab 10: Monitoring, Reporting & Verification (MRV)
+        # ---------------------------
+        with tabs[9]:
+            st.subheader('GHG Inventory')
+            baseline_year = st.number_input('Baseline Inventory Year', min_value=2000, max_value=datetime.now().year, step=1)
+            methodology = st.text_area('Methodology & Emission Factors Used')
+            sectoral_coverage = st.text_area('Sectoral Coverage')
+
+            st.subheader('KPIs & MRV System')
+            kpis = st.text_area('KPIs for Monitoring (Emissions, Energy Intensity, Green Cover, Climate Deaths, % Floodplain Population)')
+            mrv_details = st.text_area('Responsible Agency, Data Frequency, Verification, Public Reporting Mechanisms')
+
+        # ---------------------------
+        # Tab 11: Climate Budget & Finance
+        # ---------------------------
+        with tabs[10]:
+            st.subheader('Budget & Allocation')
+            past_budget_file = st.file_uploader('Upload Past 3–5 Years Municipal Budgets', type=['csv','xlsx','pdf'])
+            climate_allocation_percent = st.number_input('Climate Allocation (%)', min_value=0.0, max_value=100.0, step=0.1)
+
+            st.subheader('CAP Implementation Costs & Funding')
+            short_term_cost = st.number_input('Short-term Implementation Cost (₹)', min_value=0, step=1000, format='%d')
+            medium_term_cost = st.number_input('Medium-term Implementation Cost (₹)', min_value=0, step=1000, format='%d')
+            long_term_cost = st.number_input('Long-term Implementation Cost (₹)', min_value=0, step=1000, format='%d')
+
+            funding_sources = st.multiselect('Funding Sources', ['Own Revenue','State/National Schemes','CSR','MDB Loans','GCF','Carbon Credits','Green Bonds','Other'])
+            funding_gap_info = st.text_area('Funding Gap Analysis')
+            climate_finance_mrv = st.text_area('MRV for Climate Finance (Tagging, Expenditure Tracking, Audits, Reporting)')
         # ---------------------------
         # Tab 12: Upload & Notes
         # ---------------------------
