@@ -48,6 +48,13 @@ def sidebar_section():
         background-color: #111827;  /* Dark background */
         color: #ffffff;
         width: 260px;
+        min-width: 260px;
+        max-width: 260px;
+    }
+
+    /* Hide collapse/expand button */
+    [data-testid="stSidebarCollapseButton"] {
+        display: none;
     }
 
     /* Sidebar Logo */
@@ -60,6 +67,7 @@ def sidebar_section():
     .sidebar-logo img {
         max-width: 190px;
         height: auto;
+        border-radius: 15px; /* Rounded corners */
     }
 
     /* Menu Buttons */
@@ -68,7 +76,7 @@ def sidebar_section():
         width: 100%;
         padding: 12px 20px;
         margin: 8px 0;
-        background: linear-gradient(90deg, transparent 0%, transparent 100%);
+        background: transparent;
         color: #e5e7eb;
         text-align: left;
         font-size: 16px;
@@ -76,28 +84,32 @@ def sidebar_section():
         border: none;
         border-radius: 6px;
         cursor: pointer;
-        position: relative;
-        transition: all 0.35s ease;
+        transition: all 0.3s ease;
     }
     .menu-btn:hover {
-        background: linear-gradient(90deg, #2563eb20 0%, #2563eb40 100%);
+        background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%); /* soft red hover */
         color: #ffffff;
         transform: translateX(4px);
     }
     .menu-btn-active {
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%); /* red gradient */
         color: #ffffff !important;
         font-weight: 600;
+        border-left: 4px solid #f87171; /* red border highlight */
+        padding-left: 16px;
+        box-shadow: 0px 4px 12px rgba(239, 68, 68, 0.4); /* subtle shadow */
     }
 
     /* Footer */
     .sidebar-footer {
-        position: absolute;
-        bottom: 30px;
-        width: 100%;
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        width: 260px;
         text-align: center;
         color: #9ca3af;
         font-size: 13px;
+        padding: 10px 0;
     }
     .sidebar-footer strong {
         color: #ffffff;
@@ -117,6 +129,10 @@ def sidebar_section():
         btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
         if st.sidebar.button(m, key=f"menu_{m}"):
             st.session_state.current_page = m
+        st.sidebar.markdown(
+            f"<style>div[data-testid='stSidebar'] button[kind='secondary'][key='menu_{m}']{{{'background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%) !important; color:white !important; border-left:4px solid #f87171 !important; padding-left:16px; box-shadow:0px 4px 12px rgba(239, 68, 68, 0.4) !important;' if st.session_state.current_page == m else ''}}}</style>",
+            unsafe_allow_html=True
+        )
 
     # Footer
     st.sidebar.markdown(
