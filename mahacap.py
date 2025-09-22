@@ -231,7 +231,6 @@ def admin_panel():
     admin_tabs = st.tabs(["Add/Update City","Generate CAP","GHG Inventory","Logout"])
 
     # -------------------- Add/Update City --------------------
-    # -------------------- Add/Update City --------------------
 if st.session_state.current_admin_tab == 0:
     with admin_tabs[0]:
         st.subheader("Add / Update City Data")
@@ -250,155 +249,167 @@ if st.session_state.current_admin_tab == 0:
         st.session_state.last_selected_city = city_select
         city_info = st.session_state.city_data.get(city_select, {})
 
-        # -------------------- Basic Info --------------------
-        with st.container():
-            st.markdown("### Basic Information")
-            col1, col2, col3 = st.columns([2,2,2])
-            with col1:
-                district = st.text_input(
-                    "District", value=city_info.get("District",""), key="district"
-                )
-            with col2:
-                year_est = st.number_input(
-                    "Year of Establishment",
-                    min_value=1500, max_value=2050,
-                    value=city_info.get("Year_Establishment",2025),
-                    key="year_est"
-                )
-            with col3:
-                admin_types = ["State","Municipal Corporation","Municipal Council","Other"]
-                type_admin = st.selectbox(
-                    "Type of Administration",
-                    admin_types,
-                    index=admin_types.index(city_info.get("Type_Admin","State")),
-                    key="type_admin"
-                )
+        # -------------------- Basic Info Block --------------------
+        st.markdown("""
+        <div style='border:1px solid #d1d1d1; padding:15px; border-radius:8px; margin-bottom:15px;'>
+        <h4 style='margin-bottom:10px;'>Basic Information</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([2,2,2])
+        with col1:
+            district = st.text_input(
+                "District", value=city_info.get("District",""), key="district"
+            )
+        with col2:
+            year_est = st.number_input(
+                "Year of Establishment",
+                min_value=1500, max_value=2050,
+                value=city_info.get("Year_Establishment",2025),
+                key="year_est"
+            )
+        with col3:
+            admin_types = ["State","Municipal Corporation","Municipal Council","Other"]
+            type_admin = st.selectbox(
+                "Type of Administration",
+                admin_types,
+                index=admin_types.index(city_info.get("Type_Admin","State")),
+                key="type_admin"
+            )
 
-            col1, col2 = st.columns(2)
-            with col1:
-                cap_status_options = ["Not Started","In Progress","Completed"]
-                cap_status = st.selectbox(
-                    "CAP Status",
-                    cap_status_options,
-                    index=cap_status_options.index(city_info.get("CAP_Status","Not Started")),
-                    key="cap_status"
-                )
-            with col2:
-                cap_link = city_info.get("CAP_Link","")
-                if cap_status == "Completed":
-                    cap_link = st.text_input("CAP Link", value=cap_link, key="cap_link")
+        col1, col2 = st.columns(2)
+        with col1:
+            cap_status_options = ["Not Started","In Progress","Completed"]
+            cap_status = st.selectbox(
+                "CAP Status",
+                cap_status_options,
+                index=cap_status_options.index(city_info.get("CAP_Status","Not Started")),
+                key="cap_status"
+            )
+        with col2:
+            cap_link = city_info.get("CAP_Link","")
+            if cap_status == "Completed":
+                cap_link = st.text_input("CAP Link", value=cap_link, key="cap_link")
 
-        st.markdown("---")
+        st.markdown("<hr style='border:1px solid #d1d1d1'>", unsafe_allow_html=True)
 
-        # -------------------- Population & Area --------------------
-        with st.container():
-            st.markdown("### Population & Area")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                male_pop = st.number_input(
-                    "Male Population",
-                    min_value=0,
-                    value=city_info.get("Population",{}).get("Male",0),
-                    key="pop_male"
-                )
-            with col2:
-                female_pop = st.number_input(
-                    "Female Population",
-                    min_value=0,
-                    value=city_info.get("Population",{}).get("Female",0),
-                    key="pop_female"
-                )
-            with col3:
-                total_pop = male_pop + female_pop
-                st.metric("Total Population", total_pop)
-
-            area = st.number_input(
-                "Area (sq.km)",
+        # -------------------- Population & Area Block --------------------
+        st.markdown("""
+        <div style='border:1px solid #d1d1d1; padding:15px; border-radius:8px; margin-bottom:15px;'>
+        <h4 style='margin-bottom:10px;'>Population & Area</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            male_pop = st.number_input(
+                "Male Population",
                 min_value=0,
-                value=city_info.get("Area",0),
-                key="area"
+                value=city_info.get("Population",{}).get("Male",0),
+                key="pop_male"
             )
-
-            density = total_pop / area if area > 0 else 0
-            st.metric("Population Density (people/km²)", int(density))
-
-        st.markdown("---")
-
-        # -------------------- Literacy Rate --------------------
-        with st.container():
-            st.markdown("### Literacy Rate (%)")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                male_lit = st.number_input(
-                    "Male Literacy",
-                    min_value=0.0,
-                    max_value=100.0,
-                    value=city_info.get("Literacy",{}).get("Male",0.0),
-                    key="lit_male"
-                )
-            with col2:
-                female_lit = st.number_input(
-                    "Female Literacy",
-                    min_value=0.0,
-                    max_value=100.0,
-                    value=city_info.get("Literacy",{}).get("Female",0.0),
-                    key="lit_female"
-                )
-            with col3:
-                total_lit = st.number_input(
-                    "Total Literacy",
-                    min_value=0.0,
-                    max_value=100.0,
-                    value=city_info.get("Literacy",{}).get("Total",0.0),
-                    key="lit_total"
-                )
-
-            sex_ratio = st.number_input(
-                "Sex Ratio (F/M)",
+        with col2:
+            female_pop = st.number_input(
+                "Female Population",
                 min_value=0,
-                value=city_info.get("Sex_Ratio",0),
-                key="sex_ratio"
+                value=city_info.get("Population",{}).get("Female",0),
+                key="pop_female"
+            )
+        with col3:
+            total_pop = male_pop + female_pop
+            st.metric("Total Population", total_pop)
+
+        area = st.number_input(
+            "Area (sq.km)",
+            min_value=0,
+            value=city_info.get("Area",0),
+            key="area"
+        )
+
+        density = total_pop / area if area > 0 else 0
+        st.metric("Population Density (people/km²)", int(density))
+
+        st.markdown("<hr style='border:1px solid #d1d1d1'>", unsafe_allow_html=True)
+
+        # -------------------- Literacy Rate Block --------------------
+        st.markdown("""
+        <div style='border:1px solid #d1d1d1; padding:15px; border-radius:8px; margin-bottom:15px;'>
+        <h4 style='margin-bottom:10px;'>Literacy Rate (%)</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            male_lit = st.number_input(
+                "Male Literacy",
+                min_value=0.0,
+                max_value=100.0,
+                value=city_info.get("Literacy",{}).get("Male",0.0),
+                key="lit_male"
+            )
+        with col2:
+            female_lit = st.number_input(
+                "Female Literacy",
+                min_value=0.0,
+                max_value=100.0,
+                value=city_info.get("Literacy",{}).get("Female",0.0),
+                key="lit_female"
+            )
+        with col3:
+            total_lit = st.number_input(
+                "Total Literacy",
+                min_value=0.0,
+                max_value=100.0,
+                value=city_info.get("Literacy",{}).get("Total",0.0),
+                key="lit_total"
             )
 
-        st.markdown("---")
+        sex_ratio = st.number_input(
+            "Sex Ratio (F/M)",
+            min_value=0,
+            value=city_info.get("Sex_Ratio",0),
+            key="sex_ratio"
+        )
 
-        # -------------------- Environment Department --------------------
-        with st.container():
-            st.markdown("### Environment Department")
-            env_exist = st.selectbox(
-                "Environment Dept Exist",
-                ["Yes","No"],
-                index=0 if city_info.get("Env_Dept_Exist","Yes")=="Yes" else 1,
-                key="env_exist"
+        st.markdown("<hr style='border:1px solid #d1d1d1'>", unsafe_allow_html=True)
+
+        # -------------------- Environment Department Block --------------------
+        st.markdown("""
+        <div style='border:1px solid #d1d1d1; padding:15px; border-radius:8px; margin-bottom:15px;'>
+        <h4 style='margin-bottom:10px;'>Environment Department</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        env_exist = st.selectbox(
+            "Environment Dept Exist",
+            ["Yes","No"],
+            index=0 if city_info.get("Env_Dept_Exist","Yes")=="Yes" else 1,
+            key="env_exist"
+        )
+
+        dept_name = ""
+        if env_exist == "No":
+            dept_name = st.text_input(
+                "Department Name",
+                value=city_info.get("Dept_Name",""),
+                key="dept_name"
             )
-
-            dept_name = ""
-            if env_exist == "No":
-                dept_name = st.text_input(
-                    "Department Name",
-                    value=city_info.get("Dept_Name",""),
-                    key="dept_name"
-                )
-            col1, col2 = st.columns(2)
-            with col1:
-                dept_person = st.text_input(
-                    "Contact Person",
-                    value=city_info.get("Dept_Person",""),
-                    key="dept_person"
-                )
-            with col2:
-                dept_email = st.text_input(
-                    "Email ID",
-                    value=city_info.get("Dept_Email",""),
-                    key="dept_email"
-                )
-            website = st.text_input(
-                "Website",
-                value=city_info.get("Website",""),
-                key="website"
+        col1, col2 = st.columns(2)
+        with col1:
+            dept_person = st.text_input(
+                "Contact Person",
+                value=city_info.get("Dept_Person",""),
+                key="dept_person"
             )
+        with col2:
+            dept_email = st.text_input(
+                "Email ID",
+                value=city_info.get("Dept_Email",""),
+                key="dept_email"
+            )
+        website = st.text_input(
+            "Website",
+            value=city_info.get("Website",""),
+            key="website"
+        )
 
-        st.markdown("---")
+        st.markdown("<hr style='border:1px solid #d1d1d1'>", unsafe_allow_html=True)
 
         # -------------------- Save Button --------------------
         if st.button("Add/Update City"):
@@ -421,6 +432,7 @@ if st.session_state.current_admin_tab == 0:
                 "Website": website
             }
             st.success(f"{city_select} data saved successfully!")
+
 
 
     # --- Generate CAP ---
