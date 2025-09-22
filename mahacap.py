@@ -348,7 +348,6 @@ def admin_panel():
                     "CAP_Link": cap_link if cap_status=="Completed" else "",
                     "Population":{"Male":male_pop,"Female":female_pop,"Total":total_pop},
                     "Area": area,
-                    "Literacy":{"Male":male_lit,"Female":female_lit,"Total":total_lit},
                     "Sex_Ratio": sex_ratio,
                     "Density": density,
                     "Env_Dept_Exist": env_exist,
