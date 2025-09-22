@@ -147,7 +147,7 @@ def sidebar_section():
 # -------------------- Home Page --------------------
 def home_page():
     st.header("Climate Action Plan Dashboard")
-    st.subheader("Maharashtra's Net Zero Journey")
+    st.caption("Maharashtra's Net Zero Journey")
 
     # --- CAP Status Overview ---
     status_counts = {"Not Started": 0, "In Progress": 0, "Completed": 0}
@@ -161,22 +161,22 @@ def home_page():
     st.markdown("### CAP Status Overview")
 
     cap_status_html = f"""
-    <div style="display:flex; gap:20px; margin-bottom:20px;">
-        <div style="flex:1; border:1px solid #ddd; background:#e6f0fa; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin:0; color:#1f77b4;">Total Cities</h3>
-            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{total_cities}</p>
+    <div style="display:flex; gap:15px; margin-bottom:15px;">
+        <div style="flex:1; border:1px solid #ccc; background:#f9fbfd; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#555;">Total Cities</div>
+            <div style="font-size:22px; font-weight:600; color:#1f77b4;">{total_cities}</div>
         </div>
-        <div style="flex:1; border:1px solid #ddd; background:#fdecea; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin:0; color:#d62728;">Not Started</h3>
-            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{status_counts['Not Started']}</p>
+        <div style="flex:1; border:1px solid #ccc; background:#fdf8f8; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#555;">Not Started</div>
+            <div style="font-size:22px; font-weight:600; color:#d62728;">{status_counts['Not Started']}</div>
         </div>
-        <div style="flex:1; border:1px solid #ddd; background:#fff4e5; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin:0; color:#ff7f0e;">In Progress</h3>
-            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{status_counts['In Progress']}</p>
+        <div style="flex:1; border:1px solid #ccc; background:#fffaf4; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#555;">In Progress</div>
+            <div style="font-size:22px; font-weight:600; color:#ff7f0e;">{status_counts['In Progress']}</div>
         </div>
-        <div style="flex:1; border:1px solid #ddd; background:#e8f5e9; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin:0; color:#2ca02c;">Completed</h3>
-            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{status_counts['Completed']}</p>
+        <div style="flex:1; border:1px solid #ccc; background:#f8fcf8; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#555;">Completed</div>
+            <div style="font-size:22px; font-weight:600; color:#2ca02c;">{status_counts['Completed']}</div>
         </div>
     </div>
     """
@@ -186,66 +186,65 @@ def home_page():
     st.markdown("### Maharashtra Basic Information")
 
     total_population = sum([
-        st.session_state.city_data.get(c, {}).get("Basic Info", {}).get("Population", 0) 
+        st.session_state.city_data.get(c, {}).get("Population", {}).get("Total", 0)
         for c in cities
     ])
     total_area = sum([
-        st.session_state.city_data.get(c, {}).get("Basic Info", {}).get("Area", 0) 
+        st.session_state.city_data.get(c, {}).get("Area", 0)
         for c in cities
     ])
 
-    # fetch extra fields (using first city that has data as representative)
     dept_name = ""
     dept_email = ""
     website = ""
     cap_link = ""
     cap_status = ""
     for c in cities:
-        city_info = st.session_state.city_data.get(c, {}).get("Basic Info", {})
+        city_info = st.session_state.city_data.get(c, {})
         if city_info:
-            cap_status = st.session_state.city_data.get(c, {}).get("CAP_Status", "Not Started")
-            cap_link = st.session_state.city_data.get(c, {}).get("CAP_Link", "")
-            dept_name = city_info.get("Department Name", "")
-            dept_email = city_info.get("Department Email", "")
+            cap_status = city_info.get("CAP_Status", "Not Started")
+            cap_link = city_info.get("CAP_Link", "")
+            dept_name = city_info.get("Dept_Name", "")
+            dept_email = city_info.get("Dept_Email", "")
             website = city_info.get("Website", "")
             break
 
     basic_info_html = f"""
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">CAP Status</h4>
-            <p style="font-size:18px; font-weight:bold; margin:5px 0;">{cap_status}</p>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">CAP Status</div>
+            <div style="font-size:16px; font-weight:600; color:#333;">{cap_status}</div>
         </div>
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">CAP Link</h4>
-            <p style="margin:5px 0;"><a href="{cap_link}" target="_blank" style="color:#1f77b4; text-decoration:none;">Open Link</a></p>
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">CAP Link</div>
+            <div><a href="{cap_link}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">Open Link</a></div>
         </div>
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">Total Population</h4>
-            <p style="font-size:18px; font-weight:bold; margin:5px 0;">{total_population:,}</p>
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">Total Population</div>
+            <div style="font-size:16px; font-weight:600; color:#333;">{total_population:,}</div>
         </div>
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">Area (sq km)</h4>
-            <p style="font-size:18px; font-weight:bold; margin:5px 0;">{total_area:,}</p>
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">Area (sq km)</div>
+            <div style="font-size:16px; font-weight:600; color:#333;">{total_area:,}</div>
         </div>
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">Department Name</h4>
-            <p style="margin:5px 0;">{dept_name}</p>
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">Department Name</div>
+            <div style="font-size:14px; color:#333;">{dept_name}</div>
         </div>
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">Department Email</h4>
-            <p style="margin:5px 0;">{dept_email}</p>
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">Department Email</div>
+            <div style="font-size:14px; color:#333;">{dept_email}</div>
         </div>
-        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0; color:#555;">Website</h4>
-            <p style="margin:5px 0;"><a href="{website}" target="_blank" style="color:#1f77b4; text-decoration:none;">{website}</a></p>
+        <div style="border:1px solid #ccc; background:#fafafa; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#555;">Website</div>
+            <div><a href="{website}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">{website}</a></div>
         </div>
     </div>
     """
     st.markdown(basic_info_html, unsafe_allow_html=True)
 
-    # --- GHG Emissions by Sector ---
-    ghg_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
+    # --- GHG by Sector ---
+    ghg_sectors = ["Energy", "Transport", "Waste", "Water"]
     ghg_values = [
         sum([st.session_state.city_data.get(c, {}).get("GHG", {}).get(s, 0) for c in cities])
         for s in ghg_sectors
@@ -258,26 +257,23 @@ def home_page():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- RCP Scenario ---
-    st.subheader("RCP Scenario Projections")
+    # --- RCP Scenarios ---
+    st.markdown("### RCP Scenario Projections")
     years = list(range(2020, 2051))
     rcp_45 = np.linspace(1.0, 2.0, len(years))
     rcp_60 = np.linspace(1.0, 2.5, len(years))
     rcp_85 = np.linspace(1.0, 3.5, len(years))
 
-    fig2 = px.line(
-        x=years, y=rcp_45, labels={"x": "Year", "y": "Temp Rise (°C)"},
-        title="Projected RCP Scenarios"
-    )
+    fig2 = px.line(x=years, y=rcp_45, labels={"x": "Year", "y": "Temp Rise (°C)"}, title="Projected RCP Scenarios")
     fig2.add_scatter(x=years, y=rcp_60, mode="lines", name="RCP 6.0")
     fig2.add_scatter(x=years, y=rcp_85, mode="lines", name="RCP 8.5")
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    # --- Last Updated Footer ---
+    # --- Footer ---
     st.markdown(
         f"""
-        <div style='position:fixed; bottom:10px; right:10px; color:#888888; font-size:12px;'>
+        <div style='position:fixed; bottom:10px; centre:10px; color:#888; font-size:12px;'>
             {last_updated()}
         </div>
         """,
