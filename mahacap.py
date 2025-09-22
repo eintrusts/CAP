@@ -8,20 +8,6 @@ import datetime, io
 # -------------------- Page Config --------------------
 st.set_page_config(page_title="Maharashtra CAP Dashboard", layout="wide")
 
-# -------------------- Dark Theme --------------------
-st.markdown("""
-<style>
-body {background-color:#0e1117; color:#ffffff;}
-h1,h2,h3,h4,h5,h6{color:#ffffff;}
-.stButton>button{background-color:#1f2937;color:#ffffff;}
-.stTextInput>div>input{background-color:#1f2937;color:#ffffff;}
-.stSelectbox>div>div>select{background-color:#1f2937;color:#ffffff;}
-.stSlider>div>div>input{background-color:#1f2937;color:#ffffff;}
-.stNumberInput>div>input{background-color:#1f2937;color:#ffffff;}
-.footer {position: fixed; bottom: 5px; left: 10px; color: #888888; font-size:12px;}
-</style>
-""", unsafe_allow_html=True)
-
 # -------------------- Utilities --------------------
 def format_inr(value):
     return "{:,}".format(value)
@@ -43,30 +29,34 @@ cities = ["Mumbai","Kalyan-Dombivli","Mira-Bhayandar","Navi Mumbai","Bhiwandi-Ni
           "Achalpur Council","Wardha Coumcil","Hinganghat Ciuncil","Nagpur","Chandrapur",
           "Gondia Council"]
 
-# -------------------- Sidebar --------------------
-st.sidebar.markdown("## EinTrust")
-st.sidebar.image("https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true", use_container_width=True)
-st.sidebar.markdown("---")
-page = st.sidebar.radio("Menu", ["Home","City","Admin"])
-st.sidebar.markdown("<div style='position:fixed; bottom:10px;'>© EinTrust</div>", unsafe_allow_html=True)
+# -------------------- Sidebar Section --------------------
+def sidebar_section():
+    st.sidebar.markdown("""
+    <style>
+    [data-testid="stSidebar"] {background-color: #1f2937; color: #ffffff;}
+    .sidebar-logo {display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;}
+    .stButton>button {
+        width: 100%; text-align: left; padding: 10px 20px; background-color: #1f2937; border: none; color: #ffffff;
+        font-size: 16px; transition: 0.3s; border-radius: 8px; margin-bottom: 5px;
+    }
+    .stButton>button:hover {background-color: #374151; cursor: pointer;}
+    .sidebar-footer {position: absolute; bottom: 20px; width: 100%; text-align: center; color: #9ca3af; font-size: 12px;}
+    </style>
+    """, unsafe_allow_html=True)
 
-# -------------------- Admin Login --------------------
-ADMIN_PASSWORD = "eintrust123"
-if 'admin_logged_in' not in st.session_state:
-    st.session_state.admin_logged_in = False
+    st.sidebar.markdown('<div class="sidebar-logo"><img src="https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true" width="120"></div>', unsafe_allow_html=True)
 
-if page=="Admin" and not st.session_state.admin_logged_in:
-    st.header("Admin Login")
-    password_input = st.text_input("Enter Admin Password", type="password")
-    if st.button("Login"):
-        if password_input == ADMIN_PASSWORD:
-            st.session_state.admin_logged_in = True
-            st.success("Logged in successfully!")
-        else:
-            st.error("Incorrect password")
+    menu = ["Home","City","Admin"]
+    selected_menu = None
+    for m in menu:
+        if st.sidebar.button(m):
+            selected_menu = m
+
+    st.sidebar.markdown('<div class="sidebar-footer">© 2025 All Rights Reserved</div>', unsafe_allow_html=True)
+    return selected_menu
 
 # -------------------- Home Page --------------------
-if page=="Home":
+def home_page():
     st.header("Maharashtra Net Zero Journey")
     
     # CAP Status count
@@ -96,10 +86,10 @@ if page=="Home":
     fig2 = px.line(x=years, y=rcp_values, labels={"x":"Year","y":"Temp Rise (°C)"}, title="Projected RCP Scenario")
     st.plotly_chart(fig2)
     
-    st.markdown(f"<div class='footer'>Last Updated: {last_updated()}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='position:fixed; bottom:10px; left:10px; color:#888888;'>{last_updated()}</div>", unsafe_allow_html=True)
 
 # -------------------- City Page --------------------
-elif page=="City":
+def city_page():
     st.header("City-Level CAP Dashboard")
     selected_city = st.selectbox("Select City", cities, key="city_page_select")
     city_info = st.session_state.city_data.get(selected_city, {})
@@ -122,14 +112,29 @@ elif page=="City":
     fig2 = px.line(x=years, y=rcp_values, labels={"x":"Year","y":"Temp Rise (°C)"}, title=f"{selected_city} RCP Scenario")
     st.plotly_chart(fig2)
     
-    st.markdown(f"<div class='footer'>Last Updated: {city_info.get('Last_Updated', last_updated())}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='position:fixed; bottom:10px; left:10px; color:#888888;'>{last_updated()}</div>", unsafe_allow_html=True)
 
 # -------------------- Admin Panel --------------------
-elif page=="Admin" and st.session_state.admin_logged_in:
+def admin_panel():
+    ADMIN_PASSWORD = "eintrust123"
+    if 'admin_logged_in' not in st.session_state:
+        st.session_state.admin_logged_in = False
+
+    if not st.session_state.admin_logged_in:
+        st.header("Admin Login")
+        password_input = st.text_input("Enter Admin Password", type="password")
+        if st.button("Login"):
+            if password_input == ADMIN_PASSWORD:
+                st.session_state.admin_logged_in = True
+                st.success("Logged in successfully!")
+            else:
+                st.error("Incorrect password")
+        return
+
     st.header("Admin Panel")
     admin_tabs = st.tabs(["Add/Update City","Generate CAP","GHG Inventory","Logout"])
 
-    # ---------------- Add/Update City -----------------
+    # --- Add/Update City ---
     with admin_tabs[0]:
         st.subheader("Add / Update City")
         city_select = st.selectbox("Select City", cities, key="add_update_city")
@@ -145,7 +150,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             }
             st.success(f"{city_select} information saved!")
 
-    # ---------------- Generate CAP -----------------
+    # --- Generate CAP ---
     with admin_tabs[1]:
         st.subheader("Generate CAP")
         city_select = st.selectbox("Select City for CAP", cities, key="cap_city_select")
@@ -156,7 +161,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             "4. Sustainable Mobility","5. Water Resources","6. Waste Management","7. Climate Data"
         ])
 
-        # 1. Basic Info
+        # ---- Basic Info ----
         with cap_form_tabs[0]:
             population = st.number_input("Population", min_value=0, value=city_info.get("Basic Info",{}).get("Population",0), key="cap_pop")
             area = st.number_input("Area (sq km)", min_value=0, value=city_info.get("Basic Info",{}).get("Area",0), key="cap_area")
@@ -167,7 +172,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             cap_status_form = st.selectbox("CAP Status", ["Not Started","In Progress","Completed"], key="cap_status_form")
             last_updated_input = st.date_input("Last Updated", datetime.date.today(), key="cap_last_updated")
 
-        # 2. Energy & Buildings
+        # ---- Energy & Buildings ----
         with cap_form_tabs[1]:
             res_energy = st.number_input("Residential Electricity Consumption (kWh/year)", min_value=0, key="res_energy")
             com_energy = st.number_input("Commercial Electricity Consumption (kWh/year)", min_value=0, key="com_energy")
@@ -180,7 +185,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             public_building_energy = st.number_input("Public Building Energy Consumption (kWh/year)", min_value=0, key="public_energy")
             green_policy = st.selectbox("Green Building Policies in Place", ["Yes","No"], key="green_policy")
 
-        # 3. Green Cover & Biodiversity
+        # ---- Green Cover & Biodiversity ----
         with cap_form_tabs[2]:
             green_cover_area = st.number_input("Total Green Cover Area (ha)", min_value=0, key="green_cover")
             tree_density = st.number_input("Tree Density (trees/km²)", min_value=0, key="tree_density")
@@ -191,7 +196,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             afforestation_programs = st.number_input("Trees Planted per Year", min_value=0, key="afforestation")
             biodiversity_committees = st.selectbox("Biodiversity Management Committees", ["Yes","No"], key="biodiversity_committees")
 
-        # 4. Sustainable Mobility
+        # ---- Sustainable Mobility ----
         with cap_form_tabs[3]:
             modal_share = st.slider("Modal Share of Public Transport (%)",0,100,0,key="modal_share")
             electric_vehicles = st.number_input("No. of Electric Vehicles",min_value=0,key="electric_vehicles")
@@ -200,7 +205,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             congestion_pricing = st.selectbox("Congestion Pricing in Place",["Yes","No"],key="congestion_pricing")
             traffic_emission_reduction = st.slider("Traffic Emission Reduction (%)",0,100,0,key="traffic_emission_reduction")
 
-        # 5. Water Resources
+        # ---- Water Resources ----
         with cap_form_tabs[4]:
             water_consumption = st.number_input("Total Water Consumption (ML/year)",min_value=0,key="water_consumption")
             water_reuse = st.slider("Water Reuse / Recycling (%)",0,100,0,key="water_reuse")
@@ -209,7 +214,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             leakage_loss = st.slider("Water Loss due to Leakage (%)",0,100,0,key="leakage_loss")
             wastewater_treatment = st.number_input("Wastewater Treated (ML/year)",min_value=0,key="wastewater_treatment")
 
-        # 6. Waste Management
+        # ---- Waste Management ----
         with cap_form_tabs[5]:
             municipal_solid_waste = st.number_input("Municipal Solid Waste Generated (T/year)",min_value=0,key="msw_generated")
             recycling_rate = st.slider("Recycling Rate (%)",0,100,0,key="recycling_rate")
@@ -218,7 +223,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             hazardous_waste = st.number_input("Hazardous Waste Generated (T/year)",min_value=0,key="hazardous_waste")
             e_waste = st.number_input("E-Waste Generated (T/year)",min_value=0,key="e_waste")
 
-        # 7. Climate Data
+        # ---- Climate Data ----
         with cap_form_tabs[6]:
             annual_temp = st.number_input("Average Annual Temperature (°C)",key="annual_temp")
             avg_rainfall = st.number_input("Average Annual Rainfall (mm)",key="avg_rainfall")
@@ -226,7 +231,6 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             rcp_scenario = st.selectbox("RCP Scenario",["RCP2.6","RCP4.5","RCP6.0","RCP8.5"],key="rcp_scenario")
             projected_temp_increase = st.slider("Projected Temp Increase by 2050 (°C)",0,5,1,key="projected_temp_increase")
 
-        # ---------------- Save Generate CAP Form -----------------
         if st.button("Save Generate CAP Data"):
             st.session_state.city_data[city_select]["Basic Info"] = {
                 "Population":population,"Area":area,"GDP":gdp,"Density":density,
@@ -234,71 +238,63 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             }
             st.session_state.city_data[city_select]["CAP_Status"] = cap_status_form
             st.session_state.city_data[city_select]["Last_Updated"] = last_updated()
-            # Energy & Buildings
             st.session_state.city_data[city_select]["Energy_Buildings"] = {
                 "Residential_Energy":res_energy,"Commercial_Energy":com_energy,"Industrial_Energy":ind_energy,
                 "Renewable_Share":renewable_share,"EE_Buildings":ee_buildings,"Street_Lighting_Type":street_lighting_type,
                 "Street_Lighting_Coverage":street_lighting_coverage,"Fuel_Types":fuel_types,"Public_Building_Energy":public_building_energy,
                 "Green_Building_Policy":green_policy
             }
-            # Green Cover
             st.session_state.city_data[city_select]["Green_Biodiversity"] = {
                 "Green_Cover_Area":green_cover_area,"Tree_Density":tree_density,"Protected_Areas":protected_areas,
                 "Wetlands_Area":wetlands_area,"Species_Richness":species_richness,"Urban_Parks":urban_parks,
                 "Afforestation_Programs":afforestation_programs,"Biodiversity_Committees":biodiversity_committees
             }
-            # Mobility
             st.session_state.city_data[city_select]["Mobility"] = {
-                "Modal_Share_Public":modal_share,"Electric_Vehicles":electric_vehicles,"Bike_Lanes":bike_lanes,
-                "Pedestrian":pedestrian_infra,"Congestion_Pricing":congestion_pricing,"Traffic_Emission_Reduction":traffic_emission_reduction
+                "Modal_Share_Public":modal_share,"EVs":electric_vehicles,"Bike_Lanes":bike_lanes,
+                "Pedestrian_Infra":pedestrian_infra,"Congestion_Pricing":congestion_pricing,
+                "Traffic_Emission_Reduction":traffic_emission_reduction
             }
-            # Water
             st.session_state.city_data[city_select]["Water"] = {
-                "Consumption":water_consumption,"Reuse":water_reuse,"Rainwater_Harvesting":rainwater_harvesting,
-                "Groundwater_Recharge":groundwater_recharge,"Leakage_Loss":leakage_loss,"Wastewater_Treatment":wastewater_treatment
+                "Water_Consumption":water_consumption,"Water_Reuse":water_reuse,
+                "Rainwater_Harvesting":rainwater_harvesting,"Groundwater_Recharge":groundwater_recharge,
+                "Leakage_Loss":leakage_loss,"Wastewater_Treatment":wastewater_treatment
             }
-            # Waste
             st.session_state.city_data[city_select]["Waste"] = {
-                "MSW_Generated":municipal_solid_waste,"Recycling_Rate":recycling_rate,"Composting_Rate":composting_rate,
-                "Waste_to_Energy":waste_to_energy,"Hazardous_Waste":hazardous_waste,"E_Waste":e_waste
+                "MSW_Generated":municipal_solid_waste,"Recycling_Rate":recycling_rate,
+                "Composting_Rate":composting_rate,"Waste_to_Energy":waste_to_energy,
+                "Hazardous_Waste":hazardous_waste,"E_Waste":e_waste
             }
-            # Climate
             st.session_state.city_data[city_select]["Climate_Data"] = {
-                "Annual_Temp":annual_temp,"Avg_Rainfall":avg_rainfall,"Extreme_Events":extreme_events,
-                "RCP":rcp_scenario,"Projected_Temp_Increase":projected_temp_increase
+                "Annual_Temp":annual_temp,"Avg_Rainfall":avg_rainfall,
+                "Extreme_Events":extreme_events,"RCP_Scenario":rcp_scenario,
+                "Projected_Temp_Increase":projected_temp_increase
             }
-            st.success(f"{city_select} CAP data saved!")
+            st.success(f"CAP data for {city_select} saved!")
 
-    # ---------------- GHG Inventory -----------------
+    # --- GHG Inventory ---
     with admin_tabs[2]:
         st.subheader("GHG Inventory")
-        city_select = st.selectbox("Select City", cities, key="ghg_city")
-        city_info = st.session_state.city_data.get(city_select,{})
-        
-        if st.button("Calculate GHG Inventory"):
-            city_info["GHG"] = {"Energy":10000,"Transport":5000,"Waste":2000,"Water":500,"Buildings":1500,"Industry":3000}
-            st.session_state.city_data[city_select] = city_info
-            st.success("GHG Inventory Calculated!")
-            st.write(city_info["GHG"])
-        
-        if st.button("Generate CAP PDF"):
-            if city_info.get("GHG"):
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_font("Arial","B",16)
-                pdf.cell(0,10,f"{city_select} Climate Action Plan", ln=True, align="C")
-                pdf.set_font("Arial","",12)
-                pdf.ln(5)
-                pdf.multi_cell(0,8,"Scenario-Based Recommendations:\n- Renewable energy expansion\n- Energy efficiency\n- Sustainable mobility\n- Water conservation\n- Waste management\n- Green cover enhancement")
-                pdf_output = io.BytesIO()
-                pdf.output(pdf_output)
-                pdf_output.seek(0)
-                st.download_button("Download CAP PDF", pdf_output, file_name=f"{city_select}_CAP.pdf", mime="application/pdf")
-            else:
-                st.warning("Please calculate GHG inventory first.")
+        sector = st.selectbox("Select Sector", ["Energy","Transport","Waste","Water","Buildings","Industry"], key="ghg_sector")
+        ghg_values = [st.session_state.city_data.get(c, {}).get("GHG", {}).get(sector,np.random.randint(1000,10000)) for c in cities]
+        df = pd.DataFrame({"City":cities, "tCO2e":ghg_values})
+        st.dataframe(df)
+        fig = px.bar(df, x="City", y="tCO2e", title=f"{sector} GHG Inventory by City")
+        st.plotly_chart(fig)
 
-    # ---------------- Logout -----------------
+    # --- Logout ---
     with admin_tabs[3]:
         if st.button("Logout"):
             st.session_state.admin_logged_in = False
             st.success("Logged out successfully!")
+
+# -------------------- Run App --------------------
+selected_menu = sidebar_section()
+
+if selected_menu == "Home":
+    home_page()
+elif selected_menu == "City":
+    city_page()
+elif selected_menu == "Admin":
+    admin_panel()
+else:
+    st.title("Welcome to Maharashtra CAP Dashboard")
