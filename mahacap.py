@@ -116,7 +116,7 @@ elif page=="City":
         st.plotly_chart(fig)
     
     st.subheader("RCP Scenario")
-    climate = city_info.get("Climate Data",{})
+    climate = city_info.get("Climate_Data",{})
     years = list(range(2020,2051))
     rcp_values = climate.get("RCP",[np.random.uniform(1,3) for _ in years])
     fig2 = px.line(x=years, y=rcp_values, labels={"x":"Year","y":"Temp Rise (°C)"}, title=f"{selected_city} RCP Scenario")
@@ -150,13 +150,14 @@ elif page=="Admin" and st.session_state.admin_logged_in:
         st.subheader("Generate CAP")
         city_select = st.selectbox("Select City for CAP", cities, key="cap_city_select")
         city_info = st.session_state.city_data.get(city_select, {})
-        
+
         cap_form_tabs = st.tabs([
             "1. Basic Info","2. Energy & Buildings","3. Green Cover & Biodiversity",
             "4. Sustainable Mobility","5. Water Resources","6. Waste Management","7. Climate Data"
         ])
-        
-        # ----- 1. Basic Info -----
+
+        # ---------------- CAP Form -----------------
+        # 1. Basic Info
         with cap_form_tabs[0]:
             population = st.number_input("Population", min_value=0, value=city_info.get("Basic Info",{}).get("Population",0), key="cap_pop")
             area = st.number_input("Area (sq km)", min_value=0, value=city_info.get("Basic Info",{}).get("Area",0), key="cap_area")
@@ -167,7 +168,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             cap_status_form = st.selectbox("CAP Status", ["Not Started","In Progress","Completed"], key="cap_status_form")
             last_updated_input = st.date_input("Last Updated", datetime.date.today(), key="cap_last_updated")
 
-        # ----- 2. Energy & Buildings -----
+        # 2. Energy & Buildings
         with cap_form_tabs[1]:
             res_energy = st.number_input("Residential Electricity Consumption (kWh/year)", min_value=0, key="res_energy")
             com_energy = st.number_input("Commercial Electricity Consumption (kWh/year)", min_value=0, key="com_energy")
@@ -180,7 +181,7 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             public_building_energy = st.number_input("Public Building Energy Consumption (kWh/year)", min_value=0, key="public_energy")
             green_policy = st.selectbox("Green Building Policies in Place", ["Yes","No"], key="green_policy")
 
-        # ----- 3. Green Cover & Biodiversity -----
+        # 3. Green Cover & Biodiversity
         with cap_form_tabs[2]:
             green_cover_area = st.number_input("Total Green Cover Area (ha)", min_value=0, key="green_cover")
             tree_density = st.number_input("Tree Density (trees/km²)", min_value=0, key="tree_density")
@@ -191,88 +192,42 @@ elif page=="Admin" and st.session_state.admin_logged_in:
             afforestation_programs = st.number_input("Trees Planted per Year", min_value=0, key="afforestation")
             biodiversity_committees = st.selectbox("Biodiversity Management Committees", ["Yes","No"], key="biodiversity_committees")
 
-        # # ----- 4. Sustainable Mobility -----
-with cap_form_tabs[3]:
-    modal_share = st.slider("Modal Share of Public Transport (%)",0,100,0,key="modal_share")
-    electric_vehicles = st.number_input("No. of Electric Vehicles",min_value=0,key="electric_vehicles")
-    bike_lanes = st.number_input("Length of Bike Lanes (km)",min_value=0,key="bike_lanes")
-    pedestrian_infra = st.selectbox("Pedestrian Infrastructure",["Yes","No"],key="pedestrian_infra")
-    congestion_pricing = st.selectbox("Congestion Pricing in Place",["Yes","No"],key="congestion_pricing")
-    traffic_emission_reduction = st.slider("Traffic Emission Reduction (%)",0,100,0,key="traffic_emission_reduction")
+        # 4. Sustainable Mobility
+        with cap_form_tabs[3]:
+            modal_share = st.slider("Modal Share of Public Transport (%)",0,100,0,key="modal_share")
+            electric_vehicles = st.number_input("No. of Electric Vehicles",min_value=0,key="electric_vehicles")
+            bike_lanes = st.number_input("Length of Bike Lanes (km)",min_value=0,key="bike_lanes")
+            pedestrian_infra = st.selectbox("Pedestrian Infrastructure",["Yes","No"],key="pedestrian_infra")
+            congestion_pricing = st.selectbox("Congestion Pricing in Place",["Yes","No"],key="congestion_pricing")
+            traffic_emission_reduction = st.slider("Traffic Emission Reduction (%)",0,100,0,key="traffic_emission_reduction")
 
-# ----- 5. Water Resources -----
-with cap_form_tabs[4]:
-    water_consumption = st.number_input("Total Water Consumption (ML/year)",min_value=0,key="water_consumption")
-    water_reuse = st.slider("Water Reuse / Recycling (%)",0,100,0,key="water_reuse")
-    rainwater_harvesting = st.selectbox("Rainwater Harvesting Mandated",["Yes","No"],key="rainwater_harvesting")
-    groundwater_recharge = st.number_input("Groundwater Recharge (ML/year)",min_value=0,key="groundwater_recharge")
-    leakage_loss = st.slider("Water Loss due to Leakage (%)",0,100,0,key="leakage_loss")
-    wastewater_treatment = st.number_input("Wastewater Treated (ML/year)",min_value=0,key="wastewater_treatment")
+        # 5. Water Resources
+        with cap_form_tabs[4]:
+            water_consumption = st.number_input("Total Water Consumption (ML/year)",min_value=0,key="water_consumption")
+            water_reuse = st.slider("Water Reuse / Recycling (%)",0,100,0,key="water_reuse")
+            rainwater_harvesting = st.selectbox("Rainwater Harvesting Mandated",["Yes","No"],key="rainwater_harvesting")
+            groundwater_recharge = st.number_input("Groundwater Recharge (ML/year)",min_value=0,key="groundwater_recharge")
+            leakage_loss = st.slider("Water Loss due to Leakage (%)",0,100,0,key="leakage_loss")
+            wastewater_treatment = st.number_input("Wastewater Treated (ML/year)",min_value=0,key="wastewater_treatment")
 
-# ----- 6. Waste Management -----
-with cap_form_tabs[5]:
-    municipal_solid_waste = st.number_input("Municipal Solid Waste Generated (T/year)",min_value=0,key="msw_generated")
-    recycling_rate = st.slider("Recycling Rate (%)",0,100,0,key="recycling_rate")
-    composting_rate = st.slider("Composting Rate (%)",0,100,0,key="composting_rate")
-    waste_to_energy = st.selectbox("Waste-to-Energy Plants",["Yes","No"],key="waste_to_energy")
-    hazardous_waste = st.number_input("Hazardous Waste Generated (T/year)",min_value=0,key="hazardous_waste")
-    e_waste = st.number_input("E-Waste Generated (T/year)",min_value=0,key="e_waste")
+        # 6. Waste Management
+        with cap_form_tabs[5]:
+            municipal_solid_waste = st.number_input("Municipal Solid Waste Generated (T/year)",min_value=0,key="msw_generated")
+            recycling_rate = st.slider("Recycling Rate (%)",0,100,0,key="recycling_rate")
+            composting_rate = st.slider("Composting Rate (%)",0,100,0,key="composting_rate")
+            waste_to_energy = st.selectbox("Waste-to-Energy Plants",["Yes","No"],key="waste_to_energy")
+            hazardous_waste = st.number_input("Hazardous Waste Generated (T/year)",min_value=0,key="hazardous_waste")
+            e_waste = st.number_input("E-Waste Generated (T/year)",min_value=0,key="e_waste")
 
-# ----- 7. Climate Data -----
-with cap_form_tabs[6]:
-    annual_temp = st.number_input("Average Annual Temperature (°C)",key="annual_temp")
-    avg_rainfall = st.number_input("Average Annual Rainfall (mm)",key="avg_rainfall")
-    extreme_events = st.text_area("Extreme Climate Events Observed",key="extreme_events")
-    rcp_scenario = st.selectbox("RCP Scenario",["RCP2.6","RCP4.5","RCP6.0","RCP8.5"],key="rcp_scenario")
-    projected_temp_increase = st.slider("Projected Temp Increase by 2050 (°C)",0,5,1,key="projected_temp_increase")
+        # 7. Climate Data
+        with cap_form_tabs[6]:
+            annual_temp = st.number_input("Average Annual Temperature (°C)",key="annual_temp")
+            avg_rainfall = st.number_input("Average Annual Rainfall (mm)",key="avg_rainfall")
+            extreme_events = st.text_area("Extreme Climate Events Observed",key="extreme_events")
+            rcp_scenario = st.selectbox("RCP Scenario",["RCP2.6","RCP4.5","RCP6.0","RCP8.5"],key="rcp_scenario")
+            projected_temp_increase = st.slider("Projected Temp Increase by 2050 (°C)",0,5,1,key="projected_temp_increase")
 
-# ---------------- Save Generate CAP Form ----------------
-if st.button("Save Generate CAP Data"):
-    st.session_state.city_data[city_select]["Basic Info"] = {
-        "Population":population,"Area":area,"GDP":gdp,"Density":density,
-        "Climate_Zone":climate_zone,"Admin":admin_structure
-    }
-    st.session_state.city_data[city_select]["CAP_Status"] = cap_status_form
-    st.session_state.city_data[city_select]["Last_Updated"] = last_updated()
-    # Energy & Buildings
-    st.session_state.city_data[city_select]["Energy_Buildings"] = {
-        "Residential_Energy":res_energy,"Commercial_Energy":com_energy,"Industrial_Energy":ind_energy,
-        "Renewable_Share":renewable_share,"EE_Buildings":ee_buildings,"Street_Lighting_Type":street_lighting_type,
-        "Street_Lighting_Coverage":street_lighting_coverage,"Fuel_Types":fuel_types,"Public_Building_Energy":public_building_energy,
-        "Green_Building_Policy":green_policy
-    }
-    # Green Cover
-    st.session_state.city_data[city_select]["Green_Biodiversity"] = {
-        "Green_Cover_Area":green_cover_area,"Tree_Density":tree_density,"Protected_Areas":protected_areas,
-        "Wetlands_Area":wetlands_area,"Species_Richness":species_richness,"Urban_Parks":urban_parks,
-        "Afforestation_Programs":afforestation_programs,"Biodiversity_Committees":biodiversity_committees
-    }
-    # Mobility
-    st.session_state.city_data[city_select]["Mobility"] = {
-        "Modal_Share_Public":modal_share,"EVs":electric_vehicles,"Bike_Lanes":bike_lanes,
-        "Pedestrian_Infra":pedestrian_infra,"Congestion_Pricing":congestion_pricing,
-        "Traffic_Emission_Reduction":traffic_emission_reduction
-    }
-    # Water
-    st.session_state.city_data[city_select]["Water"] = {
-        "Total_Water_Consumption":water_consumption,"Water_Reuse":water_reuse,
-        "Rainwater_Harvesting":rainwater_harvesting,"Groundwater_Recharge":groundwater_recharge,
-        "Leakage_Loss":leakage_loss,"Wastewater_Treatment":wastewater_treatment
-    }
-    # Waste
-    st.session_state.city_data[city_select]["Waste"] = {
-        "MSW_Generated":municipal_solid_waste,"Recycling_Rate":recycling_rate,
-        "Composting_Rate":composting_rate,"Waste_to_Energy":waste_to_energy,
-        "Hazardous_Waste":hazardous_waste,"E_Waste":e_waste
-    }
-    # Climate Data
-    st.session_state.city_data[city_select]["Climate_Data"] = {
-        "Annual_Temp":annual_temp,"Avg_Rainfall":avg_rainfall,"Extreme_Events":extreme_events,
-        "RCP_Scenario":rcp_scenario,"Projected_Temp_Increase":projected_temp_increase
-    }
-
-    st.success(f"{city_select} CAP Data Saved Successfully!")
-
+        # ---------------- Save Generate CAP Form -----------------
         if st.button("Save Generate CAP Data"):
             st.session_state.city_data[city_select]["Basic Info"] = {
                 "Population":population,"Area":area,"GDP":gdp,"Density":density,
@@ -280,6 +235,42 @@ if st.button("Save Generate CAP Data"):
             }
             st.session_state.city_data[city_select]["CAP_Status"] = cap_status_form
             st.session_state.city_data[city_select]["Last_Updated"] = last_updated()
+            # Energy & Buildings
+            st.session_state.city_data[city_select]["Energy_Buildings"] = {
+                "Residential_Energy":res_energy,"Commercial_Energy":com_energy,"Industrial_Energy":ind_energy,
+                "Renewable_Share":renewable_share,"EE_Buildings":ee_buildings,"Street_Lighting_Type":street_lighting_type,
+                "Street_Lighting_Coverage":street_lighting_coverage,"Fuel_Types":fuel_types,"Public_Building_Energy":public_building_energy,
+                "Green_Building_Policy":green_policy
+            }
+            # Green Cover
+            st.session_state.city_data[city_select]["Green_Biodiversity"] = {
+                "Green_Cover_Area":green_cover_area,"Tree_Density":tree_density,"Protected_Areas":protected_areas,
+                "Wetlands_Area":wetlands_area,"Species_Richness":species_richness,"Urban_Parks":urban_parks,
+                "Afforestation_Programs":afforestation_programs,"Biodiversity_Committees":biodiversity_committees
+            }
+            # Mobility
+            st.session_state.city_data[city_select]["Mobility"] = {
+                "Modal_Share_Public":modal_share,"EVs":electric_vehicles,"Bike_Lanes":bike_lanes,
+                "Pedestrian_Infra":pedestrian_infra,"Congestion_Pricing":congestion_pricing,
+                "Traffic_Emission_Reduction":traffic_emission_reduction
+            }
+            # Water
+            st.session_state.city_data[city_select]["Water"] = {
+                "Total_Water_Consumption":water_consumption,"Water_Reuse":water_reuse,
+                "Rainwater_Harvesting":rainwater_harvesting,"Groundwater_Recharge":groundwater_recharge,
+                "Leakage_Loss":leakage_loss,"Wastewater_Treatment":wastewater_treatment
+            }
+            # Waste
+            st.session_state.city_data[city_select]["Waste"] = {
+                "MSW_Generated":municipal_solid_waste,"Recycling_Rate":recycling_rate,
+                "Composting_Rate":composting_rate,"Waste_to_Energy":waste_to_energy,
+                "Hazardous_Waste":hazardous_waste,"E_Waste":e_waste
+            }
+            # Climate Data
+            st.session_state.city_data[city_select]["Climate_Data"] = {
+                "Annual_Temp":annual_temp,"Avg_Rainfall":avg_rainfall,"Extreme_Events":extreme_events,
+                "RCP_Scenario":rcp_scenario,"Projected_Temp_Increase":projected_temp_increase
+            }
             st.success(f"{city_select} CAP Data Saved Successfully!")
 
     # ---------------- GHG Inventory -----------------
@@ -309,4 +300,3 @@ if st.button("Save Generate CAP Data"):
                 st.download_button("Download CAP PDF", pdf_output, file_name=f"{city_select}_CAP.pdf", mime="application/pdf")
             else:
                 st.warning("Please calculate GHG inventory first.")
-
