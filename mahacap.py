@@ -216,32 +216,102 @@ def admin_panel():
             if password_input == ADMIN_PASSWORD:
                 st.session_state.admin_logged_in = True
                 st.success("Logged in successfully!")
+                st.session_state.current_admin_tab = 0
             else:
                 st.error("Incorrect password")
         return
 
     st.header("Admin Panel")
+
+    if 'current_admin_tab' not in st.session_state:
+        st.session_state.current_admin_tab = 0
+    if 'last_selected_city' not in st.session_state:
+        st.session_state.last_selected_city = "Maharashtra"
+
     admin_tabs = st.tabs(["Add/Update City","Generate CAP","GHG Inventory","Logout"])
 
-    # --- Add/Update City ---
-    with admin_tabs[0]:
-        st.subheader("Add / Update City")
-        city_select = st.selectbox("Select City", cities, key="add_update_city")
-        population = st.number_input("Population", min_value=0, key="population")
-        area = st.number_input("Area (sq km)", min_value=0, key="area")
-        gdp = st.number_input("GDP (₹ Crores)", min_value=0, key="gdp")
-        cap_status_options = ["Not Started","In Progress","Completed"]
-        cap_status_default = st.session_state.city_data.get(city_select, {}).get("CAP_Status","Not Started")
-        if cap_status_default not in cap_status_options:
-            cap_status_default = "Not Started"
-        cap_status = st.selectbox("CAP Status", cap_status_options, index=cap_status_options.index(cap_status_default), key="cap_status_add")
-        if st.button("Save City Info"):
-            st.session_state.city_data[city_select] = {
-                "Basic Info":{"Population":population,"Area":area,"GDP":gdp},
-                "CAP_Status":cap_status,
-                "Last_Updated":last_updated()
-            }
-            st.success(f"{city_select} information saved!")
+    # -------------------- Add/Update City --------------------
+    if st.session_state.current_admin_tab == 0:
+        with admin_tabs[0]:
+            city_list = sorted(cities)
+            if "Maharashtra" not in city_list:
+                city_list = ["Maharashtra"] + city_list
+
+            st.subheader("Add / Update City Data")
+            city_select = st.selectbox(
+                "Select City",
+                city_list,
+                index=city_list.index(st.session_state.last_selected_city),
+                key="add_update_city"
+            )
+            st.session_state.last_selected_city = city_select
+
+            city_info = st.session_state.city_data.get(city_select, {})
+
+            # --- Fields ---
+            district = city_info.get("District","")
+            st.text_input("District", value=district, key="district")
+
+            year_est = st.number_input("Year of Establishment", min_value=1500, max_value=2050,
+                                       value=city_info.get("Year_Establishment",2025), key="year_est")
+
+            admin_types = ["State","Municipal Corporation","Municipal Council","Other"]
+            type_admin = st.selectbox("Type of Administration", admin_types,
+                                      index=admin_types.index(city_info.get("Type_Admin","State")), key="type_admin")
+
+            cap_status_options = ["Not Started","In Progress","Completed"]
+            cap_status = st.selectbox("CAP Status", cap_status_options,
+                                      index=cap_status_options.index(city_info.get("CAP_Status","Not Started")), key="cap_status")
+
+            cap_link = city_info.get("CAP_Link","")
+            if cap_status == "Completed":
+                cap_link = st.text_input("CAP Link", value=cap_link, key="cap_link")
+
+            st.markdown("### Population")
+            male_pop = st.number_input("Male", min_value=0, value=city_info.get("Population",{}).get("Male",0), key="pop_male")
+            female_pop = st.number_input("Female", min_value=0, value=city_info.get("Population",{}).get("Female",0), key="pop_female")
+            total_pop = male_pop + female_pop
+            st.write(f"Total: {total_pop}")
+
+            st.markdown("### Literacy Rate (%)")
+            male_lit = st.number_input("Male", min_value=0.0, max_value=100.0,
+                                       value=city_info.get("Literacy",{}).get("Male",0.0), key="lit_male")
+            female_lit = st.number_input("Female", min_value=0.0, max_value=100.0,
+                                         value=city_info.get("Literacy",{}).get("Female",0.0), key="lit_female")
+            total_lit = st.number_input("Total", min_value=0.0, max_value=100.0,
+                                        value=city_info.get("Literacy",{}).get("Total",0.0), key="lit_total")
+
+            sex_ratio = st.number_input("Sex Ratio (F/M)", min_value=0, value=city_info.get("Sex_Ratio",0), key="sex_ratio")
+            density = st.number_input("Density (people/km²)", min_value=0, value=city_info.get("Density",0), key="density")
+
+            env_exist = st.selectbox("Environment Dept Exist", ["Yes","No"], index=0 if city_info.get("Env_Dept_Exist","Yes")=="Yes" else 1, key="env_exist")
+            dept_name = ""
+            if env_exist == "No":
+                dept_name = st.text_input("Department Name", value=city_info.get("Dept_Name",""), key="dept_name")
+            dept_person = st.text_input("Department Contact Person", value=city_info.get("Dept_Person",""), key="dept_person")
+            dept_email = st.text_input("Department Email ID", value=city_info.get("Dept_Email",""), key="dept_email")
+            website = st.text_input("Website", value=city_info.get("Website",""), key="website")
+
+            # --- Save Button ---
+            if st.button("Add/Update City"):
+                prev_data = st.session_state.city_data.get(city_select, {})
+                st.session_state.city_data[city_select] = {
+                    "District": st.session_state.get("district", prev_data.get("District","")),
+                    "Year_Establishment": year_est,
+                    "Type_Admin": type_admin,
+                    "CAP_Status": cap_status,
+                    "CAP_Link": st.session_state.get("cap_link", prev_data.get("CAP_Link","")) if cap_status=="Completed" else "",
+                    "Population":{"Male":male_pop,"Female":female_pop,"Total":total_pop},
+                    "Literacy":{"Male":male_lit,"Female":female_lit,"Total":total_lit},
+                    "Sex_Ratio": sex_ratio,
+                    "Density": density,
+                    "Env_Dept_Exist": env_exist,
+                    "Dept_Name": dept_name if env_exist=="No" else "",
+                    "Dept_Person": dept_person,
+                    "Dept_Email": dept_email,
+                    "Website": website
+                }
+                st.success(f"{city_select} data saved successfully!")
 
     # --- Generate CAP ---
     with admin_tabs[1]:
