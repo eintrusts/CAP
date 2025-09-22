@@ -286,29 +286,93 @@ def home_page():
 
 # -------------------- City Page --------------------
 def city_page():
+    st.markdown("<style>body {background-color: #121212; color: #ffffff;}</style>", unsafe_allow_html=True)
+    
     st.header("City-Level CAP Dashboard")
     selected_city = st.selectbox("Select City", cities, key="city_page_select")
     city_info = st.session_state.city_data.get(selected_city, {})
-    
+
     st.subheader(f"{selected_city} Net Zero Journey")
-    st.write(f"CAP Status: {city_info.get('CAP_Status','Not Started')}")
-    st.write(f"Population: {format_inr(city_info.get('Basic Info',{}).get('Population',0))}")
-    st.write(f"Area (sq km): {format_inr(city_info.get('Basic Info',{}).get('Area',0))}")
-    st.write(f"Last Updated: {city_info.get('Last_Updated',last_updated())}")
-    
-    ghg = city_info.get("GHG",{})
+
+    # --- CAP Status & Basic Info Cards ---
+    cap_status = city_info.get('CAP_Status', 'Not Started')
+    cap_link = city_info.get('CAP_Link', '')
+    population = city_info.get('Population', {}).get('Total', 0)
+    area = city_info.get('Area', 0)
+    dept_name = city_info.get('Dept_Name', '')
+    dept_email = city_info.get('Dept_Email', '')
+    website = city_info.get('Website', '')
+
+    basic_info_html = f"""
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:15px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">CAP Status</div>
+            <div style="font-size:16px; font-weight:600; color:#ffffff;">{cap_status}</div>
+        </div>
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">CAP Link</div>
+            <div><a href="{cap_link}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">Open Link</a></div>
+        </div>
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">Total Population</div>
+            <div style="font-size:16px; font-weight:600; color:#ffffff;">{population:,}</div>
+        </div>
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">Area (sq km)</div>
+            <div style="font-size:16px; font-weight:600; color:#ffffff;">{area:,}</div>
+        </div>
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">Department Name</div>
+            <div style="font-size:14px; color:#ffffff;">{dept_name}</div>
+        </div>
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">Department Email</div>
+            <div style="font-size:14px; color:#ffffff;">{dept_email}</div>
+        </div>
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <div style="font-size:13px; color:#cccccc;">Website</div>
+            <div><a href="{website}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">{website}</a></div>
+        </div>
+    </div>
+    """
+    st.markdown(basic_info_html, unsafe_allow_html=True)
+
+    # --- GHG by Sector ---
+    ghg = city_info.get("GHG", {})
     if ghg:
-        fig = px.bar(x=list(ghg.keys()), y=list(ghg.values()), labels={"x":"Sector","y":"tCO2e"}, title=f"{selected_city} GHG Emissions by Sector")
+        fig = px.bar(
+            x=list(ghg.keys()), 
+            y=list(ghg.values()), 
+            labels={"x":"Sector","y":"tCO2e"}, 
+            title=f"{selected_city} GHG Emissions by Sector",
+            template="plotly_dark"
+        )
         st.plotly_chart(fig, use_container_width=True)
-    
-    st.subheader("RCP Scenario")
-    climate = city_info.get("Climate_Data",{})
+
+    # --- RCP Scenario ---
+    st.markdown("### RCP Scenario Projections")
+    climate = city_info.get("Climate_Data", {})
     years = list(range(2020,2051))
-    rcp_values = climate.get("RCP",[np.random.uniform(1,3) for _ in years])
-    fig2 = px.line(x=years, y=rcp_values, labels={"x":"Year","y":"Temp Rise (°C)"}, title=f"{selected_city} RCP Scenario")
+    rcp_values = climate.get("RCP", [np.random.uniform(1,3) for _ in years])
+
+    fig2 = px.line(
+        x=years, 
+        y=rcp_values, 
+        labels={"x":"Year","y":"Temp Rise (°C)"}, 
+        title=f"{selected_city} RCP Scenario",
+        template="plotly_dark"
+    )
     st.plotly_chart(fig2, use_container_width=True)
-    
-    st.markdown(f"<div style='position:fixed; bottom:10px; left:10px; color:#888888;'>{last_updated()}</div>", unsafe_allow_html=True)
+
+    # --- Footer: Last Updated ---
+    st.markdown(
+        f"""
+        <div style='position:fixed; bottom:10px; left:10px; color:#aaaaaa; font-size:12px;'>
+            Last Updated: {city_info.get('Last_Updated', last_updated())}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # -------------------- Admin Panel --------------------
 def admin_panel():
