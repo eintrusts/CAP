@@ -287,14 +287,17 @@ def home_page():
 # -------------------- City Page --------------------
 def city_page():
     st.markdown("<style>body {background-color: #121212; color: #ffffff;}</style>", unsafe_allow_html=True)
-    
+
     st.header("City-Level CAP Dashboard")
-    selected_city = st.selectbox("Select City", cities, key="city_page_select")
+
+    # --- City Dropdown Alphabetical ---
+    sorted_cities = sorted(cities)
+    selected_city = st.selectbox("Select City", sorted_cities, key="city_page_select")
     city_info = st.session_state.city_data.get(selected_city, {})
 
     st.subheader(f"{selected_city} Net Zero Journey")
 
-    # --- CAP Status & Basic Info Cards ---
+    # --- Basic Information Cards ---
     cap_status = city_info.get('CAP_Status', 'Not Started')
     cap_link = city_info.get('CAP_Link', '')
     population = city_info.get('Population', {}).get('Total', 0)
@@ -340,6 +343,7 @@ def city_page():
     # --- GHG by Sector ---
     ghg = city_info.get("GHG", {})
     if ghg:
+        st.markdown("### GHG Emissions by Sector")
         fig = px.bar(
             x=list(ghg.keys()), 
             y=list(ghg.values()), 
@@ -367,12 +371,13 @@ def city_page():
     # --- Footer: Last Updated ---
     st.markdown(
         f"""
-        <div style='position:fixed; bottom:10px; left:10px; color:#aaaaaa; font-size:12px;'>
+        <div style='position:fixed; bottom:10px; centre:10px; color:#aaaaaa; font-size:12px;'>
             Last Updated: {city_info.get('Last_Updated', last_updated())}
         </div>
         """,
         unsafe_allow_html=True
     )
+
 
 # -------------------- Admin Panel --------------------
 def admin_panel():
