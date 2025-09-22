@@ -117,12 +117,6 @@ def sidebar_section():
         btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
         if st.sidebar.button(m, key=f"menu_{m}"):
             st.session_state.current_page = m
-        st.sidebar.markdown(
-            f"<style>div[data-testid='stSidebar'] button[kind='secondary'][key='menu_{m}'] .st-emotion-cache-16txtl3{{"
-            f"{'background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%) !important; color: white !important;' if st.session_state.current_page == m else ''}}"
-            f"}}</style>",
-            unsafe_allow_html=True
-        )
 
     # Footer
     st.sidebar.markdown(
