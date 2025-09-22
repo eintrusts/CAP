@@ -252,8 +252,7 @@ def admin_panel():
             st.session_state.last_selected_city = city_select
             city_info = st.session_state.city_data.get(city_select, {})
 
-            # --- Basic Info ---
-            st.markdown("### Basic Information")
+            
             district = st.text_input("District", value=city_info.get("District",""), key="district")
             year_est = st.number_input("Year of Establishment", min_value=1500, max_value=2050,
                                        value=city_info.get("Year_Establishment",2025), key="year_est")
@@ -267,8 +266,7 @@ def admin_panel():
             if cap_status == "Completed":
                 cap_link = st.text_input("CAP Link", value=cap_link, key="cap_link")
 
-            # --- Population Block ---
-            st.markdown("### Population")
+           
             col1, col2, col3 = st.columns(3)
             with col1:
                 male_pop = st.number_input("Male", min_value=0,
@@ -280,8 +278,6 @@ def admin_panel():
             with col3:
                 st.metric("Total Population", total_pop)
 
-            # --- Area & Density Block ---
-            st.markdown("### Area & Density")
             col1, col2 = st.columns(2)
             with col1:
                 area = st.number_input("Area (sq km)", min_value=0,
@@ -290,8 +286,6 @@ def admin_panel():
                 density = total_pop / area if area > 0 else 0
                 st.metric("Density (people/km²)", round(density,2))
 
-            # --- Literacy Block ---
-            st.markdown("### Literacy Rate (%)")
             col1, col2, col3 = st.columns(3)
             with col1:
                 male_lit = st.number_input("Male", min_value=0.0, max_value=100.0,
@@ -303,7 +297,6 @@ def admin_panel():
                 total_lit = st.number_input("Total", min_value=0.0, max_value=100.0,
                                             value=city_info.get("Literacy",{}).get("Total",0.0), key="lit_total")
 
-            # --- Other Details ---
             sex_ratio = st.number_input("Sex Ratio (F/M)", min_value=0,
                                         value=city_info.get("Sex_Ratio",0), key="sex_ratio")
             env_exist = st.selectbox("Environment Dept Exist", ["Yes","No"],
