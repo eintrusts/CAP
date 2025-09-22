@@ -148,34 +148,101 @@ def sidebar_section():
 def home_page():
     st.header("Climate Action Plan Dashboard")
     st.subheader("Maharashtra's Net Zero Journey")
-    
-    # --- CAP Status count ---
+
+    # --- CAP Status Overview ---
     status_counts = {"Not Started": 0, "In Progress": 0, "Completed": 0}
     for c in cities:
         status = st.session_state.city_data.get(c, {}).get("CAP_Status", "Not Started")
         if status in status_counts:
             status_counts[status] += 1
 
+    total_cities = 43  # fixed value
+
     st.markdown("### CAP Status Overview")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Not Started", status_counts["Not Started"])
-    col2.metric("In Progress", status_counts["In Progress"])
-    col3.metric("Completed", status_counts["Completed"])
+
+    cap_status_html = f"""
+    <div style="display:flex; gap:20px; margin-bottom:20px;">
+        <div style="flex:1; border:1px solid #ddd; background:#e6f0fa; padding:20px; border-radius:8px; text-align:center;">
+            <h3 style="margin:0; color:#1f77b4;">Total Cities</h3>
+            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{total_cities}</p>
+        </div>
+        <div style="flex:1; border:1px solid #ddd; background:#fdecea; padding:20px; border-radius:8px; text-align:center;">
+            <h3 style="margin:0; color:#d62728;">Not Started</h3>
+            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{status_counts['Not Started']}</p>
+        </div>
+        <div style="flex:1; border:1px solid #ddd; background:#fff4e5; padding:20px; border-radius:8px; text-align:center;">
+            <h3 style="margin:0; color:#ff7f0e;">In Progress</h3>
+            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{status_counts['In Progress']}</p>
+        </div>
+        <div style="flex:1; border:1px solid #ddd; background:#e8f5e9; padding:20px; border-radius:8px; text-align:center;">
+            <h3 style="margin:0; color:#2ca02c;">Completed</h3>
+            <p style="font-size:28px; font-weight:bold; margin:10px 0;">{status_counts['Completed']}</p>
+        </div>
+    </div>
+    """
+    st.markdown(cap_status_html, unsafe_allow_html=True)
 
     # --- Maharashtra Basic Information ---
     st.markdown("### Maharashtra Basic Information")
+
     total_population = sum([
-        st.session_state.city_data.get(c, {}).get("Population", {}).get("Total", 0) 
+        st.session_state.city_data.get(c, {}).get("Basic Info", {}).get("Population", 0) 
         for c in cities
     ])
     total_area = sum([
-        st.session_state.city_data.get(c, {}).get("Area", 0) 
+        st.session_state.city_data.get(c, {}).get("Basic Info", {}).get("Area", 0) 
         for c in cities
     ])
 
-    col4, col5 = st.columns(2)
-    col4.write(f"**Population:** {total_population:,}")
-    col5.write(f"**Area (sq km):** {total_area:,}")
+    # fetch extra fields (using first city that has data as representative)
+    dept_name = ""
+    dept_email = ""
+    website = ""
+    cap_link = ""
+    cap_status = ""
+    for c in cities:
+        city_info = st.session_state.city_data.get(c, {}).get("Basic Info", {})
+        if city_info:
+            cap_status = st.session_state.city_data.get(c, {}).get("CAP_Status", "Not Started")
+            cap_link = st.session_state.city_data.get(c, {}).get("CAP_Link", "")
+            dept_name = city_info.get("Department Name", "")
+            dept_email = city_info.get("Department Email", "")
+            website = city_info.get("Website", "")
+            break
+
+    basic_info_html = f"""
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">CAP Status</h4>
+            <p style="font-size:18px; font-weight:bold; margin:5px 0;">{cap_status}</p>
+        </div>
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">CAP Link</h4>
+            <p style="margin:5px 0;"><a href="{cap_link}" target="_blank" style="color:#1f77b4; text-decoration:none;">Open Link</a></p>
+        </div>
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">Total Population</h4>
+            <p style="font-size:18px; font-weight:bold; margin:5px 0;">{total_population:,}</p>
+        </div>
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">Area (sq km)</h4>
+            <p style="font-size:18px; font-weight:bold; margin:5px 0;">{total_area:,}</p>
+        </div>
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">Department Name</h4>
+            <p style="margin:5px 0;">{dept_name}</p>
+        </div>
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">Department Email</h4>
+            <p style="margin:5px 0;">{dept_email}</p>
+        </div>
+        <div style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <h4 style="margin:0; color:#555;">Website</h4>
+            <p style="margin:5px 0;"><a href="{website}" target="_blank" style="color:#1f77b4; text-decoration:none;">{website}</a></p>
+        </div>
+    </div>
+    """
+    st.markdown(basic_info_html, unsafe_allow_html=True)
 
     # --- GHG Emissions by Sector ---
     ghg_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
@@ -207,7 +274,7 @@ def home_page():
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    # --- Last Updated Footer (bottom-right) ---
+    # --- Last Updated Footer ---
     st.markdown(
         f"""
         <div style='position:fixed; bottom:10px; right:10px; color:#888888; font-size:12px;'>
