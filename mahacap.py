@@ -37,7 +37,6 @@ cities = ["Mumbai","Kalyan-Dombivli","Mira-Bhayandar","Navi Mumbai","Bhiwandi-Ni
 
 # -------------------- Sidebar --------------------
 def sidebar_section():
-    # Ensure current_page persists across refresh
     if "current_page" not in st.session_state:
         st.session_state.current_page = "Home"
 
@@ -87,17 +86,26 @@ def sidebar_section():
         transition: all 0.3s ease;
     }
     .menu-btn:hover {
-        background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%); /* soft red hover */
+        background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%);
         color: #ffffff;
         transform: translateX(4px);
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); /* Red glow on hover */
     }
+
+    /* Active Button with Pulse Animation */
     .menu-btn-active {
-        background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%); /* red gradient */
+        background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
         color: #ffffff !important;
         font-weight: 600;
-        border-left: 4px solid #f87171; /* red border highlight */
+        border-left: 4px solid #f87171;
         padding-left: 16px;
-        box-shadow: 0px 4px 12px rgba(239, 68, 68, 0.4); /* subtle shadow */
+        box-shadow: 0 0 10px rgba(239,68,68,0.6);
+        animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
+        50% { box-shadow: 0 0 20px rgba(239,68,68,0.9); }
+        100% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
     }
 
     /* Footer */
@@ -123,16 +131,12 @@ def sidebar_section():
         unsafe_allow_html=True
     )
 
-    # Sidebar Menu with Persistent Active State
+    # Sidebar Menu with Active State
     menu = ["Home", "City", "Admin"]
     for m in menu:
         btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
         if st.sidebar.button(m, key=f"menu_{m}"):
             st.session_state.current_page = m
-        st.sidebar.markdown(
-            f"<style>div[data-testid='stSidebar'] button[kind='secondary'][key='menu_{m}']{{{'background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%) !important; color:white !important; border-left:4px solid #f87171 !important; padding-left:16px; box-shadow:0px 4px 12px rgba(239, 68, 68, 0.4) !important;' if st.session_state.current_page == m else ''}}}</style>",
-            unsafe_allow_html=True
-        )
 
     # Footer
     st.sidebar.markdown(
