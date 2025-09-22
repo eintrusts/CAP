@@ -232,7 +232,7 @@ def admin_panel():
 
     # -------------------- Add/Update City --------------------
     if st.session_state.current_admin_tab == 0:
-    with admin_tabs[0]:
+       with admin_tabs[0]:
         city_list = sorted(cities)
         if "Maharashtra" not in city_list:
             city_list = ["Maharashtra"] + city_list
