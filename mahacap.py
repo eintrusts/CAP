@@ -286,17 +286,6 @@ def admin_panel():
                 density = total_pop / area if area > 0 else 0
                 st.metric("Density (people/km²)", round(density,2))
 
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                male_lit = st.number_input("Male", min_value=0.0, max_value=100.0,
-                                           value=city_info.get("Literacy",{}).get("Male",0.0), key="lit_male")
-            with col2:
-                female_lit = st.number_input("Female", min_value=0.0, max_value=100.0,
-                                             value=city_info.get("Literacy",{}).get("Female",0.0), key="lit_female")
-            with col3:
-                total_lit = st.number_input("Total", min_value=0.0, max_value=100.0,
-                                            value=city_info.get("Literacy",{}).get("Total",0.0), key="lit_total")
-
             sex_ratio = st.number_input("Sex Ratio (F/M)", min_value=0,
                                         value=city_info.get("Sex_Ratio",0), key="sex_ratio")
             env_exist = st.selectbox("Environment Dept Exist", ["Yes","No"],
