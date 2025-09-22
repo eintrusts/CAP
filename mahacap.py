@@ -146,36 +146,76 @@ def sidebar_section():
 
 # -------------------- Home Page --------------------
 def home_page():
-    st.header("Maharashtra Net Zero Journey")
+    st.header("Climate Action Plan Dashboard")
+    st.subheader("Maharashtra's Net Zero Journey")
     
-    # CAP Status count
-    status_counts = {"Not Started":0,"In Progress":0,"Completed":0}
+    # --- CAP Status count ---
+    status_counts = {"Not Started": 0, "In Progress": 0, "Completed": 0}
     for c in cities:
-        status = st.session_state.city_data.get(c, {}).get("CAP_Status","Not Started")
-        status_counts[status] +=1
-    st.subheader("CAP Status Overview")
-    st.write(f"Cities Not Started: {status_counts['Not Started']}")
-    st.write(f"Cities In Progress: {status_counts['In Progress']}")
-    st.write(f"Cities Completed: {status_counts['Completed']}")
-    
-    st.subheader("Maharashtra Basic Information")
-    total_population = sum([st.session_state.city_data.get(c, {}).get("Basic Info", {}).get("Population",0) for c in cities])
-    total_area = sum([st.session_state.city_data.get(c, {}).get("Basic Info", {}).get("Area",0) for c in cities])
-    st.write(f"Population: {format_inr(total_population)}")
-    st.write(f"Area (sq km): {format_inr(total_area)}")
-    
-    ghg_sectors = ["Energy","Transport","Waste","Water","Buildings","Industry"]
-    ghg_values = [sum([st.session_state.city_data.get(c, {}).get("GHG", {}).get(s,0) for c in cities]) for s in ghg_sectors]
-    fig = px.bar(x=ghg_sectors, y=ghg_values, labels={"x":"Sector","y":"tCO2e"}, title="Maharashtra GHG Emissions by Sector")
+        status = st.session_state.city_data.get(c, {}).get("CAP_Status", "Not Started")
+        if status in status_counts:
+            status_counts[status] += 1
+
+    st.markdown("### CAP Status Overview")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Not Started", status_counts["Not Started"])
+    col2.metric("In Progress", status_counts["In Progress"])
+    col3.metric("Completed", status_counts["Completed"])
+
+    # --- Maharashtra Basic Information ---
+    st.markdown("### Maharashtra Basic Information")
+    total_population = sum([
+        st.session_state.city_data.get(c, {}).get("Population", {}).get("Total", 0) 
+        for c in cities
+    ])
+    total_area = sum([
+        st.session_state.city_data.get(c, {}).get("Area", 0) 
+        for c in cities
+    ])
+
+    col4, col5 = st.columns(2)
+    col4.write(f"**Population:** {total_population:,}")
+    col5.write(f"**Area (sq km):** {total_area:,}")
+
+    # --- GHG Emissions by Sector ---
+    ghg_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
+    ghg_values = [
+        sum([st.session_state.city_data.get(c, {}).get("GHG", {}).get(s, 0) for c in cities])
+        for s in ghg_sectors
+    ]
+    fig = px.bar(
+        x=ghg_sectors, 
+        y=ghg_values, 
+        labels={"x": "Sector", "y": "tCO2e"}, 
+        title="Maharashtra GHG Emissions by Sector"
+    )
     st.plotly_chart(fig, use_container_width=True)
-    
-    st.subheader("RCP Scenario")
-    years = list(range(2020,2051))
-    rcp_values = [np.random.uniform(1,3) for _ in years]
-    fig2 = px.line(x=years, y=rcp_values, labels={"x":"Year","y":"Temp Rise (°C)"}, title="Projected RCP Scenario")
+
+    # --- RCP Scenario ---
+    st.subheader("RCP Scenario Projections")
+    years = list(range(2020, 2051))
+    rcp_45 = np.linspace(1.0, 2.0, len(years))
+    rcp_60 = np.linspace(1.0, 2.5, len(years))
+    rcp_85 = np.linspace(1.0, 3.5, len(years))
+
+    fig2 = px.line(
+        x=years, y=rcp_45, labels={"x": "Year", "y": "Temp Rise (°C)"},
+        title="Projected RCP Scenarios"
+    )
+    fig2.add_scatter(x=years, y=rcp_60, mode="lines", name="RCP 6.0")
+    fig2.add_scatter(x=years, y=rcp_85, mode="lines", name="RCP 8.5")
+
     st.plotly_chart(fig2, use_container_width=True)
-    
-    st.markdown(f"<div style='position:fixed; bottom:10px; left:10px; color:#888888;'>{last_updated()}</div>", unsafe_allow_html=True)
+
+    # --- Last Updated Footer (bottom-right) ---
+    st.markdown(
+        f"""
+        <div style='position:fixed; bottom:10px; right:10px; color:#888888; font-size:12px;'>
+            {last_updated()}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # -------------------- City Page --------------------
 def city_page():
