@@ -33,6 +33,19 @@ cities = ["Mumbai","Kalyan-Dombivli","Mira-Bhayandar","Navi Mumbai","Bhiwandi-Ni
 st.set_page_config(page_title="Maharashtra CAP Dashboard", layout="wide", page_icon="🌍")
 
 # ---------------------------
+# Dark Minimalist Theme
+# ---------------------------
+st.markdown("""
+<style>
+body {background-color:#1E1E1E; color:#F5F5F5;}
+h1, h2, h3, h4, h5, h6 {color:#FFFFFF;}
+.stButton>button {background-color:#0A84FF; color:white;}
+.stTabs [role="tab"] {background-color:#2C2C2C; color:white;}
+.stTabs [role="tabpanel"] {background-color:#1E1E1E;}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------
 # Sidebar Navigation
 # ---------------------------
 st.sidebar.title("EinTrust")
@@ -66,7 +79,7 @@ if menu_choice == "Home":
     st.markdown("### CAP Status of Cities")
     st.write("CAP/GHG status table for all 43 cities will appear here after admin input.")
     st.markdown("### KPIs & RCP Graph")
-    st.write("Placeholder for Maharashtra-wide sectoral KPIs, RCP graphs, and visualizations.")
+    st.write("Placeholder for Maharashtra-wide sectoral KPIs, GHG, RCP graphs, and visualizations.")
 
 # ---------------------------
 # City Page
@@ -118,7 +131,9 @@ elif menu_choice == "Admin Login":
                     gdp = st.number_input("City GDP (₹ Crores)", min_value=0)
                     climate_budget = st.number_input("Annual Climate Budget (₹ Crores)", min_value=0)
                     governance_structure = st.text_area("Municipal Governance Structure / Departments")
-
+                    master_plan = st.text_area("Urban Master Plan Details / Zoning")
+                    funding_sources = st.text_area("Funding Sources for Climate Actions")
+                    
                 # ----------------- Tab 2: Energy & Buildings -----------------
                 with cap_tabs[1]:
                     st.markdown("### Energy Consumption & Buildings (IPCC 2006, MoEFCC, ECBC)")
@@ -129,7 +144,9 @@ elif menu_choice == "Admin Login":
                     building_floor_area = st.number_input("Total Built-up Floor Area (sq.m)")
                     green_buildings = st.number_input("Number of Green-Certified Buildings")
                     renewable_energy = st.number_input("Installed Renewable Energy Capacity (MW)")
-
+                    street_lighting_energy = st.number_input("Street Lighting Energy Consumption (MWh/year)")
+                    energy_efficiency_programs = st.text_area("Existing Energy Efficiency Measures / Programs")
+                    
                 # ----------------- Tab 3: Green Cover & Biodiversity -----------------
                 with cap_tabs[2]:
                     st.markdown("### Green Cover & Biodiversity (CSCAF, UN SDG 15, MoEFCC)")
@@ -138,7 +155,9 @@ elif menu_choice == "Admin Login":
                     street_trees = st.number_input("Number of Street Trees")
                     protected_areas = st.number_input("Area under Protected Zones (ha)")
                     biodiversity_programs = st.text_area("Biodiversity Programs / Initiatives")
-
+                    soil_conservation = st.text_area("Soil Conservation Programs")
+                    ecological_restoration = st.text_area("Ecological Restoration Projects")
+                    
                 # ----------------- Tab 4: Sustainable Mobility -----------------
                 with cap_tabs[3]:
                     st.markdown("### Sustainable Mobility (CSCAF, NUTP, NITI Aayog)")
@@ -147,7 +166,10 @@ elif menu_choice == "Admin Login":
                     avg_km_per_vehicle = st.number_input("Average km Travelled per Vehicle per Day")
                     cycling_infra = st.number_input("Length of Cycling Lanes (km)")
                     pedestrian_infra = st.number_input("Length of Pedestrian Walkways (km)")
-
+                    ev_vehicles = st.number_input("Number of EV / Hybrid Vehicles")
+                    traffic_hotspots = st.text_area("Traffic Congestion Hotspots")
+                    modal_share_data = st.text_area("Transport Modal Share Data (%)")
+                    
                 # ----------------- Tab 5: Water Resources -----------------
                 with cap_tabs[4]:
                     st.markdown("### Water Resource Management (MoUD, CSCAF)")
@@ -156,7 +178,9 @@ elif menu_choice == "Admin Login":
                     wastewater_treated = st.number_input("Wastewater Treated (MLD)")
                     reuse_percentage = st.number_input("Wastewater Reuse (%)")
                     rainwater_harvesting = st.number_input("Buildings with RWH (No.)")
-
+                    stormwater_coverage = st.number_input("Stormwater Drainage Coverage (%)")
+                    water_losses = st.number_input("Non-Revenue Water Loss (%)")
+                    
                 # ----------------- Tab 6: Waste Management -----------------
                 with cap_tabs[5]:
                     st.markdown("### Waste Management (MoHUA, SWM Rules 2016)")
@@ -164,86 +188,82 @@ elif menu_choice == "Admin Login":
                     municipal_waste_treated = st.number_input("Municipal Waste Treated (T/day)")
                     recycling_rate = st.number_input("Recycling Rate (%)")
                     composting = st.number_input("Organic Waste Composting (T/day)")
-
+                    hazardous_waste = st.text_area("Hazardous Waste Management")
+                    biomedical_waste = st.text_area("Biomedical Waste Management")
+                    e_waste = st.text_area("E-Waste Management")
+                    swm_compliance = st.text_area("SWM Rules Compliance Status")
+                    
                 # ----------------- Tab 7: Climate Data -----------------
                 with cap_tabs[6]:
-                    st.markdown("### Climate Data (IMD, IPCC, Paris Agreement)")
+                    st.markdown("### Climate Data (IPCC, MoHUA, CSCAF)")
                     rcp_pathway = st.selectbox("RCP Pathway", ["RCP2.6","RCP4.5","RCP6.0","RCP8.5"])
-                    urban_heat_intensity = st.number_input("Urban Heat Island Intensity (°C)")
-                    avg_temperature = st.number_input("Average Annual Temperature (°C)")
-                    rainfall = st.number_input("Annual Rainfall (mm)")
-                    flood_frequency = st.number_input("Flood Events per Decade")
-                    drought_frequency = st.number_input("Drought Events per Decade")
-                    extreme_weather_events = st.text_area("Other Extreme Weather Events Observed")
-
-                # ----------------- Calculate GHG Inventory -----------------
-                if st.button("Calculate GHG Inventory"):
-                    cap_data = {
-                        "Energy": {"Residential": res_energy, "Commercial": com_energy, "Industrial": ind_energy, "Public": public_energy},
-                        "Transport": {"Vehicles": total_vehicles, "AvgKmPerDay": avg_km_per_vehicle},
-                        "Waste": {"WasteGenerated": municipal_waste_generated},
-                        "Climate": {"RCP": rcp_pathway, "UrbanHeat": urban_heat_intensity, "Flood": flood_frequency, "Drought": drought_frequency},
-                        "Balances": {"Ecological": "To Be Calculated", "Social": "To Be Calculated", "Economic": "To Be Calculated", "Urban": "To Be Calculated"}
+                    avg_temperature = st.number_input("Average Temperature (°C)")
+                    avg_rainfall = st.number_input("Average Annual Rainfall (mm)")
+                    extreme_events = st.text_area("Extreme Weather Events")
+                    flood_prone = st.text_area("Flood-Prone Zones")
+                    drought_prone = st.text_area("Drought-Prone Zones")
+                    urban_heat_island = st.text_area("Urban Heat Island Intensity")
+                    climate_vulnerability = st.text_area("Social/Economic/Ecological/Urban Vulnerability Index")
+                    
+                if st.button("Create GHG Inventory"):
+                    ghg_data = {
+                        "Energy":{"Residential":res_energy, "Commercial":com_energy, "Industrial":ind_energy, "Public":public_energy},
+                        "Transport":{"Vehicles":total_vehicles, "AvgKmPerDay":avg_km_per_vehicle},
+                        "Waste":{"WasteGenerated":municipal_waste_generated}
                     }
-                    ghg = calculate_ghg(cap_data)
-                    st.markdown("### Sectoral GHG Emissions (tCO₂)")
-                    for sector, val in ghg.items():
+                    ghg_result = calculate_ghg(ghg_data)
+                    st.success("GHG Inventory Calculated Successfully!")
+                    st.write("Sector-wise Emissions (tCO₂)")
+                    for sector,val in ghg_result.items():
                         st.write(f"{sector}: {format_inr(int(val))}")
-                    fig = px.pie(values=list(ghg.values())[:-1], names=list(ghg.keys())[:-1], title="Sectoral GHG Emissions")
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # ----------------- Scenario-Based Decision Support -----------------
-                    st.markdown("## Scenario-Based Decision Support (SDS)")
-                    scenario_type = st.selectbox("Select Scenario", 
-                                                 ["Business-as-Usual (BAU)",
-                                                  "Renewable Energy Expansion",
-                                                  "Waste Reduction Plan",
-                                                  "Sustainable Transport Boost",
-                                                  "Integrated Sustainability Plan"])
-                    scenario_energy_reduction = st.slider("Energy Consumption Reduction (%)", 0, 50, 10)
-                    scenario_renewable_increase = st.slider("Increase in Renewable Energy Capacity (%)", 0, 100, 20)
-                    scenario_transport_shift = st.slider("Increase Public Transport Usage (%)", 0, 100, 15)
-                    scenario_waste_reduction = st.slider("Increase Recycling/Composting (%)", 0, 100, 20)
-                    scenario_green_cover_increase = st.slider("Increase Green Cover Area (%)", 0, 50, 10)
-
-                    # Projected GHG calculations
-                    projected_energy = res_energy * (1 - scenario_energy_reduction / 100) - renewable_energy * (scenario_renewable_increase / 100)
-                    projected_transport = total_vehicles * (1 - scenario_transport_shift / 100) * avg_km_per_vehicle
-                    projected_waste = municipal_waste_generated * (1 - scenario_waste_reduction / 100)
+                    
+                    # Scenario-Based Decision Support
+                    st.markdown("### Scenario-Based Decision Support")
+                    scenario_energy_reduction = st.slider("Energy Reduction (%)",0,50,10)
+                    scenario_renewable_increase = st.slider("Renewable Energy Increase (%)",0,50,10)
+                    scenario_transport_shift = st.slider("Transport Modal Shift (%)",0,50,10)
+                    scenario_waste_reduction = st.slider("Waste Reduction (%)",0,50,10)
+                    scenario_green_cover_increase = st.slider("Green Cover Increase (%)",0,50,10)
+                    
+                    # Projected GHG
+                    projected_energy = res_energy*(1-scenario_energy_reduction/100) - renewable_energy*(scenario_renewable_increase/100)
+                    projected_transport = total_vehicles*(1-scenario_transport_shift/100)*avg_km_per_vehicle
+                    projected_waste = municipal_waste_generated*(1-scenario_waste_reduction/100)
                     ghg_projected = calculate_ghg({
-                        "Energy": {"Residential": projected_energy, "Commercial": projected_energy/2, "Industrial": projected_energy/3, "Public": projected_energy/4},
-                        "Transport": {"Vehicles": total_vehicles*(1-scenario_transport_shift/100), "AvgKmPerDay": avg_km_per_vehicle},
-                        "Waste": {"WasteGenerated": projected_waste}
+                        "Energy":{"Residential":projected_energy,"Commercial":projected_energy/2,"Industrial":projected_energy/3,"Public":projected_energy/4},
+                        "Transport":{"Vehicles":total_vehicles*(1-scenario_transport_shift/100),"AvgKmPerDay":avg_km_per_vehicle},
+                        "Waste":{"WasteGenerated":projected_waste}
                     })
-                    st.markdown("### Projected GHG Emissions (tCO₂)")
-                    for sector, val in ghg_projected.items():
+                    st.markdown("#### Projected GHG Emissions (tCO₂)")
+                    for sector,val in ghg_projected.items():
                         st.write(f"{sector}: {format_inr(int(val))}")
+                    
                     fig_proj = px.bar(x=list(ghg_projected.keys())[:-1], y=list(ghg_projected.values())[:-1],
-                                      labels={"x":"Sector","y":"tCO₂"}, title="Projected GHG Emissions per Sector")
+                                      labels={"x":"Sector","y":"tCO₂"}, title="Projected GHG per Sector")
                     st.plotly_chart(fig_proj, use_container_width=True)
-
+                    
                     # RCP Graph
-                    st.markdown("### Projected RCP Pathway")
+                    st.markdown("### RCP Projection")
                     rcp_values = {"RCP2.6":1.0, "RCP4.5":1.1, "RCP6.0":1.2, "RCP8.5":1.5}
-                    st.line_chart(pd.DataFrame({"Year": list(range(2025,2051)),
-                                                "Projected Temperature Rise (°C)":[rcp_values[rcp_pathway]*0.02*i for i in range(26)]}))
-
-                    # Recommendations
-                    st.markdown("### Automated Recommendations")
+                    st.line_chart(pd.DataFrame({"Year":list(range(2025,2051)),
+                                                "Temp Rise (°C)":[rcp_values[rcp_pathway]*0.02*i for i in range(26)]}))
+                    
+                    # Recommendations based on frameworks
+                    st.markdown("### Recommendations (Frameworks: CSCAF, MoHUA, IPCC, SDG11, Paris Agreement)")
                     recommendations = []
-                    if scenario_energy_reduction > 0:
+                    if scenario_energy_reduction>0:
                         recommendations.append(f"Reduce energy consumption by {scenario_energy_reduction}% via efficiency measures")
-                    if scenario_renewable_increase > 0:
+                    if scenario_renewable_increase>0:
                         recommendations.append(f"Increase renewable energy capacity by {scenario_renewable_increase}%")
-                    if scenario_transport_shift > 0:
+                    if scenario_transport_shift>0:
                         recommendations.append(f"Promote public transport to shift {scenario_transport_shift}% of vehicle usage")
-                    if scenario_waste_reduction > 0:
-                        recommendations.append(f"Enhance waste recycling/composting to cover additional {scenario_waste_reduction}%")
-                    if scenario_green_cover_increase > 0:
-                        recommendations.append(f"Expand green cover by {scenario_green_cover_increase}% to improve ecological balance")
+                    if scenario_waste_reduction>0:
+                        recommendations.append(f"Enhance waste recycling/composting to cover {scenario_waste_reduction}% of waste")
+                    if scenario_green_cover_increase>0:
+                        recommendations.append(f"Expand green cover by {scenario_green_cover_increase}%")
                     for rec in recommendations:
                         st.write(f"- {rec}")
-
+                    
                     # Download CAP PDF
                     if st.button("Download CAP PDF"):
                         pdf = FPDF()
@@ -267,6 +287,12 @@ elif menu_choice == "Admin Login":
                         pdf_buffer.seek(0)
                         st.download_button("Download CAP PDF", pdf_buffer, file_name=f"{city_select}_CAP.pdf", mime="application/pdf")
                         st.success("CAP PDF generated successfully!")
+
+            # ----------------- Tab 3: GHG Inventory -----------------
+            with tabs[2]:
+                st.header("GHG Inventory Overview")
+                st.write("This page will summarize all GHG inventory calculated from Generate CAP inputs.")
+                st.write("Sector-wise emissions, RCP pathway, projected emissions, and balances will be displayed here.")
 
 # ---------------------------
 # End of Dashboard
