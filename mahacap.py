@@ -273,7 +273,6 @@ if st.button("Save Generate CAP Data"):
 
     st.success(f"{city_select} CAP Data Saved Successfully!")
 
-
         if st.button("Save Generate CAP Data"):
             st.session_state.city_data[city_select]["Basic Info"] = {
                 "Population":population,"Area":area,"GDP":gdp,"Density":density,
