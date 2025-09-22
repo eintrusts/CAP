@@ -146,6 +146,7 @@ def sidebar_section():
 
 # -------------------- Home Page --------------------
 def home_page():
+    # --- Dark Theme Body ---
     st.markdown("<style>body {background-color: #121212; color: #ffffff;}</style>", unsafe_allow_html=True)
 
     st.header("Climate Action Plan Dashboard")
@@ -163,19 +164,19 @@ def home_page():
 
     cap_status_html = f"""
     <div style="display:flex; gap:15px; margin-bottom:15px;">
-        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+        <div style="flex:1; border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Total Cities</div>
             <div style="font-size:22px; font-weight:600; color:#1f77b4;">{total_cities}</div>
         </div>
-        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+        <div style="flex:1; border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Not Started</div>
             <div style="font-size:22px; font-weight:600; color:#d62728;">{status_counts['Not Started']}</div>
         </div>
-        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+        <div style="flex:1; border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">In Progress</div>
             <div style="font-size:22px; font-weight:600; color:#ff7f0e;">{status_counts['In Progress']}</div>
         </div>
-        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+        <div style="flex:1; border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Completed</div>
             <div style="font-size:22px; font-weight:600; color:#2ca02c;">{status_counts['Completed']}</div>
         </div>
@@ -211,32 +212,32 @@ def home_page():
             break
 
     basic_info_html = f"""
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">CAP Status</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{cap_status}</div>
         </div>
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">CAP Link</div>
             <div><a href="{cap_link}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">Open Link</a></div>
         </div>
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Total Population</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{total_population:,}</div>
         </div>
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Area (sq km)</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{total_area:,}</div>
         </div>
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Department Name</div>
             <div style="font-size:14px; color:#ffffff;">{dept_name}</div>
         </div>
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Department Email</div>
             <div style="font-size:14px; color:#ffffff;">{dept_email}</div>
         </div>
-        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Website</div>
             <div><a href="{website}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">{website}</a></div>
         </div>
@@ -245,7 +246,7 @@ def home_page():
     st.markdown(basic_info_html, unsafe_allow_html=True)
 
     # --- GHG by Sector ---
-    ghg_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
+    ghg_sectors = ["Energy", "Transport", "Waste", "Water"]
     ghg_values = [
         sum([st.session_state.city_data.get(c, {}).get("GHG", {}).get(s, 0) for c in cities])
         for s in ghg_sectors
@@ -275,12 +276,13 @@ def home_page():
     # --- Footer: Last Updated ---
     st.markdown(
         f"""
-        <div style='position:fixed; bottom:10px; left:10px; color:#aaaaaa; font-size:12px;'>
+        <div style='position:fixed; bottom:10px; centre:10px; color:#aaaaaa; font-size:12px;'>
             Last Updated: {last_updated()}
         </div>
         """,
         unsafe_allow_html=True
     )
+
 
 # -------------------- City Page --------------------
 def city_page():
