@@ -146,105 +146,141 @@ def sidebar_section():
 
 # -------------------- Home Page --------------------
 def home_page():
-    st.markdown(
-        """
-        <style>
-        .card {
-            background-color: #1e1e1e;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 6px rgba(255,255,255,0.05);
-            text-align: center;
-            margin: 5px;
-            color: #f5f5f5;
-        }
-        .card h3 {
-            margin: 0;
-            font-size: 20px;
-            color: #ffffff;
-        }
-        .card p {
-            margin: 5px 0 0;
-            font-size: 16px;
-            color: #cccccc;
-        }
-        .metric-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .footer {
-            position: fixed;
-            bottom: 10px;
-            left: 15px;
-            font-size: 12px;
-            color: #aaaaaa;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("<style>body {background-color: #121212; color: #ffffff;}</style>", unsafe_allow_html=True)
 
-    st.markdown("<h2 style='color:white;'>Maharashtra Net Zero Journey</h2>", unsafe_allow_html=True)
+    st.header("Climate Action Plan Dashboard")
+    st.caption("Maharashtra's Net Zero Journey")
 
-    # ------------------- CAP STATUS COUNTS -------------------
+    # --- CAP Status Overview ---
     status_counts = {"Not Started": 0, "In Progress": 0, "Completed": 0}
     for c in cities:
         status = st.session_state.city_data.get(c, {}).get("CAP_Status", "Not Started")
-        status_counts[status] += 1
+        if status in status_counts:
+            status_counts[status] += 1
 
+    total_cities = 43  # fixed value
     st.markdown("### CAP Status Overview")
-    st.markdown("<div class='metric-row'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{len(cities)}</h3><p>Total Cities</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{status_counts['Not Started']}</h3><p>Not Started</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{status_counts['In Progress']}</h3><p>In Progress</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{status_counts['Completed']}</h3><p>Completed</p></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    # ------------------- BASIC INFORMATION -------------------
+    cap_status_html = f"""
+    <div style="display:flex; gap:15px; margin-bottom:15px;">
+        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#cccccc;">Total Cities</div>
+            <div style="font-size:22px; font-weight:600; color:#1f77b4;">{total_cities}</div>
+        </div>
+        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#cccccc;">Not Started</div>
+            <div style="font-size:22px; font-weight:600; color:#d62728;">{status_counts['Not Started']}</div>
+        </div>
+        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#cccccc;">In Progress</div>
+            <div style="font-size:22px; font-weight:600; color:#ff7f0e;">{status_counts['In Progress']}</div>
+        </div>
+        <div style="flex:1; border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-size:13px; color:#cccccc;">Completed</div>
+            <div style="font-size:22px; font-weight:600; color:#2ca02c;">{status_counts['Completed']}</div>
+        </div>
+    </div>
+    """
+    st.markdown(cap_status_html, unsafe_allow_html=True)
+
+    # --- Maharashtra Basic Information ---
     st.markdown("### Maharashtra Basic Information")
 
-    total_population = sum([st.session_state.city_data.get(c, {}).get("Population", {}).get("Total", 0) for c in cities])
-    total_area = sum([st.session_state.city_data.get(c, {}).get("Area", 0) for c in cities])
+    total_population = sum([
+        st.session_state.city_data.get(c, {}).get("Population", {}).get("Total", 0)
+        for c in cities
+    ])
+    total_area = sum([
+        st.session_state.city_data.get(c, {}).get("Area", 0)
+        for c in cities
+    ])
 
-    department_name = " / ".join(
-        filter(None, [st.session_state.city_data.get(c, {}).get("Department_Name", "") for c in cities])
-    )
-    department_email = " / ".join(
-        filter(None, [st.session_state.city_data.get(c, {}).get("Department_Email", "") for c in cities])
-    )
-    website = " / ".join(
-        filter(None, [st.session_state.city_data.get(c, {}).get("Website", "") for c in cities])
-    )
+    dept_name = ""
+    dept_email = ""
+    website = ""
+    cap_link = ""
+    cap_status = ""
+    for c in cities:
+        city_info = st.session_state.city_data.get(c, {})
+        if city_info:
+            cap_status = city_info.get("CAP_Status", "Not Started")
+            cap_link = city_info.get("CAP_Link", "")
+            dept_name = city_info.get("Dept_Name", "")
+            dept_email = city_info.get("Dept_Email", "")
+            website = city_info.get("Website", "")
+            break
 
-    st.markdown("<div class='metric-row'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{total_population:,}</h3><p>Total Population</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{total_area:,}</h3><p>Total Area (sq.km)</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{department_name or '-'}</h3><p>Department</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{department_email or '-'}</h3><p>Department Email</p></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='card'><h3>{website or '-'}</h3><p>Website</p></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    basic_info_html = f"""
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">CAP Status</div>
+            <div style="font-size:16px; font-weight:600; color:#ffffff;">{cap_status}</div>
+        </div>
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">CAP Link</div>
+            <div><a href="{cap_link}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">Open Link</a></div>
+        </div>
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">Total Population</div>
+            <div style="font-size:16px; font-weight:600; color:#ffffff;">{total_population:,}</div>
+        </div>
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">Area (sq km)</div>
+            <div style="font-size:16px; font-weight:600; color:#ffffff;">{total_area:,}</div>
+        </div>
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">Department Name</div>
+            <div style="font-size:14px; color:#ffffff;">{dept_name}</div>
+        </div>
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">Department Email</div>
+            <div style="font-size:14px; color:#ffffff;">{dept_email}</div>
+        </div>
+        <div style="border:1px solid #333; background:#1e1e1e; padding:12px; border-radius:6px;">
+            <div style="font-size:13px; color:#cccccc;">Website</div>
+            <div><a href="{website}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">{website}</a></div>
+        </div>
+    </div>
+    """
+    st.markdown(basic_info_html, unsafe_allow_html=True)
 
-    # ------------------- GRAPHS -------------------
+    # --- GHG by Sector ---
     ghg_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
-    ghg_values = [sum([st.session_state.city_data.get(c, {}).get("GHG", {}).get(s, 0) for c in cities]) for s in ghg_sectors]
-    fig = px.bar(x=ghg_sectors, y=ghg_values, labels={"x": "Sector", "y": "tCO2e"},
-                 title="Maharashtra GHG Emissions by Sector", template="plotly_dark")
+    ghg_values = [
+        sum([st.session_state.city_data.get(c, {}).get("GHG", {}).get(s, 0) for c in cities])
+        for s in ghg_sectors
+    ]
+    fig = px.bar(
+        x=ghg_sectors, 
+        y=ghg_values, 
+        labels={"x": "Sector", "y": "tCO2e"}, 
+        title="Maharashtra GHG Emissions by Sector",
+        template="plotly_dark"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
+    # --- RCP Scenarios ---
     st.markdown("### RCP Scenario Projections")
     years = list(range(2020, 2051))
     rcp_45 = np.linspace(1.0, 2.0, len(years))
     rcp_60 = np.linspace(1.0, 2.5, len(years))
-    rcp_85 = np.linspace(1.2, 4.0, len(years))
-    fig2 = px.line(x=years, y=rcp_45, labels={"x": "Year", "y": "Temp Rise (°C)"},
-                   title="Projected RCP Scenarios", template="plotly_dark")
+    rcp_85 = np.linspace(1.0, 3.5, len(years))
+
+    fig2 = px.line(x=years, y=rcp_45, labels={"x": "Year", "y": "Temp Rise (°C)"}, title="Projected RCP Scenarios", template="plotly_dark")
     fig2.add_scatter(x=years, y=rcp_60, mode="lines", name="RCP 6.0")
     fig2.add_scatter(x=years, y=rcp_85, mode="lines", name="RCP 8.5")
+
     st.plotly_chart(fig2, use_container_width=True)
 
-    # ------------------- FOOTER -------------------
-    st.markdown(f"<div class='footer'>Last Updated: {last_updated()}</div>", unsafe_allow_html=True)
+    # --- Footer: Last Updated ---
+    st.markdown(
+        f"""
+        <div style='position:fixed; bottom:10px; left:10px; color:#aaaaaa; font-size:12px;'>
+            Last Updated: {last_updated()}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # -------------------- City Page --------------------
 def city_page():
