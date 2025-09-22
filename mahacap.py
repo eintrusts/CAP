@@ -37,27 +37,98 @@ cities = ["Mumbai","Kalyan-Dombivli","Mira-Bhayandar","Navi Mumbai","Bhiwandi-Ni
 
 # -------------------- Sidebar --------------------
 def sidebar_section():
+    # Ensure current_page persists across refresh
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "Home"
+
     st.sidebar.markdown("""
     <style>
-    [data-testid="stSidebar"] {background-color: #1f2937; color: #ffffff; width: 250px;}
-    .sidebar-logo {display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;}
-    .stButton>button {
-        width: 100%; text-align: left; padding: 10px 20px; background-color: #1f2937; border: none; color: #ffffff;
-        font-size: 16px; transition: 0.3s; border-radius: 8px; margin-bottom: 5px;
+    /* Sidebar Background */
+    [data-testid="stSidebar"] {
+        background-color: #111827;  /* Dark background */
+        color: #ffffff;
+        width: 260px;
     }
-    .stButton>button:hover {background-color: #374151; cursor: pointer;}
-    .sidebar-footer {position: absolute; bottom: 20px; width: 100%; text-align: center; color: #9ca3af; font-size: 12px;}
+
+    /* Sidebar Logo */
+    .sidebar-logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0 30px 0;
+    }
+    .sidebar-logo img {
+        max-width: 190px;
+        height: auto;
+    }
+
+    /* Menu Buttons */
+    .menu-btn {
+        display: block;
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        background: linear-gradient(90deg, transparent 0%, transparent 100%);
+        color: #e5e7eb;
+        text-align: left;
+        font-size: 16px;
+        font-weight: 500;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.35s ease;
+    }
+    .menu-btn:hover {
+        background: linear-gradient(90deg, #2563eb20 0%, #2563eb40 100%);
+        color: #ffffff;
+        transform: translateX(4px);
+    }
+    .menu-btn-active {
+        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    /* Footer */
+    .sidebar-footer {
+        position: absolute;
+        bottom: 30px;
+        width: 100%;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 13px;
+    }
+    .sidebar-footer strong {
+        color: #ffffff;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    st.sidebar.markdown('<div class="sidebar-logo"><img src="https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true" width="120"></div>', unsafe_allow_html=True)
+    # Sidebar Logo
+    st.sidebar.markdown(
+        '<div class="sidebar-logo"><img src="https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true"></div>',
+        unsafe_allow_html=True
+    )
 
-    menu = ["Home","City","Admin"]
+    # Sidebar Menu with Persistent Active State
+    menu = ["Home", "City", "Admin"]
     for m in menu:
-        if st.sidebar.button(m):
+        btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
+        if st.sidebar.button(m, key=f"menu_{m}"):
             st.session_state.current_page = m
+        st.sidebar.markdown(
+            f"<style>div[data-testid='stSidebar'] button[kind='secondary'][key='menu_{m}'] .st-emotion-cache-16txtl3{{"
+            f"{'background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%) !important; color: white !important;' if st.session_state.current_page == m else ''}}"
+            f"}}</style>",
+            unsafe_allow_html=True
+        )
 
-    st.sidebar.markdown('<div class="sidebar-footer">© 2025 All Rights Reserved</div>', unsafe_allow_html=True)
+    # Footer
+    st.sidebar.markdown(
+        '<div class="sidebar-footer"><strong>© EinTrust 2025</strong><br>All Rights Reserved</div>',
+        unsafe_allow_html=True
+    )
 
 # -------------------- Home Page --------------------
 def home_page():
