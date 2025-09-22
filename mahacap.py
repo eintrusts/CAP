@@ -128,17 +128,10 @@ elif page=="Admin":
                 st.error("Incorrect password")
     else:
         st.header("Admin Panel")
-        admin_tabs = st.sidebar.radio("Admin Menu", ["Add/Update City","Generate CAP","GHG Inventory","Logout"])
-        
-        # ---------------- Logout -----------------
-        if admin_tabs=="Logout":
-            if st.button("Logout Admin"):
-                st.session_state.admin_logged_in = False
-                st.success("Logged out successfully!")
-                st.experimental_rerun()
+        admin_tabs = st.tabs(["Add/Update City","Generate CAP","GHG Inventory","Logout"])
         
         # ---------------- Add/Update City -----------------
-        elif admin_tabs=="Add/Update City":
+        with admin_tabs[0]:
             st.subheader("Add / Update City")
             city_select = st.selectbox("Select City", cities, key="add_update_city")
             population = st.number_input("Population", min_value=0, key="population")
@@ -154,12 +147,12 @@ elif page=="Admin":
                 st.success(f"{city_select} information saved!")
 
         # ---------------- Generate CAP -----------------
-        elif admin_tabs=="Generate CAP":
+        with admin_tabs[1]:
             st.subheader("Generate CAP")
             st.info("CAP Form Tabs Here (Same structure as before, omitted for brevity)")
 
         # ---------------- GHG Inventory -----------------
-        elif admin_tabs=="GHG Inventory":
+        with admin_tabs[2]:
             st.subheader("GHG Inventory")
             city_select = st.selectbox("Select City", cities, key="ghg_city")
             city_info = st.session_state.city_data.get(city_select,{})
@@ -185,3 +178,10 @@ elif page=="Admin":
                     st.download_button("Download CAP PDF", pdf_output, file_name=f"{city_select}_CAP.pdf", mime="application/pdf")
                 else:
                     st.warning("Please calculate GHG inventory first.")
+
+        # ---------------- Logout -----------------
+        with admin_tabs[3]:
+            if st.button("Logout Admin"):
+                st.session_state.admin_logged_in = False
+                st.success("Logged out successfully!")
+                st.experimental_rerun()
