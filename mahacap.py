@@ -504,112 +504,173 @@ def admin_panel():
 
     # --- Generate CAP ---
     with admin_tabs[1]:
-        st.subheader("Generate CAP")
-        city_select = st.selectbox("Select City for CAP", cities, key="cap_city_select")
-        city_info = st.session_state.city_data.get(city_select, {})
+    st.subheader("Generate CAP")
+    city_select = st.selectbox("Select City for CAP", cities, key="cap_city_select")
+    city_info = st.session_state.city_data.get(city_select, {})
 
-        cap_tabs = st.tabs([
-            "1. Basic Info","2. Energy & Buildings","3. Green Cover & Biodiversity",
-            "4. Sustainable Mobility","5. Water Resources","6. Waste Management","7. Climate Data"
-        ])
+    cap_tabs = st.tabs([
+        "1. Basic Info","2. Energy & Buildings","3. Green Cover & Biodiversity",
+        "4. Sustainable Mobility","5. Water Resources","6. Waste Management","7. Climate Data"
+    ])
 
-        # -------------------- 1. Basic Info --------------------
-        with cap_tabs[0]:
-            population = st.number_input("Population", min_value=0, value=city_info.get("Basic Info",{}).get("Population",0), key="cap_pop")
-            area = st.number_input("Area (sq km)", min_value=0, value=city_info.get("Basic Info",{}).get("Area",0), key="cap_area")
-            gdp = st.number_input("GDP (₹ Crores)", min_value=0, value=city_info.get("Basic Info",{}).get("GDP",0), key="cap_gdp")
-            density = st.number_input("Population Density (people/km²)", min_value=0, key="cap_density")
-            climate_zone = st.text_input("Climate Zone", value=city_info.get("Basic Info",{}).get("Climate_Zone",""), key="cap_climate_zone")
-            admin_structure = st.text_input("Administrative Structure", value=city_info.get("Basic Info",{}).get("Admin",""), key="cap_admin_structure")
-            cap_status_options = ["Not Started","In Progress","Completed"]
-            cap_status_form_default = city_info.get("CAP_Status","Not Started")
-            if cap_status_form_default not in cap_status_options:
-                cap_status_form_default = "Not Started"
-            cap_status_form = st.selectbox("CAP Status", cap_status_options, index=cap_status_options.index(cap_status_form_default), key="cap_status_form")
-            last_updated_input = st.date_input("Last Updated", datetime.date.today(), key="cap_last_updated")
+    # -------------------- 1. Basic Info --------------------
+    with cap_tabs[0]:
+        st.markdown("### General City Information (aligned with GPC & IPCC community-scale inventory)")
 
-        # -------------------- 2. Energy & Buildings --------------------
-        with cap_tabs[1]:
-            res_energy = st.number_input("Residential Electricity Consumption (kWh/year)", min_value=0, key="res_energy")
-            com_energy = st.number_input("Commercial Electricity Consumption (kWh/year)", min_value=0, key="com_energy")
-            ind_energy = st.number_input("Industrial Electricity Consumption (kWh/year)", min_value=0, key="ind_energy")
-            renewable_share = st.slider("Renewable Energy Share (%)", 0,100,0, key="renewable_share")
-            ee_buildings = st.number_input("No. of Energy-Efficient Buildings Certified", min_value=0, key="ee_buildings")
-            street_lighting_type = st.selectbox("Street Lighting Type", ["LED","CFL","Other"], key="street_type")
-            street_lighting_coverage = st.slider("Street Lighting Coverage (%)",0,100,0, key="street_coverage")
-            fuel_types = st.multiselect("Fuel Types Used", ["Coal","Gas","Biomass","Electricity","Petroleum"], key="fuel_types")
-            public_building_energy = st.number_input("Public Building Energy Consumption (kWh/year)", min_value=0, key="public_energy")
-            green_policy = st.selectbox("Green Building Policies in Place", ["Yes","No"], key="green_policy")
+        population = st.number_input("Population", min_value=0, value=city_info.get("Basic Info",{}).get("Population",0), key="cap_pop")
+        area = st.number_input("Area (sq km)", min_value=0, value=city_info.get("Basic Info",{}).get("Area",0), key="cap_area")
+        gdp = st.number_input("GDP (₹ Crores)", min_value=0, value=city_info.get("Basic Info",{}).get("GDP",0), key="cap_gdp")
+        density = st.number_input("Population Density (people/km²)", min_value=0, key="cap_density")
 
-        # -------------------- 3. Green Cover & Biodiversity --------------------
-        with cap_tabs[2]:
-            green_cover_area = st.number_input("Total Green Cover Area (ha)", min_value=0, key="green_cover")
-            tree_density = st.number_input("Tree Density (trees/km²)", min_value=0, key="tree_density")
-            protected_areas = st.number_input("Protected Areas (ha)", min_value=0, key="protected_areas")
-            biodiversity_programs = st.text_area("Biodiversity Programs", key="biodiversity_programs")
-            urban_forests = st.number_input("Urban Forests Area (ha)", min_value=0, key="urban_forests")
+        climate_zone = st.text_input("Climate Zone (per IMD/India SAPCC categories)", value=city_info.get("Basic Info",{}).get("Climate_Zone",""), key="cap_climate_zone")
+        admin_structure = st.text_area("Administrative Structure (ULB type, governance, departments involved)", value=city_info.get("Basic Info",{}).get("Admin",""), key="cap_admin_structure")
 
-        # -------------------- 4. Sustainable Mobility --------------------
-        with cap_tabs[3]:
-            public_transport_coverage = st.slider("Public Transport Coverage (%)",0,100,0, key="pt_coverage")
-            non_motorized_infra = st.slider("Non-Motorized Infrastructure (%)",0,100,0, key="nmi")
-            ev_charging_stations = st.number_input("No. of EV Charging Stations", min_value=0, key="ev_stations")
-            veh_emissions = st.number_input("Average Vehicle Emissions (gCO2/km)", min_value=0, key="veh_emissions")
-            smart_transport_projects = st.text_area("Smart Transport Projects", key="smart_projects")
+        economic_sectors = st.multiselect("Key Economic Sectors (affecting GHG inventory)", ["Agriculture","Industry","Services","IT/Tech","Tourism","Other"], key="cap_econ_sectors")
 
-        # -------------------- 5. Water Resources --------------------
-        with cap_tabs[4]:
-            water_consumption = st.number_input("Total Water Consumption (ML/year)", min_value=0, key="water_cons")
-            wastewater_treatment = st.slider("Wastewater Treatment Coverage (%)",0,100,0, key="wwt")
-            rainwater_harvesting = st.selectbox("Rainwater Harvesting Implementation", ["Yes","No"], key="rwh")
-            leakage_ratio = st.slider("Water Leakage Ratio (%)",0,100,0, key="leakage_ratio")
-            water_policy = st.text_area("Water Management Policies", key="water_policy")
+        # Policy & planning alignment
+        cap_status_options = ["Not Started","In Progress","Completed"]
+        cap_status_form_default = city_info.get("CAP_Status","Not Started")
+        if cap_status_form_default not in cap_status_options:
+            cap_status_form_default = "Not Started"
+        cap_status_form = st.selectbox("CAP Status", cap_status_options, index=cap_status_options.index(cap_status_form_default), key="cap_status_form")
 
-        # -------------------- 6. Waste Management --------------------
-        with cap_tabs[5]:
-            total_waste = st.number_input("Total Waste Generated (t/year)", min_value=0, key="total_waste")
-            waste_recycled = st.slider("Waste Recycled (%)",0,100,0, key="waste_recycled")
-            waste_treatment_facilities = st.number_input("No. of Treatment Facilities", min_value=0, key="waste_facilities")
-            composting_infra = st.selectbox("Composting Infrastructure", ["Yes","No"], key="composting")
-            hazardous_waste_policy = st.text_area("Hazardous Waste Policy", key="hazardous_policy")
+        ndc_alignment = st.selectbox("Alignment with India’s NDC/State Action Plan", ["Yes","Partially","No"], key="cap_ndc")
+        sdg_priority = st.multiselect("Relevant SDGs", ["SDG 7: Energy","SDG 11: Cities","SDG 12: Responsible Consumption","SDG 13: Climate Action","SDG 15: Life on Land"], key="cap_sdg")
 
-        # -------------------- 7. Climate Data --------------------
-        with cap_tabs[6]:
-            avg_temp = st.number_input("Average Temperature (°C)", key="avg_temp")
-            rainfall = st.number_input("Annual Rainfall (mm)", key="rainfall")
-            extreme_events = st.text_area("Extreme Events History", key="extreme_events")
-            rcp_scenario = [st.number_input(f"RCP Year {year}", min_value=-10.0, max_value=10.0, value=0.0, key=f"rcp_{year}") for year in range(2020,2051)]
+        last_updated_input = st.date_input("Last Updated", datetime.date.today(), key="cap_last_updated")
 
-        if st.button("Save CAP Data"):
-            st.session_state.city_data[city_select]["CAP"] = {
-                "Basic Info":{"Population":population,"Area":area,"GDP":gdp,"Density":density,
-                              "Climate_Zone":climate_zone,"Admin":admin_structure,"CAP_Status":cap_status_form,
-                              "Last_Updated":last_updated_input.strftime("%B %Y")},
-                "Energy_Buildings": {
-                    "Residential":res_energy,"Commercial":com_energy,"Industrial":ind_energy,
-                    "Renewable_Share":renewable_share,"EE_Buildings":ee_buildings,
-                    "Street_Lighting_Type":street_lighting_type,"Street_Lighting_Coverage":street_lighting_coverage,
-                    "Fuel_Types":fuel_types,"Public_Building_Energy":public_building_energy,"Green_Policy":green_policy
-                },
-                "Green_Biodiversity":{
-                    "Green_Cover":green_cover_area,"Tree_Density":tree_density,"Protected_Areas":protected_areas,
-                    "Programs":biodiversity_programs,"Urban_Forests":urban_forests
-                },
-                "Mobility":{
-                    "Public_Transport":public_transport_coverage,"Non_Motorized":non_motorized_infra,
-                    "EV_Stations":ev_charging_stations,"Vehicle_Emissions":veh_emissions,"Smart_Projects":smart_transport_projects
-                },
-                "Water":{
-                    "Consumption":water_consumption,"WWT":wastewater_treatment,"RWH":rainwater_harvesting,
-                    "Leakage":leakage_ratio,"Policy":water_policy
-                },
-                "Waste":{
-                    "Total":total_waste,"Recycled":waste_recycled,"Facilities":waste_treatment_facilities,
-                    "Composting":composting_infra,"Hazardous":hazardous_waste_policy
-                },
-                "Climate_Data":{"Avg_Temp":avg_temp,"Rainfall":rainfall,"Extreme_Events":extreme_events,"RCP":rcp_scenario}
+    # -------------------- 2. Energy & Buildings --------------------
+    with cap_tabs[1]:
+        st.markdown("### Energy Demand & Supply (aligned with IPCC 2006 Guidelines & GHG Protocol Scope 1-2-3)")
+
+        res_energy = st.number_input("Residential Electricity Consumption (MWh/year)", min_value=0, key="res_energy")
+        com_energy = st.number_input("Commercial Electricity Consumption (MWh/year)", min_value=0, key="com_energy")
+        ind_energy = st.number_input("Industrial Electricity Consumption (MWh/year)", min_value=0, key="ind_energy")
+        public_building_energy = st.number_input("Public Building Energy Consumption (MWh/year)", min_value=0, key="public_energy")
+
+        fuel_types = st.multiselect("Fuel Types Used (direct combustion – Scope 1)", ["Coal","Gas","Biomass","Petroleum","Other"], key="fuel_types")
+        renewable_share = st.slider("Renewable Energy Share in Grid (%)", 0,100,0, key="renewable_share")
+        onsite_renewable = st.number_input("Onsite Renewable Energy (MW installed)", min_value=0, key="onsite_renewable")
+
+        ee_buildings = st.number_input("Energy-Efficient Buildings Certified (LEED/GRIHA)", min_value=0, key="ee_buildings")
+        building_codes = st.selectbox("Enforcement of Energy Codes (ECBC/State Codes)", ["Yes","Partial","No"], key="building_codes")
+
+        street_lighting_type = st.selectbox("Street Lighting Type", ["LED","CFL","Other"], key="street_type")
+        street_lighting_coverage = st.slider("Street Lighting Coverage (%)",0,100,0, key="street_coverage")
+
+        energy_losses = st.slider("Distribution Losses (%)", 0, 100, 0, key="energy_losses")
+
+    # -------------------- 3. Green Cover & Biodiversity --------------------
+    with cap_tabs[2]:
+        st.markdown("### Land Use, Green Cover & Biodiversity (linked with IPCC AFOLU & SDG 15)")
+
+        green_cover_area = st.number_input("Total Green Cover Area (ha)", min_value=0, key="green_cover")
+        tree_density = st.number_input("Tree Density (trees/km²)", min_value=0, key="tree_density")
+        protected_areas = st.number_input("Protected Areas (ha)", min_value=0, key="protected_areas")
+        urban_forests = st.number_input("Urban Forests Area (ha)", min_value=0, key="urban_forests")
+
+        biodiversity_programs = st.text_area("Biodiversity & Conservation Programs", key="biodiversity_programs")
+        carbon_sequestration = st.number_input("Estimated Annual Carbon Sequestration (tCO₂e)", min_value=0, key="carbon_seq")
+
+    # -------------------- 4. Sustainable Mobility --------------------
+    with cap_tabs[3]:
+        st.markdown("### Transport & Mobility (aligned with IPCC 2006 Vol. 2 & GPC Transport sector)")
+
+        total_vehicles = st.number_input("Total Registered Vehicles", min_value=0, key="total_vehicles")
+        veh_type_split = st.text_area("Vehicle Type Split (2W, 4W, Bus, Truck, etc.)", key="veh_split")
+
+        public_transport_coverage = st.slider("Public Transport Coverage (%)",0,100,0, key="pt_coverage")
+        non_motorized_infra = st.slider("Non-Motorized Infrastructure (%)",0,100,0, key="nmi")
+        ev_charging_stations = st.number_input("No. of EV Charging Stations", min_value=0, key="ev_stations")
+
+        fuel_consumption_transport = st.number_input("Total Transport Fuel Consumption (kL/year)", min_value=0, key="fuel_transport")
+        veh_emissions = st.number_input("Average Vehicle Emissions (gCO2/km)", min_value=0, key="veh_emissions")
+
+        smart_transport_projects = st.text_area("Smart / Low-carbon Transport Projects", key="smart_projects")
+
+    # -------------------- 5. Water Resources --------------------
+    with cap_tabs[4]:
+        st.markdown("### Water Supply & Sanitation (aligned with GHG Protocol – Waste & IPCC Wastewater sector)")
+
+        water_consumption = st.number_input("Total Water Consumption (ML/year)", min_value=0, key="water_cons")
+        wastewater_treatment = st.slider("Wastewater Treatment Coverage (%)",0,100,0, key="wwt")
+        sludge_management = st.selectbox("Sludge Management Practice", ["Anaerobic Digestion","Incineration","Landfill","Other"], key="sludge_mgmt")
+
+        rainwater_harvesting = st.selectbox("Rainwater Harvesting Implementation", ["Yes","No"], key="rwh")
+        leakage_ratio = st.slider("Water Leakage Ratio (%)",0,100,0, key="leakage_ratio")
+
+        water_policy = st.text_area("Water Management Policies / Adaptation Measures", key="water_policy")
+
+    # -------------------- 6. Waste Management --------------------
+    with cap_tabs[5]:
+        st.markdown("### Solid Waste & Other Waste (aligned with IPCC Waste sector & Swachh Bharat Mission data)")
+
+        total_waste = st.number_input("Total Waste Generated (t/year)", min_value=0, key="total_waste")
+        waste_collected = st.slider("Collection Efficiency (%)", 0, 100, 0, key="waste_collection")
+        waste_recycled = st.slider("Waste Recycled (%)",0,100,0, key="waste_recycled")
+        composting_infra = st.selectbox("Composting Infrastructure", ["Yes","No"], key="composting")
+        waste_to_energy = st.selectbox("Waste-to-Energy Facility", ["Yes","No"], key="wte")
+
+        waste_treatment_facilities = st.number_input("No. of Treatment Facilities", min_value=0, key="waste_facilities")
+        landfill_sites = st.number_input("No. of Active Landfill Sites", min_value=0, key="landfills")
+
+        hazardous_waste = st.number_input("Hazardous Waste Generated (t/year)", min_value=0, key="haz_waste")
+        hazardous_waste_policy = st.text_area("Hazardous Waste Policy / Management", key="hazardous_policy")
+
+    # -------------------- 7. Climate Data --------------------
+    with cap_tabs[6]:
+        st.markdown("### Climate Data & Scenario Analysis (aligned with IPCC AR6 & NAPCC/SAPCC)")
+
+        avg_temp = st.number_input("Average Temperature (°C)", key="avg_temp")
+        rainfall = st.number_input("Annual Rainfall (mm)", key="rainfall")
+        extreme_events = st.text_area("Extreme Events History (floods, droughts, heatwaves, etc.)", key="extreme_events")
+
+        st.markdown("#### Future Climate Projections (RCP/SSP pathways)")
+        rcp_scenario = {year: st.number_input(f"Δ Temperature vs baseline (°C) for {year}", min_value=-5.0, max_value=10.0, value=0.0, key=f"rcp_{year}") for year in range(2020,2051,5)}
+
+        adaptation_priorities = st.text_area("Adaptation Priorities (per SAPCC/City Needs)", key="adapt_priorities")
+
+    # -------------------- Save Button --------------------
+    if st.button("Save CAP Data"):
+        st.session_state.city_data[city_select]["CAP"] = {
+            "Basic Info":{"Population":population,"Area":area,"GDP":gdp,"Density":density,
+                          "Climate_Zone":climate_zone,"Admin":admin_structure,"Economic_Sectors":economic_sectors,
+                          "CAP_Status":cap_status_form,"NDC_Alignment":ndc_alignment,"SDGs":sdg_priority,
+                          "Last_Updated":last_updated_input.strftime("%B %Y")},
+            "Energy_Buildings": {
+                "Residential":res_energy,"Commercial":com_energy,"Industrial":ind_energy,
+                "Public_Buildings":public_building_energy,"Fuel_Types":fuel_types,
+                "Renewable_Share":renewable_share,"Onsite_Renewable":onsite_renewable,
+                "EE_Buildings":ee_buildings,"Building_Codes":building_codes,
+                "Street_Lighting_Type":street_lighting_type,"Street_Lighting_Coverage":street_lighting_coverage,
+                "Losses":energy_losses
+            },
+            "Green_Biodiversity":{
+                "Green_Cover":green_cover_area,"Tree_Density":tree_density,"Protected_Areas":protected_areas,
+                "Urban_Forests":urban_forests,"Programs":biodiversity_programs,"Carbon_Sequestration":carbon_sequestration
+            },
+            "Mobility":{
+                "Total_Vehicles":total_vehicles,"Vehicle_Split":veh_type_split,
+                "Public_Transport":public_transport_coverage,"Non_Motorized":non_motorized_infra,
+                "EV_Stations":ev_charging_stations,"Fuel_Transport":fuel_consumption_transport,
+                "Vehicle_Emissions":veh_emissions,"Smart_Projects":smart_transport_projects
+            },
+            "Water":{
+                "Consumption":water_consumption,"WWT":wastewater_treatment,"Sludge_Mgmt":sludge_management,
+                "RWH":rainwater_harvesting,"Leakage":leakage_ratio,"Policy":water_policy
+            },
+            "Waste":{
+                "Total":total_waste,"Collection":waste_collected,"Recycled":waste_recycled,"Composting":composting_infra,
+                "Waste_to_Energy":waste_to_energy,"Facilities":waste_treatment_facilities,
+                "Landfills":landfill_sites,"Hazardous":hazardous_waste,"Hazardous_Policy":hazardous_waste_policy
+            },
+            "Climate_Data":{
+                "Avg_Temp":avg_temp,"Rainfall":rainfall,"Extreme_Events":extreme_events,
+                "RCP":rcp_scenario,"Adaptation":adaptation_priorities
             }
-            st.success(f"CAP data for {city_select} saved successfully!")
+        }
+        st.success(f"CAP data for {city_select} saved successfully!")
+
 
     # --- GHG Inventory ---
     with admin_tabs[2]:
