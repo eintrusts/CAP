@@ -274,7 +274,7 @@ def admin_panel():
             if cap_status == "Completed":
                 cap_link = st.text_input("CAP Link", value=cap_link, key="cap_link")
 
-             col1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 male_pop = st.number_input("Male", min_value=0,
                                            value=city_info.get("Population",{}).get("Male",0), key="pop_male")
