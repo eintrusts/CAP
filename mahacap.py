@@ -504,7 +504,7 @@ def admin_panel():
 
     # --- Generate CAP ---
     with admin_tabs[1]:
-    st.subheader("Generate CAP")
+        st.subheader("Generate CAP")
     city_select = st.selectbox("Select City for CAP", cities, key="cap_city_select")
     city_info = st.session_state.city_data.get(city_select, {})
 
