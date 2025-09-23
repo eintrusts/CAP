@@ -285,11 +285,6 @@ def home_page():
 
 
 # -------------------- City Page --------------------
-import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np
-import streamlit as st
-
 def city_page():
     st.header("City-Level CAP Dashboard")
 
@@ -342,6 +337,51 @@ def city_page():
     </div>
     """
     st.markdown(basic_info_html, unsafe_allow_html=True)
+
+    # --- GHG Emissions by Sector ---
+    st.markdown("### GHG Emissions by Sector")
+    ghg_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
+    ghg_values = [city_info.get("GHG", {}).get(s, 0) for s in ghg_sectors]
+
+    fig = px.bar(
+        x=ghg_sectors,
+        y=ghg_values,
+        labels={"x": "Sector", "y": "tCO2e"},
+        title=f"{selected_city} GHG Emissions by Sector"
+    )
+    fig.update_layout(template="plotly_dark")
+    st.plotly_chart(fig, use_container_width=True, key=f"ghg_chart_{selected_city}")
+
+    # --- RCP Scenario ---
+    st.markdown("### RCP Scenario Projections")
+    years = list(range(2020, 2051))
+    rcp_45 = np.linspace(1.0, 2.0, len(years))
+    rcp_60 = np.linspace(1.0, 2.5, len(years))
+    rcp_85 = np.linspace(1.0, 3.5, len(years))
+
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=years, y=rcp_45, mode="lines", name="RCP 4.5", line=dict(color="green")))
+    fig2.add_trace(go.Scatter(x=years, y=rcp_60, mode="lines", name="RCP 6.0", line=dict(color="orange")))
+    fig2.add_trace(go.Scatter(x=years, y=rcp_85, mode="lines", name="RCP 8.5", line=dict(color="red")))
+    fig2.update_layout(
+        title=f"{selected_city} RCP Scenario Projections",
+        xaxis_title="Year",
+        yaxis_title="Temperature Rise (°C)",
+        template="plotly_dark"
+    )
+
+    st.plotly_chart(fig2, use_container_width=True, key=f"rcp_chart_{selected_city}")
+
+    # --- Footer ---
+    st.markdown(
+        f"""
+        <div style='position:fixed; bottom:10px; right:10px; color:#888; font-size:12px;'>
+            {last_updated()}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
     # --- GHG Emissions by Sector ---
     st.markdown("### GHG Emissions by Sector")
