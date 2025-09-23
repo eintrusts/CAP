@@ -285,9 +285,10 @@ def home_page():
 
 
 # -------------------- City Page --------------------
+import plotly.graph_objects as go
+
 def city_page():
     st.markdown("<style>body {background-color: #121212; color: #ffffff;}</style>", unsafe_allow_html=True)
-
     st.header("City-Level CAP Dashboard")
 
     # --- City Dropdown Alphabetical ---
@@ -300,45 +301,89 @@ def city_page():
     # --- Basic Information Cards ---
     cap_status = city_info.get('CAP_Status', 'Not Started')
     cap_link = city_info.get('CAP_Link', '')
-    population = city_info.get('Population', {}).get('Total', 0)
-    area = city_info.get('Area', 0)
+    population = city_info.get('Basic Info', {}).get('Population', 0)
+    area = city_info.get('Basic Info', {}).get('Area', 0)
     dept_name = city_info.get('Dept_Name', '')
     dept_email = city_info.get('Dept_Email', '')
     website = city_info.get('Website', '')
 
     basic_info_html = f"""
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:15px;">
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">CAP Status</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{cap_status}</div>
         </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">CAP Link</div>
             <div><a href="{cap_link}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">Open Link</a></div>
         </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">Total Population</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{population:,}</div>
         </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">Area (sq km)</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{area:,}</div>
         </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">Department Name</div>
             <div style="font-size:14px; color:#ffffff;">{dept_name}</div>
         </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">Department Email</div>
             <div style="font-size:14px; color:#ffffff;">{dept_email}</div>
         </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center;">
             <div style="font-size:13px; color:#cccccc;">Website</div>
             <div><a href="{website}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">{website}</a></div>
         </div>
     </div>
     """
     st.markdown(basic_info_html, unsafe_allow_html=True)
+
+    # --- GHG by Sector ---
+    st.markdown("### GHG Emissions by Sector")
+    default_sectors = ["Energy", "Transport", "Waste", "Water", "Buildings", "Industry"]
+    ghg = {s: city_info.get("GHG", {}).get(s, 0) for s in default_sectors}
+
+    fig = px.bar(
+        x=list(ghg.keys()),
+        y=list(ghg.values()),
+        labels={"x": "Sector", "y": "tCO2e"},
+        title=f"{selected_city} GHG Emissions by Sector",
+        template="plotly_dark"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- RCP Scenarios ---
+    st.markdown("### RCP Scenario Projections")
+    years = list(range(2020, 2051))
+    rcp_45 = city_info.get("Climate_Data", {}).get("RCP_4.5", np.linspace(1.0, 2.0, len(years)))
+    rcp_60 = city_info.get("Climate_Data", {}).get("RCP_6.0", np.linspace(1.0, 2.5, len(years)))
+    rcp_85 = city_info.get("Climate_Data", {}).get("RCP_8.5", np.linspace(1.0, 3.5, len(years)))
+
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=years, y=rcp_45, mode="lines", name="RCP 4.5", line=dict(color="green")))
+    fig2.add_trace(go.Scatter(x=years, y=rcp_60, mode="lines", name="RCP 6.0", line=dict(color="orange")))
+    fig2.add_trace(go.Scatter(x=years, y=rcp_85, mode="lines", name="RCP 8.5", line=dict(color="red")))
+
+    fig2.update_layout(
+        title=f"{selected_city} RCP Scenarios",
+        xaxis_title="Year",
+        yaxis_title="Temp Rise (°C)",
+        template="plotly_dark"
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # --- Footer: Last Updated ---
+    st.markdown(
+        f"""
+        <div style='position:fixed; bottom:10px; left:10px; color:#aaaaaa; font-size:12px;'>
+            Last Updated: {city_info.get('Last_Updated', last_updated())}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # --- GHG by Sector ---
     ghg = city_info.get("GHG", {})
