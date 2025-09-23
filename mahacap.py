@@ -503,7 +503,7 @@ def admin_panel():
                 st.success(f"{city_select} data saved successfully!")
 
     # --- Generate CAP ---
-    import streamlit as st
+        import streamlit as st
 import datetime
 
 # -------------------- Admin Tabs --------------------
@@ -524,27 +524,29 @@ with admin_tabs[1]:
     # -------------------- 1. Basic Info --------------------
     with cap_tabs[0]:
         st.header("City Baseline & Demographics")
-        population = st.number_input("Total Population", min_value=0, value=city_info.get("Basic Info",{}).get("Population",0), key="cap_pop")
-        area = st.number_input("Total Area (sq km)", min_value=0, value=city_info.get("Basic Info",{}).get("Area",0), key="cap_area")
-        gdp = st.number_input("GDP (₹ Crores)", min_value=0, value=city_info.get("Basic Info",{}).get("GDP",0), key="cap_gdp")
-        density = st.number_input("Population Density (people/km²)", min_value=0, value=city_info.get("Basic Info",{}).get("Density",0), key="cap_density")
-        climate_zone = st.text_input("Climate Zone", value=city_info.get("Basic Info",{}).get("Climate_Zone",""), key="cap_climate_zone")
-        admin_structure = st.text_input("Administrative Structure", value=city_info.get("Basic Info",{}).get("Admin",""), key="cap_admin_structure")
-        governance_level = st.selectbox("Governance Level", ["City Corporation","Municipal Council","Town Panchayat","Other"], key="cap_governance_level")
+        population = st.number_input("Total Population", min_value=0, value=city_info.get("Basic Info",{}).get("Population",0), help="Provide the total population of the city.", key="cap_pop")
+        area = st.number_input("Total Area (sq km)", min_value=0, value=city_info.get("Basic Info",{}).get("Area",0), help="Provide total administrative area.", key="cap_area")
+        gdp = st.number_input("GDP (₹ Crores)", min_value=0, value=city_info.get("Basic Info",{}).get("GDP",0), help="Provide city GDP.", key="cap_gdp")
+        density = st.number_input("Population Density (people/km²)", min_value=0, value=city_info.get("Basic Info",{}).get("Density",0), help="Population per sq km.", key="cap_density")
+        climate_zone = st.text_input("Climate Zone", value=city_info.get("Basic Info",{}).get("Climate_Zone",""), help="e.g., Tropical, Semi-arid, Temperate", key="cap_climate_zone")
+        admin_structure = st.text_input("Administrative Structure", value=city_info.get("Basic Info",{}).get("Admin",""), help="Municipal Corporation, Council, etc.", key="cap_admin_structure")
+        governance_level = st.selectbox("Governance Level", ["City Corporation","Municipal Council","Town Panchayat","Other"], help="Administrative governance type.", key="cap_governance_level")
         baseline_year = st.number_input("Baseline Year for GHG Inventory", min_value=1990, max_value=datetime.datetime.now().year, value=city_info.get("Basic Info",{}).get("Baseline_Year",2020), key="cap_baseline_year")
         reporting_frameworks = st.multiselect("Reporting Frameworks Covered", ["IPCC","GPC","GHG Protocol","National Guidelines","State Guidelines","SDGs","Paris/NDC Alignment"], default=city_info.get("Basic Info",{}).get("Frameworks",[]), key="cap_frameworks")
         population_growth = st.number_input("Population Growth Rate (%)", min_value=0.0, max_value=10.0, step=0.01, value=city_info.get("Basic Info",{}).get("Population_Growth",0.0), key="cap_pop_growth")
         economic_growth = st.number_input("Economic Growth Rate (%)", min_value=0.0, max_value=20.0, step=0.01, value=city_info.get("Basic Info",{}).get("Economic_Growth",0.0), key="cap_econ_growth")
         boundary_scope = st.text_area("CAP Boundary & Scope (Administrative, Sectoral, GHG Scope 1/2/3)", value=city_info.get("Basic Info",{}).get("Boundary_Scope",""), key="cap_boundary_scope")
         mer_tracking_existing = st.selectbox("Existing MER System", ["Yes","No"], key="cap_mer_existing")
-        
+        upload_basic_info = st.file_uploader("Upload Documents for Basic Info (PDF/Excel/Images)", type=["pdf","xlsx","xls","png","jpg"], key="upload_basic_info")
+
         if st.button("Save Basic Info Data"):
-            st.session_state.city_data[city_select]["Basic Info"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Basic Info"] = {
                 "Population":population,"Area":area,"GDP":gdp,"Density":density,
                 "Climate_Zone":climate_zone,"Admin":admin_structure,"Governance":governance_level,
                 "Baseline_Year":baseline_year,"Frameworks":reporting_frameworks,
                 "Population_Growth":population_growth,"Economic_Growth":economic_growth,
-                "Boundary_Scope":boundary_scope,"MER_Existing":mer_tracking_existing
+                "Boundary_Scope":boundary_scope,"MER_Existing":mer_tracking_existing,
+                "Documents": upload_basic_info
             }
             st.success("Basic Info saved!")
 
@@ -563,15 +565,16 @@ with admin_tabs[1]:
         energy_emissions = st.number_input("Estimated Energy Sector GHG Emissions (tCO2e/year)", min_value=0,key="energy_emissions")
         energy_reduction_targets = st.number_input("Energy Reduction Targets (%)", min_value=0,max_value=100,key="energy_reduction_targets")
         energy_policy_notes = st.text_area("Existing Energy & Building Policies / Standards", key="energy_policy_notes")
-        
+        upload_energy_docs = st.file_uploader("Upload Documents for Energy & Buildings (PDF/Excel/Images)", type=["pdf","xlsx","xls","png","jpg"], key="upload_energy_docs")
+
         if st.button("Save Energy & Buildings Data"):
-            st.session_state.city_data[city_select]["Energy_Buildings"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Energy_Buildings"] = {
                 "Residential":res_energy,"Commercial":com_energy,"Industrial":ind_energy,
                 "Public_Building_Energy":public_building_energy,"Fuel_Types":fuel_types,
                 "Renewable_Share":renewable_share,"EE_Buildings":ee_buildings,
                 "Street_Lighting_Type":street_lighting_type,"Street_Lighting_Coverage":street_lighting_coverage,
                 "Energy_Emissions":energy_emissions,"Energy_Reduction_Targets":energy_reduction_targets,
-                "Policy_Notes":energy_policy_notes
+                "Policy_Notes":energy_policy_notes,"Documents":upload_energy_docs
             }
             st.success("Energy & Buildings data saved!")
 
@@ -585,12 +588,14 @@ with admin_tabs[1]:
         biodiversity_programs = st.text_area("Biodiversity Programs", key="biodiversity_programs")
         carbon_sequestration = st.number_input("Estimated Carbon Sequestration (tCO2e/year)", min_value=0, key="carbon_seq")
         resilience_projects = st.text_area("Climate Resilience & Adaptation Projects", key="resilience_projects")
-        
+        upload_green_docs = st.file_uploader("Upload Documents for Green Cover & Biodiversity", type=["pdf","xlsx","xls","png","jpg"], key="upload_green_docs")
+
         if st.button("Save Green Cover Data"):
-            st.session_state.city_data[city_select]["Green_Biodiversity"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Green_Biodiversity"] = {
                 "Green_Cover":green_cover_area,"Tree_Density":tree_density,"Protected_Areas":protected_areas,
                 "Urban_Forests":urban_forests,"Programs":biodiversity_programs,
-                "Carbon_Sequestration":carbon_sequestration,"Resilience_Projects":resilience_projects
+                "Carbon_Sequestration":carbon_sequestration,"Resilience_Projects":resilience_projects,
+                "Documents":upload_green_docs
             }
             st.success("Green Cover & Biodiversity data saved!")
 
@@ -603,12 +608,14 @@ with admin_tabs[1]:
         veh_emissions = st.number_input("Average Vehicle Emissions (gCO2/km)", min_value=0,key="veh_emissions")
         fuel_shift_targets = st.number_input("Target % Shift to Low Carbon Fuels",0,100,key="fuel_shift_targets")
         smart_transport_projects = st.text_area("Smart Mobility & ITS Projects", key="smart_projects")
-        
+        upload_mobility_docs = st.file_uploader("Upload Documents for Sustainable Mobility", type=["pdf","xlsx","xls","png","jpg"], key="upload_mobility_docs")
+
         if st.button("Save Mobility Data"):
-            st.session_state.city_data[city_select]["Mobility"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Mobility"] = {
                 "Public_Transport":public_transport_coverage,"Non_Motorized":non_motorized_infra,
                 "EV_Stations":ev_charging_stations,"Vehicle_Emissions":veh_emissions,
-                "Fuel_Shift_Targets":fuel_shift_targets,"Smart_Projects":smart_transport_projects
+                "Fuel_Shift_Targets":fuel_shift_targets,"Smart_Projects":smart_transport_projects,
+                "Documents":upload_mobility_docs
             }
             st.success("Sustainable Mobility data saved!")
 
@@ -622,12 +629,13 @@ with admin_tabs[1]:
         water_energy_use = st.number_input("Energy Used for Water Supply & Treatment (kWh/year)", min_value=0,key="water_energy_use")
         water_emissions = st.number_input("GHG Emissions from Water Sector (tCO2e/year)", min_value=0,key="water_emissions")
         water_policy = st.text_area("Water Management Policies & Programs", key="water_policy")
-        
+        upload_water_docs = st.file_uploader("Upload Documents for Water Resources", type=["pdf","xlsx","xls","png","jpg"], key="upload_water_docs")
+
         if st.button("Save Water Data"):
-            st.session_state.city_data[city_select]["Water"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Water"] = {
                 "Consumption":water_consumption,"WWT":wastewater_treatment,"RWH":rainwater_harvesting,
                 "Leakage":leakage_ratio,"Energy_Use":water_energy_use,"Emissions":water_emissions,
-                "Policy":water_policy
+                "Policy":water_policy,"Documents":upload_water_docs
             }
             st.success("Water Resources data saved!")
 
@@ -641,12 +649,13 @@ with admin_tabs[1]:
         hazardous_policy = st.text_area("Hazardous Waste Policies & Guidelines", key="hazardous_policy")
         methane_recovery = st.text_area("Methane / Landfill Gas Recovery Projects", key="methane_projects")
         waste_emissions = st.number_input("GHG Emissions from Waste Sector (tCO2e/year)", min_value=0,key="waste_emissions")
-        
+        upload_waste_docs = st.file_uploader("Upload Documents for Waste Management", type=["pdf","xlsx","xls","png","jpg"], key="upload_waste_docs")
+
         if st.button("Save Waste Data"):
-            st.session_state.city_data[city_select]["Waste"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Waste"] = {
                 "Total":total_waste,"Recycled":waste_recycled,"Facilities":treatment_facilities,
                 "Composting":composting,"Hazardous":hazardous_policy,"Methane_Projects":methane_recovery,
-                "Emissions":waste_emissions
+                "Emissions":waste_emissions,"Documents":upload_waste_docs
             }
             st.success("Waste Management data saved!")
 
@@ -665,15 +674,16 @@ with admin_tabs[1]:
         sectoral_targets = st.text_area("Sectoral GHG Mitigation Targets & Goals", key="sectoral_targets")
         implementation_actions = st.text_area("Planned Actions & Implementation Strategies", key="implementation_actions")
         mer_tracking_plan = st.text_area("MER Plan", key="mer_tracking_plan")
-        
+        upload_climate_docs = st.file_uploader("Upload Documents for Climate Data", type=["pdf","xlsx","xls","png","jpg"], key="upload_climate_docs")
+
         if st.button("Save Climate Data"):
-            st.session_state.city_data[city_select]["Climate_Data"] = {
+            st.session_state.city_data.setdefault(city_select, {})["Climate_Data"] = {
                 "Avg_Temp":avg_temp,"Rainfall":rainfall,"Extreme_Events":extreme_events,
                 "RCP":rcp_scenario,"Vulnerability_Notes":vulnerability_notes,
                 "Climate_Budget":climate_budget,"Staff_Count":staff_count,
                 "Training_Programs":training_programs,"Existing_Policies":existing_policies,
                 "Sectoral_Targets":sectoral_targets,"Implementation_Actions":implementation_actions,
-                "MER_Plan":mer_tracking_plan
+                "MER_Plan":mer_tracking_plan,"Documents":upload_climate_docs
             }
             st.success("Climate Data saved!")
 
