@@ -292,8 +292,8 @@ def city_page():
     st.header("City Dashboard")
     st.caption("City-wise Climate Action Plan Insights")
 
-    # --- Select City ---
-    selected_city = st.selectbox("Select a City", cities)
+    # --- Select City (Alphabetically Sorted) ---
+    selected_city = st.selectbox("Select a City", sorted(cities))
 
     city_info = st.session_state.city_data.get(selected_city, {})
 
@@ -341,6 +341,54 @@ def city_page():
     </div>
     """
     st.markdown(overview_html, unsafe_allow_html=True)
+
+    # --- GHG by Sector ---
+    st.markdown("### GHG Emissions by Sector")
+    ghg_data = city_info.get("GHG", {})
+    ghg_sectors = list(ghg_data.keys())
+    ghg_values = list(ghg_data.values())
+
+    if ghg_sectors and ghg_values:
+        fig1 = px.bar(
+            x=ghg_sectors,
+            y=ghg_values,
+            labels={"x": "Sector", "y": "tCO2e"},
+            title=f"{selected_city} GHG Emissions",
+            template="plotly_dark"
+        )
+        st.plotly_chart(fig1, use_container_width=True)
+    else:
+        st.info("No GHG data available for this city.")
+
+    # --- RCP Scenarios (Multi-line Only) ---
+    st.markdown("### RCP Scenario Projections")
+    years = list(range(2020, 2051))
+    rcp_45 = np.linspace(1.0, 2.0, len(years))
+    rcp_60 = np.linspace(1.0, 2.5, len(years))
+    rcp_85 = np.linspace(1.0, 3.5, len(years))
+
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=years, y=rcp_45, mode="lines", name="RCP 4.5"))
+    fig2.add_trace(go.Scatter(x=years, y=rcp_60, mode="lines", name="RCP 6.0"))
+    fig2.add_trace(go.Scatter(x=years, y=rcp_85, mode="lines", name="RCP 8.5"))
+
+    fig2.update_layout(
+        title=f"{selected_city} Projected RCP Scenarios",
+        xaxis_title="Year",
+        yaxis_title="Temp Rise (°C)",
+        template="plotly_dark"
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # --- Footer: Last Updated ---
+    st.markdown(
+        f"""
+        <div style='position:fixed; bottom:10px; centre:10px; color:#aaaaaa; font-size:12px;'>
+            Last Updated: {last_updated()}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # --- GHG by Sector ---
     st.markdown("### GHG Emissions by Sector")
