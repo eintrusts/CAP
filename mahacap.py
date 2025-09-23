@@ -325,19 +325,6 @@ def city_page():
         <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
             <div style="font-size:13px; color:#cccccc;">Area (sq km)</div>
             <div style="font-size:16px; font-weight:600; color:#ffffff;">{area:,}</div>
-        </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
-            <div style="font-size:13px; color:#cccccc;">Department Name</div>
-            <div style="font-size:14px; color:#ffffff;">{dept_name}</div>
-        </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
-            <div style="font-size:13px; color:#cccccc;">Department Email</div>
-            <div style="font-size:14px; color:#ffffff;">{dept_email}</div>
-        </div>
-        <div style="border-radius:8px; background:#1e1e1e; padding:16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);">
-            <div style="font-size:13px; color:#cccccc;">Website</div>
-            <div><a href="{website}" target="_blank" style="font-size:14px; color:#1f77b4; text-decoration:none;">{website}</a></div>
-        </div>
     </div>
     """
     st.markdown(basic_info_html, unsafe_allow_html=True)
