@@ -44,53 +44,37 @@ def sidebar_section():
     st.sidebar.markdown("""
     <style>
     [data-testid="stSidebar"] {
-        background-color: #111827 !important; 
-        color: #ffffff !important; 
-        width: 260px !important; 
-        min-width: 260px !important; 
+        background-color: #111827 !important;
+        width: 260px !important;
+        min-width: 260px !important;
         max-width: 260px !important;
         padding-top: 20px;
     }
-    [data-testid="stSidebarCollapseButton"] {display: none !important;}
-
-    .sidebar-logo {
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        margin: 20px 0 30px 0;
-    }
-    .sidebar-logo img {
-        max-width: 190px; 
-        height: auto; 
-        border-radius: 15px;
-    }
-
-    /* Full-width sidebar buttons */
-    .menu-btn, .menu-btn-active {
-        display: flex !important;
-        align-items: center;
-        width: 100% !important;
-        padding: 12px 20px !important;
-        margin: 5px 0 !important;
+    .sidebar-logo {display: flex; justify-content: center; margin: 20px 0 30px 0;}
+    .sidebar-logo img {max-width: 190px; height: auto; border-radius: 15px;}
+    
+    .menu-btn {
+        display: block;
+        width: 100%;
+        padding: 14px 20px;
+        margin: 6px 0;
+        border-radius: 6px;
         background: transparent;
         color: #e5e7eb;
         font-size: 16px;
         font-weight: 500;
-        border: none;
-        border-radius: 6px;
         text-align: left;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s;
         box-sizing: border-box;
+        text-decoration: none;
     }
-
     .menu-btn:hover {
         background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%);
         color: #ffffff;
         transform: translateX(2px);
-        box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        box-shadow: 0 0 8px rgba(239,68,68,0.5);
     }
-
     .menu-btn-active {
         background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
         color: #ffffff !important;
@@ -100,23 +84,12 @@ def sidebar_section():
         box-shadow: 0 0 10px rgba(239,68,68,0.6);
         animation: pulseGlow 2s infinite;
     }
-
     @keyframes pulseGlow {
         0% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
         50% { box-shadow: 0 0 20px rgba(239,68,68,0.9); }
         100% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
     }
-
-    .sidebar-footer {
-        position: fixed; 
-        bottom: 20px; 
-        left: 0; 
-        width: 260px; 
-        text-align: center; 
-        color: #9ca3af; 
-        font-size: 13px; 
-        padding: 10px 0;
-    }
+    .sidebar-footer {position: fixed; bottom: 20px; left: 0; width: 260px; text-align: center; color: #9ca3af; font-size: 13px; padding: 10px 0;}
     .sidebar-footer strong {color: #ffffff;}
     </style>
     """, unsafe_allow_html=True)
@@ -127,11 +100,11 @@ def sidebar_section():
         unsafe_allow_html=True
     )
 
-    # Menu
+    # Menu using clickable markdown
     menu = ["Home", "City", "Admin"]
     for m in menu:
-        btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
-        if st.sidebar.button(m, key=f"menu_{m}"):
+        active_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
+        if st.sidebar.markdown(f'<a href="#" class="{active_class}" onclick="window.parent.location.reload();">{m}</a>', unsafe_allow_html=True):
             st.session_state.current_page = m
 
     # Footer
