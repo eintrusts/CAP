@@ -43,16 +43,83 @@ def sidebar_section():
 
     st.sidebar.markdown("""
     <style>
-    [data-testid="stSidebar"] {background-color: #111827; color: #ffffff; width: 260px; min-width: 260px; max-width: 260px;}
+    [data-testid="stSidebar"] {
+        background-color: #111827; 
+        color: #ffffff; 
+        width: 260px; 
+        min-width: 260px; 
+        max-width: 260px;
+    }
     [data-testid="stSidebarCollapseButton"] {display: none;}
-    .sidebar-logo {display: flex; justify-content: center; align-items: center; margin: 20px 0 30px 0;}
-    .sidebar-logo img {max-width: 190px; height: auto; border-radius: 15px;}
-    .menu-btn {display: block; width: 100%; padding: 12px 20px; margin: 8px 0; background: transparent; color: #e5e7eb; text-align: left; font-size: 16px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;}
-    .menu-btn:hover {background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%); color: #ffffff; transform: translateX(4px); box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);}
-    .menu-btn-active {background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%); color: #ffffff !important; font-weight: 600; border-left: 4px solid #f87171; padding-left: 16px; box-shadow: 0 0 10px rgba(239,68,68,0.6); animation: pulseGlow 2s infinite;}
-    @keyframes pulseGlow {0% { box-shadow: 0 0 10px rgba(239,68,68,0.6); } 50% { box-shadow: 0 0 20px rgba(239,68,68,0.9); } 100% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }}
-    .sidebar-footer {position: fixed; bottom: 20px; left: 0; width: 260px; text-align: center; color: #9ca3af; font-size: 13px; padding: 10px 0;}
-    .sidebar-footer strong {color: #ffffff;}
+
+    .sidebar-logo {
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        margin: 20px 0 30px 0;
+    }
+    .sidebar-logo img {
+        max-width: 190px; 
+        height: auto; 
+        border-radius: 15px;
+    }
+
+    /* Menu button styles */
+    .menu-btn, .menu-btn-active {
+        display: block; 
+        width: 100%; 
+        height: 48px; 
+        line-height: 24px; 
+        padding: 12px 20px; 
+        margin: 6px 0; 
+        text-align: left; 
+        font-size: 16px; 
+        font-weight: 500; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        transition: all 0.3s ease; 
+        box-sizing: border-box;
+    }
+    .menu-btn {
+        background: transparent; 
+        color: #e5e7eb;
+    }
+    .menu-btn:hover {
+        background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%); 
+        color: #ffffff; 
+        transform: translateX(4px); 
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    }
+    .menu-btn-active {
+        background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%); 
+        color: #ffffff !important; 
+        font-weight: 600; 
+        border-left: 4px solid #f87171; 
+        padding-left: 16px; 
+        box-shadow: 0 0 10px rgba(239,68,68,0.6); 
+        animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+        0%   { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
+        50%  { box-shadow: 0 0 20px rgba(239,68,68,0.9); }
+        100% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
+    }
+
+    .sidebar-footer {
+        position: fixed; 
+        bottom: 20px; 
+        left: 0; 
+        width: 260px; 
+        text-align: center; 
+        color: #9ca3af; 
+        font-size: 13px; 
+        padding: 10px 0;
+    }
+    .sidebar-footer strong {
+        color: #ffffff;
+    }
     </style>
     """, unsafe_allow_html=True)
 
