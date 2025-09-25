@@ -64,46 +64,44 @@ def sidebar_section():
         border-radius: 15px;
     }
 
-    /* Menu button styles */
+    /* Menu Button Styling */
     .menu-btn, .menu-btn-active {
-        display: block; 
-        width: 100%; 
-        height: 48px; 
-        line-height: 24px; 
-        padding: 12px 20px; 
-        margin: 6px 0; 
-        text-align: left; 
-        font-size: 16px; 
-        font-weight: 500; 
-        border: none; 
-        border-radius: 6px; 
-        cursor: pointer; 
-        transition: all 0.3s ease; 
-        box-sizing: border-box;
-    }
-    .menu-btn {
-        background: transparent; 
+        display: block;
+        width: 100%;
+        height: 48px;                   /* fixed height for all buttons */
+        padding: 12px 20px;
+        margin: 8px 0;
+        background: transparent;
         color: #e5e7eb;
+        text-align: left;               /* left aligned text */
+        font-size: 16px;
+        font-weight: 500;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
     .menu-btn:hover {
-        background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%); 
-        color: #ffffff; 
-        transform: translateX(4px); 
+        background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%);
+        color: #ffffff;
+        transform: translateX(4px);
         box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
     }
+
+    /* Active button */
     .menu-btn-active {
-        background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%); 
-        color: #ffffff !important; 
-        font-weight: 600; 
-        border-left: 4px solid #f87171; 
-        padding-left: 16px; 
-        box-shadow: 0 0 10px rgba(239,68,68,0.6); 
+        background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+        color: #ffffff !important;
+        font-weight: 600;
+        border-left: 4px solid #f87171;
+        padding-left: 16px;
+        box-shadow: 0 0 10px rgba(239,68,68,0.6);
         animation: pulseGlow 2s infinite;
     }
 
     @keyframes pulseGlow {
-        0%   { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
-        50%  { box-shadow: 0 0 20px rgba(239,68,68,0.9); }
+        0% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
+        50% { box-shadow: 0 0 20px rgba(239,68,68,0.9); }
         100% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
     }
 
@@ -117,9 +115,7 @@ def sidebar_section():
         font-size: 13px; 
         padding: 10px 0;
     }
-    .sidebar-footer strong {
-        color: #ffffff;
-    }
+    .sidebar-footer strong {color: #ffffff;}
     </style>
     """, unsafe_allow_html=True)
 
