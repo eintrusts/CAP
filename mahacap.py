@@ -44,13 +44,13 @@ def sidebar_section():
     st.sidebar.markdown("""
     <style>
     [data-testid="stSidebar"] {
-        background-color: #111827; 
-        color: #ffffff; 
-        width: 260px; 
-        min-width: 260px; 
-        max-width: 260px;
+        background-color: #111827 !important; 
+        color: #ffffff !important; 
+        width: 260px !important; 
+        min-width: 260px !important; 
+        max-width: 260px !important;
     }
-    [data-testid="stSidebarCollapseButton"] {display: none;}
+    [data-testid="stSidebarCollapseButton"] {display: none !important;}
 
     .sidebar-logo {
         display: flex; 
@@ -64,31 +64,31 @@ def sidebar_section():
         border-radius: 15px;
     }
 
-    /* Menu Button Styling */
     .menu-btn, .menu-btn-active {
         display: block;
-        width: 100%;
-        height: 48px;                   /* fixed height for all buttons */
-        padding: 12px 20px;
-        margin: 8px 0;
+        width: calc(100% - 40px);  /* full width minus padding */
+        height: 48px;               /* equal height */
+        margin: 8px 20px;           /* same spacing on all */
+        padding-left: 12px;         /* left-aligned text */
         background: transparent;
         color: #e5e7eb;
-        text-align: left;               /* left aligned text */
+        text-align: left;
         font-size: 16px;
         font-weight: 500;
         border: none;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
+        line-height: 24px;
     }
+
     .menu-btn:hover {
         background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%);
         color: #ffffff;
-        transform: translateX(4px);
-        box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+        transform: translateX(2px);
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
     }
 
-    /* Active button */
     .menu-btn-active {
         background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
         color: #ffffff !important;
