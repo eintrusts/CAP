@@ -43,58 +43,39 @@ def sidebar_section():
 
     st.sidebar.markdown("""
     <style>
-    /* Sidebar Background */
     [data-testid="stSidebar"] {
-        background-color: #111827;  /* Dark background */
-        color: #ffffff;
-        width: 260px;
-        min-width: 260px;
-        max-width: 260px;
+        background-color: #111827 !important;
+        width: 260px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+        padding-top: 20px;
     }
+    .sidebar-logo {display: flex; justify-content: center; margin: 20px 0 30px 0;}
+    .sidebar-logo img {max-width: 190px; height: auto; border-radius: 15px;}
 
-    /* Hide collapse/expand button */
-    [data-testid="stSidebarCollapseButton"] {
-        display: none;
-    }
-    /* Sidebar Logo */
-    .sidebar-logo {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px 0 30px 0;
-    }
-    .sidebar-logo img {
-        max-width: 190px;
-        height: auto;
-        border-radius: 15px; /* Rounded corners */
-    }
-
-    /* Menu Buttons */
-    .menu-btn {
-        display: block;
+    /* Radio buttons as menu */
+    div[data-baseweb="radio"] > label {
         width: 100%;
-        padding: 12px 20px;
-        margin: 8px 0;
-        background: transparent;
-        color: #e5e7eb;
         text-align: left;
+        padding: 14px 20px;
+        margin: 6px 0;
+        border-radius: 6px;
         font-size: 16px;
         font-weight: 500;
-        border: none;
-        border-radius: 6px;
+        color: #e5e7eb;
+        background: transparent;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s;
+        display: block;
     }
-    .menu-btn:hover {
+    div[data-baseweb="radio"] > label:hover {
         background: linear-gradient(90deg, #ef444420 0%, #ef444440 100%);
         color: #ffffff;
-        transform: translateX(4px);
-        box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); /* Red glow on hover */
+        box-shadow: 0 0 8px rgba(239,68,68,0.5);
     }
-    /* Active Button with Pulse Animation */
-    .menu-btn-active {
+    div[data-baseweb="radio"] > label[aria-checked="true"] {
         background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
-        color: #ffffff !important;
+        color: #ffffff;
         font-weight: 600;
         border-left: 4px solid #f87171;
         padding-left: 16px;
@@ -107,7 +88,6 @@ def sidebar_section():
         100% { box-shadow: 0 0 10px rgba(239,68,68,0.6); }
     }
 
-    /* Footer */
     .sidebar-footer {
         position: fixed;
         bottom: 20px;
@@ -118,29 +98,27 @@ def sidebar_section():
         font-size: 13px;
         padding: 10px 0;
     }
-    .sidebar-footer strong {
-        color: #ffffff;
-    }
+    .sidebar-footer strong {color: #ffffff;}
     </style>
     """, unsafe_allow_html=True)
-# Sidebar Logo
+
+    # Logo
     st.sidebar.markdown(
         '<div class="sidebar-logo"><img src="https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true"></div>',
         unsafe_allow_html=True
     )
 
-    # Sidebar Menu with Active State
+    # Menu using radio buttons for proper state tracking
     menu = ["Home", "City", "Admin"]
-    for m in menu:
-        btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
-        if st.sidebar.button(m, key=f"menu_{m}"):
-            st.session_state.current_page = m
+    choice = st.sidebar.radio("", menu, index=menu.index(st.session_state.current_page))
+    st.session_state.current_page = choice
 
     # Footer
     st.sidebar.markdown(
         '<div class="sidebar-footer"><strong>© EinTrust 2025</strong><br>All Rights Reserved</div>',
         unsafe_allow_html=True
     )
+
 # -------------------- Home Page --------------------
 def home_page():
     st.markdown("<style>body {background-color: #121212; color: #ffffff;}</style>", unsafe_allow_html=True)
