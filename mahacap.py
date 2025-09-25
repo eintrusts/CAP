@@ -49,6 +49,7 @@ def sidebar_section():
         width: 260px !important; 
         min-width: 260px !important; 
         max-width: 260px !important;
+        padding-top: 20px;
     }
     [data-testid="stSidebarCollapseButton"] {display: none !important;}
 
@@ -64,22 +65,23 @@ def sidebar_section():
         border-radius: 15px;
     }
 
+    /* Full-width sidebar buttons */
     .menu-btn, .menu-btn-active {
-        display: block;
-        width: calc(100% - 40px);  /* full width minus padding */
-        height: 48px;               /* equal height */
-        margin: 8px 20px;           /* same spacing on all */
-        padding-left: 12px;         /* left-aligned text */
+        display: flex !important;
+        align-items: center;
+        width: 100% !important;
+        padding: 12px 20px !important;
+        margin: 5px 0 !important;
         background: transparent;
         color: #e5e7eb;
-        text-align: left;
         font-size: 16px;
         font-weight: 500;
         border: none;
         border-radius: 6px;
+        text-align: left;
         cursor: pointer;
         transition: all 0.3s ease;
-        line-height: 24px;
+        box-sizing: border-box;
     }
 
     .menu-btn:hover {
@@ -119,13 +121,13 @@ def sidebar_section():
     </style>
     """, unsafe_allow_html=True)
 
-    # Sidebar Logo
+    # Logo
     st.sidebar.markdown(
         '<div class="sidebar-logo"><img src="https://github.com/eintrusts/CAP/blob/main/EinTrust%20%20(2).png?raw=true"></div>',
         unsafe_allow_html=True
     )
 
-    # Sidebar Menu with Active State
+    # Menu
     menu = ["Home", "City", "Admin"]
     for m in menu:
         btn_class = "menu-btn-active" if st.session_state.current_page == m else "menu-btn"
